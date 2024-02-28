@@ -5,6 +5,7 @@ https://github.com/search?q=repo%3Aspring-projects%2Fspring-security%20baseurl&t
 
 
 https://www.sivalabs.in/spring-security-oauth2-tutorial-introduction/
+https://github.com/sivaprasadreddy/spring-security-oauth2-microservices-demo/tree/main
 
 
 https://dev-xxxxx.okta.com/oauth2/default/v1/authorize?response_type=code&scope=photos&client_id=xxxxxx&redirect_uri=https://example-app.com/redirect&state=1234
