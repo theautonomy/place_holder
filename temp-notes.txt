@@ -12,3 +12,8 @@ https://dev-xxxxx.okta.com/oauth2/default/v1/authorize?response_type=code&scope=
 curl https://dev-9746866.okta.com/oauth2/default/v1/token -d grant_type=authorization_code -d client_id=xxxxx -d client_secret=xxxxx -d code=xxxxx -d redirect_uri=https://example-app.com/redirect
 {"token_type":"Bearer","expires_in":3600,"access_token":
 "token-xxxxx","scope":"photos"}
+
+oauth
+An open standard for authorization
+OAuth doesn’t tell the app who logged in
+
