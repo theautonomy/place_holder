@@ -1,3 +1,6 @@
+https://datatracker.ietf.org/doc/html/rfc6749
+https://openid.net/specs/openid-connect-core-1_0.html
+
 https://github.com/search?q=repo%3Aspring-projects%2Fspring-security%20baseurl&type=code
 
 
