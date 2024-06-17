@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.asciidoctor.maven</groupId>
+    <artifactId>asciidoc-to-html-example</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>AsciiDoc to HTML Maven Example</name>
+    <description>An example project that demonstrates how to convert AsciiDoc to HTML5 using the Asciidoctor Maven plugin.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.slides.directory>${project.build.directory}/generated-slides</project.slides.directory>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- <asciidoctor.maven.plugin.version>3.0.0</asciidoctor.maven.plugin.version> -->
+        <asciidoctor.maven.plugin.version>2.2.6</asciidoctor.maven.plugin.version>
+        <asciidoctorj.version>2.5.13</asciidoctorj.version>
+        <jruby.version>9.4.6.0</jruby.version>
+        <revealjs.version>3.9.2</revealjs.version>
+    </properties>
+
+    <build>
+        <defaultGoal>process-resources</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.7.1</version>
+                <executions>
+                    <execution>
+                        <id>install-revealjs</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>
+                                https://github.com/hakimel/reveal.js/archive/${revealjs.version}.zip</url>
+                            <unpack>true</unpack>
+                            <outputFileName>reveal.js-${revealjs.version}.zip</outputFileName>
+                            <outputDirectory>${project.slides.directory}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${asciidoctor.maven.plugin.version}</version>
+                <dependencies>
+                    <!-- Comment this section to use the default jruby artifact provided by the
+                    plugin -->
+                    <!--
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                -->
+                    <!-- Comment this section to use the default AsciidoctorJ artifact provided by
+                    the plugin -->
+                    <!--
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj</artifactId>
+                        <version>${asciidoctorj.version}</version>
+                    </dependency>
+                -->
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-revealjs</artifactId>
+                        <version>4.0.1</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <sourceDirectory>src/docs/asciidoc</sourceDirectory>
+                    <attributes>
+                        <sourcedir>${project.build.sourceDirectory}</sourcedir>
+                        <project-version>${project.version}</project-version>
+                    </attributes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-slides</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <requires>
+                                <require>asciidoctor-revealjs</require>
+                            </requires>
+                            <outputDirectory>${project.slides.directory}</outputDirectory>
+                            <backend>revealjs</backend>
+                            <attributes>
+                                <revealjsdir>reveal.js-${revealjs.version}</revealjsdir>
+                                <!-- put here the reveal.js specific attributes -->
+                                <sourcedir>${basedir}/src/main/java</sourcedir>
+                                <revealjs_theme>black</revealjs_theme>
+                                <revealjs_transition>linear</revealjs_transition>
+                                <project-version>${project.version}</project-version>
+                                <rouge-css>class</rouge-css>
+                                <customcss>styles/monokai.css</customcss>
+                                <source-highlighter>rouge</source-highlighter>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
