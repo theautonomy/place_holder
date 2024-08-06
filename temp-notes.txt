@@ -17,3 +17,108 @@ oauth
 An open standard for authorization
 OAuth doesn’t tell the app who logged in
 
+/////
+
+* https://hbr.org/2024/05/ai-will-increase-the-quantity-and-quality-of-phishing-scams
+
+AI tools are rapidly making these emails more advanced, harder to spot, and significantly more dangerous.
+
+The entire phishing process can be automated using LLMs, which reduces the costs of phishing attacks by more than 95% while achieving equal or greater success rates
+
+Phishing has five distinct phases: collecting targets, collecting information about the targets, creating emails, sending emails, and finally validating and improving the emails. With the ability to generate human-like text and converse coherently, large language models (LLMs), such as ChatGPT and Claude, can be used to automate each phase.
+
+expect phishing to increase drastically in quality and quantity over the coming years.
+
+
+Using LLMs to create phishing emails
+
+    two types of phishing emails: spear phishing and traditional phishing 
+
+    Spear phishing attacks are personalized to exploit certain characteristics and routines of a particular target, while spray-and-pray phishing is general and mass-scale. Spear phishing attacks are expensive, time-consuming, and don’t scale well, as they are individualized for each recipient, but they are highly effective. Thus, attackers can choose between cheap and ineffective or expensive and effective.
+
+    artificial intelligence changes this playing field by drastically reducing the cost of spear phishing attacks, while maintaining or even increasing their success rate. The output quality of language models is improving rapidly, so we expect them to surpass human capability within the coming years. Our research demonstrates how different parts of the phishing process (such as information gathering and email creation) can be automated. By fully automating all parts of the phishing process, the cost of personalized and highly successful phishing attacks is reduced to the cost of mass-scale and non-personalized emails.
+
+
+    we will face a vast increase in credible and hyper-personalized spear-phishing emails that are cheap for attackers to scale up en masse.
+
+Using LLMs to detect phishing emails
+
+How businesses should prepare themselves
+
+To address the growing concern of AI-enabled spear phishing attacks, we recommend three checkpoints for business leaders, managers, and security officials:
+
+    Understand the asymmetrical capabilities of AI-enhanced phishing.
+    Determine the company or division’s phishing threat severity level.
+    Confirm your current phishing awareness routines.
+
+Artificial intelligence, and LLMs in particular, are significantly enhancing the severity of phishing attacks, and we can expect a sharp increase in both the quality and quantity of phishing in the years to come. When targeting human users, AI disproportionately benefits attackers by making it easier and more cost-effective to exploit psychological vulnerabilities than to defend and educate users. Most employees have a digital footprint with publicly available information that makes it easy to impersonate them and create tailored attacks. Therefore, phishing is evolving from mere emails to a plethora of hyper-personalized messages, including falsified voice and video.
+
+Managers must correctly classify the threat level of their organization and department to take appropriate action. By raising employee awareness about this emerging threat and equipping them to accurately assess the risk to themselves and their organization, companies can aspire to stay ahead of the curve and mitigate the next generation of phishing attacks, which will claim more victims than ever before.
+
+* https://www.securityweek.com/cyber-insights-2024-artificial-intelligence/
+
+2023, however, saw the emergence and general availability of large language model (LLM) AI, commonly known as gen-AI; with ChatGPT being the iconic frontrunner. AI is now front and center for everyone.
+
+Phishing
+
+Phishing is the cyber threat most discussed by security professionals and the media. There is little doubt that gen-AI can provide the means to supercharge attacks: word-perfect, multi-lingual, and super-scaled.
+
+There is more room for doubt, however, whether this is already happening, or will happen in 2024. Shikiar believes it has started, with more than half the population believing there has been an increase in the volume and an improvement in the sophistication of attacks.
+
+adds Matt Waxman, SVP and GM for data protection at Veritas Technologies, “Tools like WormGPT make it easy for attackers to improve their social engineering with AI-generated phishing emails that are much more convincing than those we’ve previously learned to spot.” 
+
+Deepfakes: phishing’s video and voice accessory
+ the inclusion of AI-generated voice and video into targeted spear-phishing and BEC will make attacks far more believable. 
+
+ Social engineering is already the cause of the majority of attacks, and now any fraudster, anywhere in the world, can generate word-perfect phishing attacks that are near-impossible to detect — at a fraction of the effort of creating a deepfake
+
+ * https://www.securityweek.com/the-emerging-landscape-of-ai-driven-cybersecurity-threats-a-look-ahead/
+
+ highly tailored phishing lures,
+
+ * https://computronixusa.com/top-5-cybersecurity-threats-in-2024/
+ AI-Enhanced Phishing Schemes
+
+Deception has reached new heights in cybercrime as AI-powered phishing schemes become increasingly sophisticated, directly threatening your organization’s security. These ai-enhanced phishing schemes leverage the use of AI to craft convincing messages that can trick even the most vigilant users.
+
+Here’s what you need to watch out for:
+
+-- AI-Enhanced Phishing Schemes
+
+    Utilize machine learning to personalize attacks
+    Exploit access to platforms for large-scale distribution
+    Mimic trusted sources with alarming accuracy
+
+To mitigate these risks, reinforce your defenses against sophisticated ransomware tools and adapt to the diversity in operating systems within your network. Educate your team on the nuances of these threats and ensure they’re equipped to recognize and respond to them.
+
+Stay vigilant and proactive to protect your digital landscape.
+
+-- Malicious AI Narrative Crafting
+
+Cybercriminals are harnessing artificial intelligence to craft narratives that convincingly mimic legitimate communications, further complicating your defense against these stealthy cyberattacks. AI poses a significant challenge as it’s used in generating sophisticated ransomware tools and attack vectors using AI. You must be proactive to safeguard against emerging threats that are becoming more nuanced.
+
+--AI-Exploit Rapid Development
+
+With hackers’ adoption of AI-powered tools, your organization’s defenses are facing unprecedented challenges in detecting and countering rapid exploit development. AI’s ability to generate sophisticated threats at an alarming rate means you must be vigilant and proactive.
+
+AI-Powered Cyberattacks:
+
+    Speed: AI accelerates the creation of malware, outpacing traditional security measures.
+    Variety: A range of attacks, from software supply chain attacks to data breaches, are now more complex.
+    Evasion: AI-driven threats can sidestep detection systems, making prevention increasingly difficult.
+
+Understand that AI isn’t just a tool for innovation but also a weapon for cybercriminals. Your strategy must adapt to anticipate and mitigate these evolving threats. Secure your organization by staying ahead of the AI threat curve.
+
+* https://fightcybercrime.org/blog/the-rise-of-ai-in-phishing-scams-how-scammers-use-it-and-how-we-can-fight-back/
+
+AI-Powered Phishing Scams
+  Spear Phishing
+  Deepfakes
+  Chatbots
+
+AI-Powered Phishing Detection
+  Machine learning
+  Natural Language Processing (NLP)
+  User Behavior Analysis
+
+AI has the potential to both improve and disrupt phishing scams. Scammers can use AI to automate various aspects of a phishing attack, making them more effective and targeted. However, AI can also be used to detect and prevent phishing attacks by analyzing user behavior, email content and other features. As AI continues to evolve, it is likely that we will see more sophisticated phishing scams emerge, but we will also see more effective detection and prevention techniques developed. It is important to stay vigilant and be aware of the latest phishing scams and detection techniques to protect yourself and your organization.
