@@ -16,6 +16,21 @@ public class TreeController {
         return "sample";
     }
 
+    @GetMapping("/sample2")
+    public String sample2() {
+        return "sample2";
+    }
+
+    @GetMapping("/sample3")
+    public String sample3() {
+        return "sample3";
+    }
+
+    @GetMapping("/sample4")
+    public String sample4() {
+        return "sample4";
+    }
+
     @GetMapping("/tree")
     public String index() {
         return "tree";
