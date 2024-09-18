@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree View Example</title>
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <style>
+        .caret {
+            cursor: pointer;
+            -webkit-user-select: none; /* Safari 3.1+ */
+            -moz-user-select: none; /* Firefox 2+ */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none;
+        }
+
+        .caret::before {
+            content: "\25B6";
+            color: black;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .caret-down::before {
+            -ms-transform: rotate(90deg); /* IE 9 */
+            -webkit-transform: rotate(90deg); /* Safari */
+             transform: rotate(90deg);
+        }
+
+        .nested {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tree View</h1>
+    <ul id="tree-container" class="tree">
+        <div hx-get="/nodes/root" hx-trigger="click" hx-target="#root-nodes">root</div>
+        <li id="root-nodes"></li>
+    </ul>
+    <script>
+        var toggler = document.getElementsByClassName("caret");
+        var i;
+
+        for (i = 0; i < toggler.length; i++) {
+            toggler[i].addEventListener("click", function () {
+                this.parentElement.querySelector(".nested").classList.toggle("active");
+                this.classList.toggle("caret-down");
+            });
+        }
+    </script>
+
+</body>
+
+</html>
