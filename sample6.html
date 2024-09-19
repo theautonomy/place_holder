@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree View Example</title>
+    <style>
+        html * {
+            font-size: x-small;
+            color: #000;
+            font-family: Arial !important;
+        }
+
+        ul,
+        #myUL {
+            list-style-type: none;
+        }
+
+        #myUL {
+            margin: 0;
+            padding: 0;
+        }
+
+        .caret {
+            cursor: pointer;
+            user-select: none;
+            /* Prevent text selection */
+            padding: -1px;
+            border-radius: 5px;
+            margin: 2px;
+        }
+
+        .caret::before {
+            /* content: "\25B6"; */
+            color: black;
+            display: inline-block;
+            margin-right: 0px;
+        }
+
+        .caret-down::before {
+            transform: rotate(90deg);
+        }
+
+        .nested {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        /* Styles for different states */
+        .caret.collapsed {
+            /* background-color: lightgreen; */
+            background-color: lightsteelblue;
+            border: 1px solid;
+            color: black;
+        }
+
+        .caret.expanded {
+            background-color: lightgrey;
+            border: 1px solid;
+            /* font-style: italic; */
+            /* color: white; */
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Tree View Example</h2>
+    <ul id="myUL">
+        <li><span class="caret collapsed">Beverages</span>
+            <ul class="nested">
+                <li><span class="caret collapsed">Water</span>
+                    <ul class="nested">
+                        <li>Sparkling</li>
+                        <li><span class="caret collapsed">Water Water water water water water</span>
+                            <ul class="nested">
+                                <li>Sparkling ssparking sparking sparking sparking sparking </li>
+                                <li>Still</li>
+                            </ul>
+                        </li>
+                        <li>Still</li>
+                    </ul>
+                </li>
+                <li><span class="caret collapsed">Juice</span>
+                    <ul class="nested">
+                        <li>Orange</li>
+                        <li>Apple</li>
+                        <li>Grape</li>
+                    </ul>
+                </li>
+                <li>Orange</li>
+                <li>Apple</li>
+            </ul>
+        </li>
+    </ul>
+
+    <script>
+        var toggler = document.getElementsByClassName("caret");
+        var i;
+
+        for (i = 0; i < toggler.length; i++) {
+            toggler[i].addEventListener("click", function () {
+                this.parentElement.querySelector(".nested").classList.toggle("active");
+                this.classList.toggle("caret-down");
+
+                if (this.classList.contains("caret-down")) {
+                    this.classList.remove("collapsed");
+                    this.classList.add("expanded");
+                } else {
+                    this.classList.remove("expanded");
+                    this.classList.add("collapsed");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
