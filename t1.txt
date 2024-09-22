@@ -73,22 +73,14 @@ public class ChuckNorrisJokeController {
 
 
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:htmx="http://htmx.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Chuck Norris Jokes</title>
-    <link href="/css/tailwind.build.css" rel="stylesheet">
-    <script src="https://unpkg.com/htmx.org@1.3.3"></script>
+    <title>Joke Fragment</title>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
-    <div class="container mx-auto my-8 p-8 bg-white shadow-lg rounded-lg text-center">
-        <h1 class="text-3xl font-bold mb-4">Chuck Norris Joke Generator</h1>
-        <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-                hx-get="/joke" hx-target="#jokeContainer" hx-trigger="click">
-            Get a New Joke
-        </button>
-        <div id="jokeContainer" class="mt-4">
-            <!-- Joke will be loaded here -->
-        </div>
+<body>
+    <div th:fragment="jokeFragment">
+        <img th:src="${icon}" class="mx-auto mt-4 rounded-full">
+        <p class="mt-4 text-lg text-gray-700" th:text="${joke}"></p>
     </div>
 </body>
 </html>
