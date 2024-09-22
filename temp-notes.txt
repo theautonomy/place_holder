@@ -457,3 +457,78 @@ public class BeanInfo {
         return (lastDotIndex != -1) ? type.substring(lastDotIndex + 1) : type;
     }
 }
+
+
+////
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+public class DadJokeService {
+  
+    private static final String DAD_JOKE_API_URL = "https://icanhazdadjoke.com/";
+    
+    public String getRandomDadJoke() {
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.getForObject(DAD_JOKE_API_URL, String.class);
+    }
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class DadJokeController {
+
+    @Autowired
+    private DadJokeService dadJokeService;
+
+    @GetMapping("/")
+    public String index() {
+        return "index";
+    }
+
+    @GetMapping("/joke")
+    public String getJokeFragment(Model model) {
+        String joke = dadJokeService.getRandomDadJoke();
+        model.addAttribute("joke", joke);
+        return "fragments/joke :: jokeFragment";
+    }
+}
+
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:htmx="http://htmx.org">
+<head>
+    <title>Dad Jokes</title>
+    <link href="/css/tailwind.build.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.3.3"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="container mx-auto my-8 p-8 bg-white shadow-lg rounded-lg text-center">
+        <h1 class="text-3xl font-bold mb-4">Dad Joke Generator</h1>
+        <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                hx-get="/joke" hx-target="#jokeContainer" hx-trigger="click">
+            Get a New Joke
+        </button>
+        <div id="jokeContainer" class="mt-4 text-lg text-gray-700">
+            <!-- Joke will be loaded here -->
+        </div>
+    </div>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Joke Fragment</title>
+</head>
+<body>
+    <div th:fragment="jokeFragment">
+        <p th:text="${joke}"></p>
+    </div>
+</body>
+</html>
