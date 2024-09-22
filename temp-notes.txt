@@ -532,3 +532,88 @@ public class DadJokeController {
     </div>
 </body>
 </html>
+
+///
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+
+@Service
+public class DadJokeService {
+
+    private static final String DAD_JOKE_IMAGE_API_URL = "https://icanhazdadjoke.com/";
+
+    public String getRandomDadJokeImage() {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", "image/png");
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(DAD_JOKE_IMAGE_API_URL, HttpMethod.GET, entity, byte[].class);
+
+        String base64Image = org.springframework.util.Base64Utils.encodeToString(response.getBody());
+        return "data:image/png;base64," + base64Image;
+    }
+}
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class DadJokeController {
+
+    @Autowired
+    private DadJokeService dadJokeService;
+
+    @GetMapping("/")
+    public String index() {
+        return "index";
+    }
+
+    @GetMapping("/joke")
+    public String getJokeFragment(Model model) {
+        String jokeImage = dadJokeService.getRandomDadJokeImage();
+        model.addAttribute("jokeImage", jokeImage);
+        return "fragments/joke :: jokeFragment";
+    }
+}
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:htmx="http://htmx.org">
+<head>
+    <title>Dad Jokes</title>
+    <link href="/css/tailwind.build.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.3.3"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="container mx-auto my-8 p-8 bg-white shadow-lg rounded-lg text-center">
+        <h1 class="text-3xl font-bold mb-4">Dad Joke Generator</h1>
+        <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                hx-get="/joke" hx-target="#jokeContainer" hx-trigger="click">
+            Get a New Joke
+        </button>
+        <div id="jokeContainer" class="mt-4">
+            <!-- Joke will be loaded here -->
+        </div>
+    </div>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Joke Fragment</title>
+</head>
+<body>
+    <div th:fragment="jokeFragment">
+        <img th:src="${jokeImage}" class="mx-auto mt-4">
+    </div>
+</body>
+</html>
