@@ -408,3 +408,52 @@ public class BeanInfo {
     </div>
 </body>
 </html>
+
+///
+public class BeanInfo {
+    private String name;
+    private String type;
+    private String simpleName;
+    private String simpleType;
+
+    public BeanInfo(String name, String type) {
+        this.name = name;
+        this.type = type;
+        this.simpleName = name;
+        this.simpleType = extractSimpleName(type);
+    }
+
+    // Getters and setters
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getSimpleName() {
+        return simpleName;
+    }
+
+    public String getSimpleType() {
+        return simpleType;
+    }
+
+    // Helper method to extract simple class name from fully qualified type name
+    private String extractSimpleName(String type) {
+        if (type == null) {
+            return null;
+        }
+        int lastDotIndex = type.lastIndexOf('.');
+        return (lastDotIndex != -1) ? type.substring(lastDotIndex + 1) : type;
+    }
+}
