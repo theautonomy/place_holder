@@ -258,3 +258,50 @@ public class BeanController {
     </div>
 </body>
 </html>
+
+///
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:htmx="http://htmx.org">
+<head>
+    <title>Spring Beans</title>
+    <link href="/css/tailwind.build.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.3.3"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="container mx-auto my-8 p-8 bg-white shadow-lg rounded-lg">
+        <h1 class="text-3xl font-bold mb-4">Spring Beans List</h1>
+        <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700" 
+                hx-get="/beans" hx-target="#beansList" hx-trigger="click">
+            Load Beans
+        </button>
+        <div id="beansList" class="mt-4">
+            <!-- Beans list will be loaded here -->
+        </div>
+    </div>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Beans Fragment</title>
+</head>
+<body>
+    <div th:fragment="beansList">
+        <table class="min-w-full bg-white">
+            <thead>
+                <tr>
+                    <th class="py-2">Bean Name</th>
+                    <th class="py-2">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="bean : ${beans}" class="hover:bg-gray-50">
+                    <td th:text="${bean.name}" class="py-2 px-4 border-b"></td>
+                    <td th:text="${bean.type}" class="py-2 px-4 border-b"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
