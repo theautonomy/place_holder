@@ -305,3 +305,106 @@ public class BeanController {
     </div>
 </body>
 </html>
+
+///
+public class BeanInfo {
+    private String name;
+    private String type;
+    private String shortName;
+    private String shortType;
+
+    public BeanInfo(String name, String type) {
+        this.name = name;
+        this.type = type;
+        this.shortName = shortenName(name);
+        this.shortType = shortenType(type);
+    }
+
+    // Getters and setters
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public String getShortType() {
+        return shortType;
+    }
+
+    // Helper methods to shorten name and type
+    private String shortenName(String name) {
+        if (name.length() > 20) {
+            return name.substring(0, 17) + "...";
+        }
+        return name;
+    }
+
+    private String shortenType(String type) {
+        String[] parts = type.split("\\.");
+        if (parts.length > 2) {
+            return parts[0] + "." + parts[1] + "...";
+        }
+        return type;
+    }
+}
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:htmx="http://htmx.org">
+<head>
+    <title>Spring Beans</title>
+    <link href="/css/tailwind.build.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.3.3"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="container mx-auto my-8 p-8 bg-white shadow-lg rounded-lg">
+        <h1 class="text-3xl font-bold mb-4">Spring Beans List</h1>
+        <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700" 
+                hx-get="/beans" hx-target="#beansList" hx-trigger="click">
+            Load Beans
+        </button>
+        <div id="beansList" class="mt-4">
+            <!-- Beans list will be loaded here -->
+        </div>
+    </div>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Beans Fragment</title>
+</head>
+<body>
+    <div th:fragment="beansList">
+        <table class="min-w-full bg-white">
+            <thead>
+                <tr>
+                    <th class="py-2">Bean Name</th>
+                    <th class="py-2">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="bean : ${beans}" class="hover:bg-gray-50">
+                    <td th:text="${bean.shortName}" class="py-2 px-4 border-b"></td>
+                    <td th:text="${bean.shortType}" class="py-2 px-4 border-b"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
