@@ -29,6 +29,14 @@
         <button hx-get="/endpoint" hx-target="#specific-target" hx-swap="outerHTML">Replace Specific Target</button>
     </div>
     <div id="specific-target">Specific Content to Replace</div>
+
+     <div id="container">
+        <button hx-get="/endpoint" hx-target="next .update-target">Click to Update Next</button>
+        <div class="content">
+            <p>Original Content in the container</p>
+        </div>
+        <div class="update-target">This part will be updated</div>
+    </div>
     
     <div id="example-body">
         <button hx-get="/endpoint" hx-target="body" hx-swap="outerHTML">Replace Body</button>
