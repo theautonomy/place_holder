@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTMX hx-select-oob Example</title>
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body>
+    <h1>HTMX hx-select-oob Example</h1>
+
+    <div id="main-content">
+        <button hx-get="/endpoint" hx-target="#main-content" hx-select-oob="#oob-content-1, #oob-content-2">Click to Fetch Data 1</button>
+    </div>
+
+    <div id="main-content-1">
+        <button hx-get="/endpoint" hx-target="#main-content-1" hx-select="#part1" hx-select-oob="#oob-content-1, #oob-content-2">Click to Fetch Data 2</button>
+    </div>
+
+
+    <div id="oob-content-1" style="margin-top: 20px;">Original Content 1</div>
+    <div id="oob-content-2" style="margin-top: 20px;">Original Content 2</div>
+
+    <!-- Dummy endpoint for demonstration purposes using JavaScript -->
+    <script>
+        document.addEventListener("htmx:configRequest", function(evt) {
+            if (evt.detail.path === "/endpoint") {
+                evt.detail.path = "data:text/html,"
+                    + "<div>Main content from the server...</div>"
+                    + "<div id='part1'>part 1</div>"
+                    + "<div hx-swap-oob='true' id='oob-container'>"
+                    + "  <div id='oob-content-1'>Updated Content in OOB Target 1</div>"
+                    + "  <div id='oob-content-2'>Updated Content in OOB Target 2</div>"
+                    + "</div>";
+            }
+        });
+    </script>
+
+</body>
+</html>
