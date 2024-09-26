@@ -18,9 +18,21 @@
             max-width: 900px;
             background-color: #edf2f7;
             display: flex;
+            flex-direction: column;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+        }
+        .header {
+            background-color: #4299e1;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .main-content {
+            display: flex;
         }
         .left-section, .right-section {
             padding: 20px;
@@ -67,6 +79,9 @@
         .items-list li:hover {
             background-color: #e2e8f0;
         }
+        .items-list li.active {
+            background-color: #cbd5e0;
+        }
         .pagination-controls {
             display: flex;
             justify-content: flex-start; /* Align to the left */
@@ -91,8 +106,7 @@
         }
         .right-section {
             width: 60%;
-            /* background-color: #fff; */
-            background-color: #ebf8ff;
+            background-color: #fff;
             padding: 20px;
         }
         .card {
@@ -128,31 +142,37 @@
 </head>
 <body>
     <div class="container">
-        <!-- Left Section -->
-        <div class="left-section">
-            <h2>Items List</h2>
-            <input type="text" class="search-input" id="searchInput" oninput="filterItems()" placeholder="Search items...">
-            <div class="items-list">
-                <ul id="itemList"></ul>
+        <!-- Header Section -->
+        <div class="header">Item Management System</div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Section -->
+            <div class="left-section">
+                <h2>Items List</h2>
+                <input type="text" class="search-input" id="searchInput" oninput="filterItems()" placeholder="Search items...">
+                <div class="items-list">
+                    <ul id="itemList"></ul>
+                </div>
+                <div class="pagination-controls">
+                    <button id="prevPage" onclick="prevPage()" disabled>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span id="pageInfo"></span>
+                    <button id="nextPage" onclick="nextPage()" disabled>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
-            <div class="pagination-controls">
-                <button id="prevPage" onclick="prevPage()" disabled>
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <span id="pageInfo"></span>
-                <button id="nextPage" onclick="nextPage()" disabled>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Right Section -->
-        <div class="right-section">
-            <h2>Item Details</h2> 
-            <div id="itemDetails" class="card">
-                <h3>Select an item from the list</h3>
-                <div id="detailsContent">
-                    <!-- Details will be displayed here -->
+            
+            <!-- Right Section -->
+            <div class="right-section">
+                <h2>Item Details</h2> 
+                <div id="itemDetails" class="card">
+                    <h3>Select an item from the list</h3>
+                    <div id="detailsContent">
+                        <!-- Details will be displayed here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -164,7 +184,7 @@
             id: `item${i + 1}`,
             name: `Item ${i + 1}`,
             description: `This is the detailed description for Item ${i + 1}.`,
-            category: `Category ${Math.ceil((i + 1) / 5)}`, // Example categories
+            category: `Category ${Math.ceil((i + 1) / 5)}`,
             vendors: [`Vendor A${i + 1}`, `Vendor B${i + 1}`, `Vendor C${i + 1}`]
         }));
 
@@ -182,8 +202,12 @@
 
             pageItems.forEach(item => {
                 const itemElement = document.createElement('li');
+                itemElement.id = item.id; // Set the ID for the list item
                 itemElement.innerHTML = `<i class="fas fa-info-circle icon-spacing"></i> <span>${item.name}</span>`;
-                itemElement.onclick = () => showDetails(item.id);
+                itemElement.onclick = () => {
+                    showDetails(item.id);
+                    setActiveItem(item.id);
+                };
                 itemList.appendChild(itemElement);
             });
 
@@ -210,7 +234,7 @@
             const item = items.find(i => i.id === itemId);
             if (item) {
                 document.getElementById('itemDetails').innerHTML = `
-                    <div>
+                    <div class="card">
                         <h3>${item.name}</h3>
                         <p class="detail-text">${item.description}</p>
                         <p class="details-title">Category:</p>
@@ -221,6 +245,15 @@
                         </ul>
                     </div>
                 `;
+            }
+        }
+
+        function setActiveItem(itemId) {
+            const items = document.querySelectorAll('.items-list li');
+            items.forEach(item => item.classList.remove('active'));
+            const activeItem = document.getElementById(itemId);
+            if(activeItem) {
+                activeItem.classList.add('active');
             }
         }
 
