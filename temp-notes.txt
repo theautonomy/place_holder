@@ -669,3 +669,67 @@ class ReportData {
         this.content = content;
     }
 }
+
+
+///
+
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+public class ThymeleafExample {
+
+    public static void main(String[] args) {
+        // Read the template content into a string
+        String templateContent;
+        try {
+            templateContent = new String(Files.readAllBytes(Paths.get("templates/report.html")));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // Create a TemplateEngine instance and configure it with StringTemplateResolver
+        StringTemplateResolver templateResolver = new StringTemplateResolver();
+        TemplateEngine templateEngine = new TemplateEngine();
+        templateEngine.setTemplateResolver(templateResolver);
+
+        // Create the data for the report
+        Context context = new Context();
+        context.setVariable("reportData", new ReportData("Sample Report", "This is a sample content for the report."));
+
+        // Process the template content directly
+        String htmlContent = templateEngine.process(templateContent, context);
+        System.out.println(htmlContent);
+    }
+}
+
+class ReportData {
+    private String title;
+    private String content;
+
+    public ReportData(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+}
