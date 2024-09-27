@@ -617,3 +617,55 @@ public class DadJokeController {
     </div>
 </body>
 </html>
+
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+
+public class ThymeleafExample {
+
+    public static void main(String[] args) {
+        // Create a TemplateEngine instance and configure it
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix("templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode("HTML");
+
+        TemplateEngine templateEngine = new TemplateEngine();
+        templateEngine.setTemplateResolver(templateResolver);
+
+        // Create the data for the report
+        Context context = new Context();
+        context.setVariable("reportData", new ReportData("Sample Report", "This is a sample content for the report."));
+
+        // Process the template and generate the final HTML
+        String htmlContent = templateEngine.process("report", context);
+        System.out.println(htmlContent);
+    }
+}
+
+class ReportData {
+    private String title;
+    private String content;
+
+    public ReportData(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+}
