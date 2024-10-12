@@ -733,3 +733,40 @@ class ReportData {
         this.content = content;
     }
 }
+
+////
+
+ <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte</artifactId>
+            <version>3.1.12</version>
+        </dependency>
+
+
+   <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>gg.jte</groupId>
+                <artifactId>jte-maven-plugin</artifactId>
+                <version>3.1.12</version>
+                <executions>
+                    <execution>
+                        <id>jte-generate</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/jte</sourceDirectory>
+                            <contentType>Html</contentType>
+                            <binaryStaticContent>true</binaryStaticContent>
+                            <targetResourceDirectory>${project.build.outputDirectory}</targetResourceDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+gg.jte.usePrecompiledTemplates=${GG_JTE_USE_PRECOMPILED_TEMPLATES:false}
+gg.jte.developmentMode=${GG_JTE_DEVELOPMENT_TEMPLATES:true}
