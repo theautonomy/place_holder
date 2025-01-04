@@ -770,3 +770,34 @@ class ReportData {
 
 gg.jte.usePrecompiledTemplates=${GG_JTE_USE_PRECOMPILED_TEMPLATES:false}
 gg.jte.developmentMode=${GG_JTE_DEVELOPMENT_TEMPLATES:true}
+
+
+////
+<dependency>
+    <groupId>com.itextpdf</groupId>
+    <artifactId>itextpdf</artifactId>
+    <version>5.5.13.3</version>
+</dependency>
+
+
+ public byte[] generatePdf() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        Document document = new Document();
+        PdfWriter.getInstance(document, outputStream);
+        document.open();
+        document.add(new Paragraph("Hello, this is a PDF!"));
+        document.close();
+        return outputStream.toByteArray();
+    }
+
+
+ public void sendEmailWithAttachment(String to, String subject, String body, byte[] attachment) throws MessagingException {
+        MimeMessage message = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(body);
+
+        helper.addAttachment("attachment.pdf", new ByteArrayResource(attachment));
+        javaMailSender.send(message);
+    }
