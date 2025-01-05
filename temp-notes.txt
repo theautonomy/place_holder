@@ -801,3 +801,87 @@ gg.jte.developmentMode=${GG_JTE_DEVELOPMENT_TEMPLATES:true}
         helper.addAttachment("attachment.pdf", new ByteArrayResource(attachment));
         javaMailSender.send(message);
     }
+
+////
+The Jakarta Mail API and the Angus Mail implementation work together in the following way:
+
+1. **Jakarta Mail API**: The Jakarta Mail API is a standard Java API for sending and receiving email. It provides a high-level abstraction for working with email, including features for creating, sending, and parsing email messages.
+
+2. **Angus Mail Implementation**: Angus Mail is an open-source implementation of the Jakarta Mail API. It provides a complete implementation of the Jakarta Mail API, allowing developers to use the standard Jakarta Mail API in their applications.
+
+When you use the Jakarta Mail API in your application, you don't need to worry about the underlying implementation. The Jakarta Mail API is designed to be provider-agnostic, meaning that you can use different implementations of the API without having to change your code.
+
+To use the Angus Mail implementation with the Jakarta Mail API, you need to include the Angus Mail library in your application's classpath. This is typically done by adding a dependency to your build configuration (e.g., in your `pom.xml` file for a Maven-based project).
+
+Once the Angus Mail library is available, the Jakarta Mail API will automatically use the Angus Mail implementation to handle email-related tasks, such as sending and receiving email messages.
+
+Here's an example of how you might use the Jakarta Mail API with the Angus Mail implementation:
+
+```java
+import jakarta.mail.Message;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+
+import java.util.Properties;
+
+public class MailSender {
+    public static void main(String[] args) {
+        // Set up the email properties
+        Properties props = new Properties();
+        props.put("mail.smtp.host", "smtp.example.com");
+        props.put("mail.smtp.port", "25");
+
+        // Create a session using the properties
+        Session session = Session.getInstance(props);
+
+        try {
+            // Create a new email message
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress("sender@example.com"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse("recipient@example.com"));
+            message.setSubject("Test Email");
+            message.setText("This is a test email.");
+
+            // Send the email using the Angus Mail implementation
+            Transport.send(message);
+            System.out.println("Email sent successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+In this example, the `MailSender` class uses the Jakarta Mail API to create and send an email message. The Angus Mail implementation is used behind the scenes to handle the actual email sending process, without the need for the application code to know or care about the underlying implementation.
+
+The advantage of this approach is that it provides a standardized and portable way to work with email in Java applications, while allowing different implementations (like Angus Mail) to be used interchangeably.
+
+////
+
+The way the Jakarta Mail API automatically uses the Angus Mail implementation to handle email-related tasks is through the use of the Java Service Provider Interface (SPI) mechanism.
+
+The SPI mechanism allows service providers (in this case, the Angus Mail implementation) to be discovered and loaded dynamically by the Jakarta Mail API implementation.
+
+Here's how it works:
+
+1. **Angus Mail Service Provider Configuration**:
+   The Angus Mail implementation includes a service provider configuration file located at `META-INF/services/jakarta.mail.Provider`. This file contains the fully qualified class name of the Angus Mail service provider implementation, which implements the `jakarta.mail.Provider` interface.
+
+2. **Jakarta Mail API Service Loading**:
+   When you use the Jakarta Mail API in your application and create a `Session` object, the API will attempt to load all available service providers that implement the `jakarta.mail.Provider` interface.
+
+3. **Automatic Service Provider Discovery**:
+   The Jakarta Mail API uses the `ServiceLoader` mechanism to discover and load the available service providers. The `ServiceLoader` will scan the classpath for the `META-INF/services/jakarta.mail.Provider` files and load the implementation classes specified in those files.
+
+4. **Angus Mail Provider Selection**:
+   Once the available service providers are loaded, the Jakarta Mail API will select the appropriate provider to use based on the email-related properties (e.g., `mail.smtp.host`, `mail.smtp.port`) configured in the `Session` object.
+
+In the example you provided, when you create the `Session` object and use the Jakarta Mail API to send the email, the API will automatically use the Angus Mail implementation to handle the email-related tasks, such as connecting to the SMTP server and sending the email message.
+
+This process is transparent to the application code, as the Jakarta Mail API handles the service provider discovery and selection, allowing you to use the standard Jakarta Mail API without needing to know the underlying implementation details.
+
+The advantage of this approach is that it allows different service provider implementations (such as Angus Mail) to be used interchangeably, without requiring changes to the application code. This promotes modularity, flexibility, and portability of the Jakarta Mail API-based applications.
+
+
