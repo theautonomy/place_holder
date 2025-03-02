@@ -1,0 +1,32 @@
+// .revealjs-plugins
+// Use docinfo to load third party plugins
+// :include: //body/script | //div[@class="slides"]
+// :header_footer:
+= Custom Plugins
+Author
+:revealjs_slideNumber: true
+:customcss: revealjs-plugins.css
+:docinfo: private
+:toc: 
+:toc-title: Table of Contents
+
+== Slide 1
+
+Content 1
+
+=== slide 1-1
+
+stuff
+
+=== slide 1-2
+
+stuff
+
+=== slide 1-3
+
+stuff
+
+
+== Slide 2
+
+Content 2
