@@ -1,0 +1,25 @@
+<form id="myForm" action="/your-post-endpoint" method="post" onsubmit="openNewWindow();">
+    <!-- Input fields -->
+    <input type="text" name="data" value="example">
+    <button type="submit">Submit</button>
+</form>
+
+function openNewWindow() {
+    // Prevent the default form submission
+    event.preventDefault();
+
+    // Submit the form programmatically
+    const form = document.getElementById('myForm');
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form)
+    }).then(response => {
+        if (response.ok) {
+            // Open the new window if the POST is successful
+            window.open('/your-new-window-url', '_blank');
+        } else {
+             // Handle errors
+            console.error('POST request failed');
+        }
+    });
+}
