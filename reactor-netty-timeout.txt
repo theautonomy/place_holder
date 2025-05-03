@@ -1,7 +1,7 @@
 * https://netty.io/4.0/api/io/netty/handler/timeout/ReadTimeoutHandler.html
-  * Raises a {@link WriteTimeoutException} when no data was written within a certain period of time
+  * Raises a ReadTimeoutException when no data was read within a certain period of time. 
 * https://netty.io/4.0/api/io/netty/handler/timeout/WriteTimeoutHandler.html
-  * Raises a {@link ReadTimeoutException} when no data was read within a certain period of time.
+  * Raises a WriteTimeoutException when a write operation cannot finish in a certain period of time. 
 
 * https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/http/client/ReactorClientHttpRequestFactory.html
   * ConnectTimeout: 30 seconds
