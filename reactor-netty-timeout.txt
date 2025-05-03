@@ -1,0 +1,12 @@
+* https://netty.io/4.0/api/io/netty/handler/timeout/ReadTimeoutHandler.html
+  * Raises a {@link WriteTimeoutException} when no data was written within a certain period of time
+* https://netty.io/4.0/api/io/netty/handler/timeout/WriteTimeoutHandler.html
+  * Raises a {@link ReadTimeoutException} when no data was read within a certain period of time.
+
+* https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/http/client/ReactorClientHttpRequestFactory.html
+  * ConnectTimeout: 30 seconds
+  * ReadTimeout: 10 seonds
+* https://docs.spring.io/spring-framework/reference/web/webflux-webclient/client-builder.html#webflux-client-builder-reactor-timeout
+
+* https://projectreactor.io/docs/netty/release/reference/http-client.html#connection-timeout
+  * CONNECT_TIMEOUT_MILLIS - If the connection establishment attempt to the remote peer does not finish within the configured connect timeout (resolution: ms), the connection establishment attempt fails. Default: 30s.
