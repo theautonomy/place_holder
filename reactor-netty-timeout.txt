@@ -26,3 +26,6 @@
 * https://dzone.com/articles/timeout-in-spring-boot-with-restclient-webclient-a
 
 * https://dev.to/yangbongsoo/webclient-timeout-and-connection-pool-strategy-2gpn
+
+* max-in-memory-size
+  * https://github.com/spring-projects/spring-framework/blob/main/spring-core/src/main/java/org/springframework/core/codec/AbstractDataBufferDecoder.java#L51
