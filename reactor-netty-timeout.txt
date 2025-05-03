@@ -10,3 +10,5 @@
 
 * https://projectreactor.io/docs/netty/release/reference/http-client.html#connection-timeout
   * CONNECT_TIMEOUT_MILLIS - If the connection establishment attempt to the remote peer does not finish within the configured connect timeout (resolution: ms), the connection establishment attempt fails. Default: 30s.
+* https://projectreactor.io/docs/netty/snapshot/reference/http-client.html#response-timeout
+  * By default, responseTimeout is not specified. It is always a good practice to configure a response timeout. 
