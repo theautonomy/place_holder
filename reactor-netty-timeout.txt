@@ -12,3 +12,11 @@
   * CONNECT_TIMEOUT_MILLIS - If the connection establishment attempt to the remote peer does not finish within the configured connect timeout (resolution: ms), the connection establishment attempt fails. Default: 30s.
 * https://projectreactor.io/docs/netty/snapshot/reference/http-client.html#response-timeout
   * By default, responseTimeout is not specified. It is always a good practice to configure a response timeout. 
+
+* https://www.baeldung.com/spring-webflux-timeout
+  * The response timeout is the time we wait to receive a response after sending a request
+  * The connection timeout is a period within which a connection between a client and a server must be established
+  * A read timeout occurs when no data was read within a certain period of time
+  * A write timeout when a write operation cannot finish at a specific time
+
+* https://howtodoinjava.com/spring-webflux/webclient-set-timeouts/
