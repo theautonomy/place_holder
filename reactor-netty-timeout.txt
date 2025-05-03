@@ -3,15 +3,17 @@
 * https://netty.io/4.0/api/io/netty/handler/timeout/WriteTimeoutHandler.html
   * Raises a WriteTimeoutException when a write operation cannot finish in a certain period of time. 
 
-* https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/http/client/ReactorClientHttpRequestFactory.html
-  * ConnectTimeout: 30 seconds
-  * ReadTimeout: 10 seonds
-* https://docs.spring.io/spring-framework/reference/web/webflux-webclient/client-builder.html#webflux-client-builder-reactor-timeout
-
 * https://projectreactor.io/docs/netty/release/reference/http-client.html#connection-timeout
   * CONNECT_TIMEOUT_MILLIS - If the connection establishment attempt to the remote peer does not finish within the configured connect timeout (resolution: ms), the connection establishment attempt fails. Default: 30s.
 * https://projectreactor.io/docs/netty/snapshot/reference/http-client.html#response-timeout
   * By default, responseTimeout is not specified. It is always a good practice to configure a response timeout. 
+* https://projectreactor.io/docs/netty/1.3.0-SNAPSHOT/api/reactor/netty/http/client/HttpClient.html#responseTimeout-java.time.Duration-
+  * pecifies the maximum duration allowed between each network-level read operation while reading a given response (resolution: ms). In other words, ReadTimeoutHandler is added to the channel pipeline after sending the request and is removed when the response is fully received. If the maxReadOperationInterval is null, any previous setting will be removed and no maxReadOperationInterval will be applied. If the maxReadOperationInterval is less than 1ms, then 1ms will be the maxReadOperationInterval. The maxReadOperationInterval setting on HttpClientRequest level overrides any maxReadOperationInterval setting on HttpClient level.
+
+* https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/http/client/ReactorClientHttpRequestFactory.html
+  * ConnectTimeout: 30 seconds
+  * ReadTimeout: 10 seonds
+* https://docs.spring.io/spring-framework/reference/web/webflux-webclient/client-builder.html#webflux-client-builder-reactor-timeout
 
 * https://www.baeldung.com/spring-webflux-timeout
   * The response timeout is the time we wait to receive a response after sending a request
@@ -20,3 +22,7 @@
   * A write timeout when a write operation cannot finish at a specific time
 
 * https://howtodoinjava.com/spring-webflux/webclient-set-timeouts/
+
+* https://dzone.com/articles/timeout-in-spring-boot-with-restclient-webclient-a
+
+* https://dev.to/yangbongsoo/webclient-timeout-and-connection-pool-strategy-2gpn
