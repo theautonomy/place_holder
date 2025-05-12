@@ -1,3 +1,15 @@
+ @Autowired
+    private Environment environment;
+
+    public void addRuntimeProperty(String name, String value) {
+        MutablePropertySources propertySources = ((AbstractEnvironment) environment).getPropertySources();
+        Map<String, Object> myProperties = new HashMap<>();
+        myProperties.put(name, value);
+         MapPropertySource myPropertySource = new MapPropertySource("dynamicPropertySource", myProperties);
+        propertySources.addFirst(myPropertySource);
+    }
+
+/////
 https://datatracker.ietf.org/doc/html/rfc6749
 https://openid.net/specs/openid-connect-core-1_0.html
 
