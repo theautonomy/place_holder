@@ -1,4 +1,12 @@
- @Autowired
+WebClient/NettyReactor
+* https://docs.spring.io/spring-framework/docs/6.0.6/reference/html/web-reactive.html#webflux-client
+* https://docs.spring.io/projectreactor/reactor-netty/docs/current/reference/html/#_connection_pool_2
+
+The max-in-memory-size property in Spring WebClient controls the maximum amount of data that can be buffered in memory when receiving a response. By default, this is set to 256KB. If the response exceeds this limit, a DataBufferLimitException is thrown.
+
+
+/////
+@Autowired
     private Environment environment;
 
     public void addRuntimeProperty(String name, String value) {
