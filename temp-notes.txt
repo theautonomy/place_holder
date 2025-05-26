@@ -1,3 +1,24 @@
+Properties props = PropertiesLoaderUtils.loadAllProperties("my.properties");
+PropertyPlaceholderConfigurer props2 = new PropertyPlaceholderConfigurer();
+props2.setProperties(props);
+
+ public static void loadProperties(GenericApplicationContext context, String filePath, boolean isYaml) throws IOException {
+        Properties properties = new Properties();
+
+        if (isYaml) {
+             YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();
+            factory.setResources(new ClassPathResource(filePath));
+            factory.afterPropertiesSet();
+            properties = factory.getObject();
+        } else {
+            properties.load(new ClassPathResource(filePath).getInputStream());
+        }
+        
+        PropertiesPropertySource propertySource = new PropertiesPropertySource("myProperties", properties);
+        context.getEnvironment().getPropertySources().addFirst(propertySource);
+    }
+///
+
 @Autowired
     private ConfigurableEnvironment environment;
     
