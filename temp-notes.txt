@@ -1,3 +1,20 @@
+@Autowired
+    private ConfigurableEnvironment environment;
+    
+    public void loadProperties(String configName) throws IOException {
+        ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources = resourcePatternResolver.getResources("classpath:/config/" + configName + ".properties");
+    
+        if (resources.length > 0) {
+            PropertiesPropertySourceLoader loader = new PropertiesPropertySourceLoader();
+            for (Resource resource : resources) {
+                PropertySource<?> propertySource = loader.load("myProperties", resource);
+                environment.getPropertySources().addFirst(propertySource);
+            }
+        }
+    }
+////
+
 WebClient/NettyReactor
 * https://docs.spring.io/spring-framework/docs/6.0.6/reference/html/web-reactive.html#webflux-client
 * https://docs.spring.io/projectreactor/reactor-netty/docs/current/reference/html/#_connection_pool_2
