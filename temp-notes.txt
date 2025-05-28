@@ -1,3 +1,58 @@
+https://api.openai.com/v1/chat/completions
+
+{
+  "messages": [
+    {
+      "content": "You are a helpful assistant writing in formal English",
+      "role": "system"
+    },
+    {
+      "content": "What are the 10 best movies of all time?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4o",
+  "stream": false,
+  "temperature": 0.7
+}
+
+{
+  "id": "chatcmpl-Bc9QMZMoO4bOhQInNGTuDJJnd2pRl",
+  "object": "chat.completion",
+  "created": 1748432390,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Determining the \"best\" movies of all time is subjective and often varies based on personal taste, cultural impact, and critical acclaim. However, several films are frequently cited in lists by critics, filmmakers, and audiences. Here are ten films that are often considered among the greatest:\n\n1. **Citizen Kane (1941)** - Directed by Orson Welles, this film is renowned for its innovative storytelling techniques and cinematography.\n   \n2. **The Godfather (1972)** - Directed by Francis Ford Coppola, this classic crime film is celebrated for its powerful narrative and performances, particularly by Marlon Brando and Al Pacino.\n\n3. **Casablanca (1942)** - Directed by Michael Curtiz, this romantic drama set during World War II is beloved for its memorable dialogue and iconic performances by Humphrey Bogart and Ingrid Bergman.\n\n4. **Schindler's List (1993)** - Directed by Steven Spielberg, this historical drama about the Holocaust is praised for its emotional depth and powerful storytelling.\n\n5. **Lawrence of Arabia (1962)** - Directed by David Lean, this epic film is known for its stunning cinematography and the compelling performance of Peter O'Toole.\n\n6. **The Shawshank Redemption (1994)** - Directed by Frank Darabont, this film about hope and friendship is a favorite among audiences and consistently ranks highly on viewer polls.\n\n7. **Pulp Fiction (1994)** - Directed by Quentin Tarantino, this film is celebrated for its innovative narrative structure and memorable dialogue.\n\n8. **Gone with the Wind (1939)** - Directed by Victor Fleming, this epic historical romance is notable for its grandeur and the performance of Vivien Leigh as Scarlett O'Hara.\n\n9. **The Godfather Part II (1974)** - Also directed by Francis Ford Coppola, this sequel is often hailed as one of the few films that match or surpass the original in quality.\n\n10. **Star Wars: Episode IV - A New Hope (1977)** - Directed by George Lucas, this film revolutionized the science fiction genre and became a cultural phenomenon.\n\nThese selections are based on critical acclaim, influence, and popularity over the years. Preferences may vary, and there are many other films that could be considered among the best.",
+        "refusal": null,
+        "annotations": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 31,
+    "completion_tokens": 463,
+    "total_tokens": 494,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "service_tier": "default",
+  "system_fingerprint": "fp_76544d79cb"
+}
+///
 Properties props = PropertiesLoaderUtils.loadAllProperties("my.properties");
 PropertyPlaceholderConfigurer props2 = new PropertyPlaceholderConfigurer();
 props2.setProperties(props);
