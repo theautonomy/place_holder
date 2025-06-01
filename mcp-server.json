@@ -9,7 +9,7 @@
     }
   }
 }
-
+/////
 {
   "mcpServers": {
     "brave-search": {
@@ -22,3 +22,28 @@
     }
   }
 }
+
+////
+
+{
+  "mcpServers": {
+    "brave-search": {
+      "command": "C:\\sw\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\userone\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-brave-search\\dist\\index.js"
+      ],
+      "env": {
+ 	"BRAVE_API_KEY": "key"
+      }
+    },
+
+    "tpapi": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "D:\\user\\dev\\java\\external-ai\\tpapi-mcp-server\\build\\libs\\tpapi-mcp-server-0.0.1-SNAPSHOT.jar"
+      ]
+    }
+  }
+}
+
