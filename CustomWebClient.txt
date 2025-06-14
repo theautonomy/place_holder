@@ -86,3 +86,27 @@ public class CustomWebClient {
   }
 
 }
+
+/////
+
+public <T> List<T> getList(String relativeUrl, 
+                           ParameterizedTypeReference<List<T>> typeReference){
+    try{
+        return client
+            .get()
+            .uri(relativeUrl)
+            .retrieve()
+            .bodyToMono(typeReference)
+            .block();
+    } catch(Exception e){
+        return null;
+    }
+}
+
+And call that function with
+
+ParameterizedTypeReference<List<MyClass>> typeReference = new ParameterizedTypeReference<List<MyClass>>(){};
+List<MyClass> strings = getList(relativeUrl, typeReference);
+
+
+https://stackoverflow.com/questions/53378161/webflux-webclient-and-generic-types
