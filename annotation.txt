@@ -1,3 +1,16 @@
+ String[] businessServices = applicationContext.getBeanNamesForAnnotation(BusinessService.class);
+        logger.info("Found {} beans with @BusinessService annotation:", businessServices.length);
+        for (String serviceName : businessServices) {
+            Object service = applicationContext.getBean(serviceName);
+            Class<?> targetClass = AopUtils.getTargetClass(service);
+            BusinessService annotation = targetClass.getAnnotation(BusinessService.class);
+            if (annotation != null) {
+                logger.info("  - {} ({}): {}", serviceName, annotation.value(), annotation.description());
+            } else {
+                logger.warn("  - {}: BusinessService annotation not found on target class", serviceName);
+            }
+        }
+---
 // Main Spring Boot Application
 @SpringBootApplication
 public class CustomAnnotationDemoApplication {
