@@ -1,4 +1,13 @@
-  @Test
+    Filter.Expression typeFilter =
+                            new Filter.Expression(
+                                    Filter.ExpressionType.EQ,
+                                    new Filter.Key("category"),
+                                    new Filter.Value("table"));
+
+                    vectorStore.delete(typeFilter);
+
+-------------
+@Test
     void test3() {
         var bgDocument =
                 new Document(
