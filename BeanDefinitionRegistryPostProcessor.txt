@@ -1,0 +1,368 @@
+// Main Application Class
+package com.example.beanregistry;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+
+@SpringBootApplication
+public class BeanRegistryDemoApplication {
+
+    public static void main(String[] args) {
+        ConfigurableApplicationContext context = SpringApplication.run(BeanRegistryDemoApplication.class, args);
+        
+        // Demonstrate that our dynamically registered beans are available
+        System.out.println("\n=== Demonstrating BeanDefinitionRegistryPostProcessor ===");
+        
+        // Get the service that was registered by our BeanDefinitionRegistryPostProcessor
+        UserService userService = context.getBean("userService", UserService.class);
+        userService.createUser("Alice", "alice@example.com");
+        
+        // Get the repository that was also dynamically registered
+        UserRepository userRepository = context.getBean("userRepository", UserRepository.class);
+        userRepository.findAll().forEach(System.out::println);
+        
+        // Show that we can get beans by their dynamically assigned names
+        String[] beanNames = context.getBeanNamesForType(Object.class);
+        System.out.println("\nDynamically registered beans:");
+        for (String beanName : beanNames) {
+            if (beanName.startsWith("dynamic") || beanName.contains("user")) {
+                System.out.println("- " + beanName + " : " + context.getBean(beanName).getClass().getSimpleName());
+            }
+        }
+        
+        context.close();
+    }
+}
+
+// =================================================================
+// Custom BeanDefinitionRegistryPostProcessor Implementation
+// =================================================================
+
+package com.example.beanregistry;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomBeanRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor {
+
+    @Override
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+        System.out.println("🔧 CustomBeanRegistryPostProcessor: Registering custom bean definitions...");
+        
+        // Register UserRepository bean
+        BeanDefinitionBuilder userRepositoryBuilder = BeanDefinitionBuilder
+                .genericBeanDefinition(UserRepository.class)
+                .setScope("singleton");
+        
+        registry.registerBeanDefinition("userRepository", userRepositoryBuilder.getBeanDefinition());
+        System.out.println("✅ Registered: userRepository");
+        
+        // Register UserService bean with dependency injection
+        BeanDefinitionBuilder userServiceBuilder = BeanDefinitionBuilder
+                .genericBeanDefinition(UserService.class)
+                .setScope("singleton")
+                .addConstructorArgReference("userRepository"); // Inject userRepository
+        
+        registry.registerBeanDefinition("userService", userServiceBuilder.getBeanDefinition());
+        System.out.println("✅ Registered: userService");
+        
+        // Register a dynamic configuration bean
+        BeanDefinitionBuilder configBuilder = BeanDefinitionBuilder
+                .genericBeanDefinition(AppConfig.class)
+                .setScope("singleton")
+                .addPropertyValue("appName", "Dynamic Bean Registry Demo")
+                .addPropertyValue("version", "1.0.0");
+        
+        registry.registerBeanDefinition("dynamicAppConfig", configBuilder.getBeanDefinition());
+        System.out.println("✅ Registered: dynamicAppConfig");
+        
+        // Conditionally register beans based on some logic
+        if (shouldRegisterAdvancedFeatures()) {
+            BeanDefinitionBuilder advancedServiceBuilder = BeanDefinitionBuilder
+                    .genericBeanDefinition(AdvancedUserService.class)
+                    .setScope("singleton")
+                    .addConstructorArgReference("userService");
+            
+            registry.registerBeanDefinition("advancedUserService", advancedServiceBuilder.getBeanDefinition());
+            System.out.println("✅ Registered: advancedUserService (conditional)");
+        }
+    }
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        System.out.println("🔧 CustomBeanRegistryPostProcessor: Post-processing bean factory...");
+        
+        // This method is called after all bean definitions are loaded
+        // You can modify existing bean definitions here
+        String[] userBeans = beanFactory.getBeanNamesForType(UserService.class);
+        System.out.println("📊 Found " + userBeans.length + " UserService beans in factory");
+    }
+    
+    private boolean shouldRegisterAdvancedFeatures() {
+        // Some conditional logic - could be based on profiles, properties, etc.
+        return System.getProperty("enable.advanced.features", "true").equals("true");
+    }
+}
+
+// =================================================================
+// Domain Classes
+// =================================================================
+
+package com.example.beanregistry;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class User {
+    private String name;
+    private String email;
+    
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+    
+    // Getters and setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    @Override
+    public String toString() {
+        return "User{name='" + name + "', email='" + email + "'}";
+    }
+}
+
+public class UserRepository {
+    private List<User> users = new ArrayList<>();
+    
+    public void save(User user) {
+        users.add(user);
+        System.out.println("💾 Saved user: " + user);
+    }
+    
+    public List<User> findAll() {
+        return new ArrayList<>(users);
+    }
+    
+    public void deleteAll() {
+        users.clear();
+        System.out.println("🗑️ Cleared all users");
+    }
+}
+
+public class UserService {
+    private final UserRepository userRepository;
+    
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+        System.out.println("🏗️ UserService created with repository: " + userRepository.getClass().getSimpleName());
+    }
+    
+    public void createUser(String name, String email) {
+        User user = new User(name, email);
+        userRepository.save(user);
+        System.out.println("👤 Created user: " + name);
+    }
+    
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+}
+
+public class AdvancedUserService {
+    private final UserService userService;
+    
+    public AdvancedUserService(UserService userService) {
+        this.userService = userService;
+        System.out.println("🚀 AdvancedUserService created with basic service");
+    }
+    
+    public void createUserWithValidation(String name, String email) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        
+        userService.createUser(name, email);
+        System.out.println("✅ User created with validation");
+    }
+}
+
+// =================================================================
+// Configuration Class
+// =================================================================
+
+package com.example.beanregistry;
+
+public class AppConfig {
+    private String appName;
+    private String version;
+    
+    // Getters and setters
+    public String getAppName() { return appName; }
+    public void setAppName(String appName) { 
+        this.appName = appName;
+        System.out.println("⚙️ AppConfig: Set appName to " + appName);
+    }
+    
+    public String getVersion() { return version; }
+    public void setVersion(String version) { 
+        this.version = version;
+        System.out.println("⚙️ AppConfig: Set version to " + version);
+    }
+    
+    @Override
+    public String toString() {
+        return "AppConfig{appName='" + appName + "', version='" + version + "'}";
+    }
+}
+
+// =================================================================
+// Alternative Implementation: Annotation-based Registration
+// =================================================================
+
+package com.example.beanregistry;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.stereotype.Component;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+// Custom annotation for dynamic registration
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DynamicBean {
+    String value() default "";
+    String scope() default "singleton";
+}
+
+// Example class with the annotation
+@DynamicBean(value = "customNotificationService", scope = "prototype")
+class NotificationService {
+    public void sendNotification(String message) {
+        System.out.println("📧 Notification: " + message);
+    }
+}
+
+// Annotation-based processor
+@Component
+public class AnnotationBasedBeanRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor {
+
+    @Override
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+        System.out.println("🏷️ Processing @DynamicBean annotations...");
+        
+        // In a real scenario, you'd scan packages for classes with @DynamicBean
+        // For demo purposes, we'll just register our NotificationService
+        registerDynamicBean(NotificationService.class, registry);
+    }
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        // Additional processing if needed
+    }
+    
+    private void registerDynamicBean(Class<?> clazz, BeanDefinitionRegistry registry) {
+        DynamicBean annotation = AnnotationUtils.findAnnotation(clazz, DynamicBean.class);
+        if (annotation != null) {
+            String beanName = annotation.value().isEmpty() ? 
+                clazz.getSimpleName().toLowerCase() : annotation.value();
+            
+            BeanDefinitionBuilder builder = BeanDefinitionBuilder
+                    .genericBeanDefinition(clazz)
+                    .setScope(annotation.scope());
+            
+            registry.registerBeanDefinition(beanName, builder.getBeanDefinition());
+            System.out.println("✅ Registered @DynamicBean: " + beanName + " (" + clazz.getSimpleName() + ")");
+        }
+    }
+}
+
+// =================================================================
+// Maven pom.xml
+// =================================================================
+
+/*
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.example</groupId>
+    <artifactId>bean-registry-demo</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    
+    <name>Bean Definition Registry Post Processor Demo</name>
+    <description>Demo project for Spring Boot BeanDefinitionRegistryPostProcessor</description>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+    
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+*/
+
+// =================================================================
+// application.properties
+// =================================================================
+
+/*
+# Application Configuration
+spring.application.name=Bean Registry Demo
+logging.level.com.example.beanregistry=DEBUG
+
+# Custom property for conditional bean registration
+enable.advanced.features=true
+
+# Spring Boot banner
+spring.main.banner-mode=console
+*/
