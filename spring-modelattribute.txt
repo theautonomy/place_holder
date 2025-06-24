@@ -1,0 +1,1499 @@
+
+// Main Application Class
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ModelAttributeInitBinderDemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ModelAttributeInitBinderDemoApplication.class, args);
+    }
+}
+
+// ===============================
+// MODEL CLASSES
+// ===============================
+
+// User.java
+package com.example.demo.model;
+
+import javax.validation.constraints.*;
+import java.time.LocalDate;
+import java.util.List;
+
+public class User {
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
+    private String name;
+    
+    @Email(message = "Please provide a valid email")
+    @NotBlank(message = "Email is required")
+    private String email;
+    
+    @Min(value = 18, message = "Age must be at least 18")
+    @Max(value = 120, message = "Age must be less than 120")
+    private Integer age;
+    
+    private LocalDate birthDate;
+    
+    @NotNull(message = "Gender is required")
+    private Gender gender;
+    
+    private List<String> hobbies;
+    
+    private Address address;
+    
+    // Constructors
+    public User() {}
+    
+    public User(String name, String email, Integer age, LocalDate birthDate, Gender gender) {
+        this.name = name;
+        this.email = email;
+        this.age = age;
+        this.birthDate = birthDate;
+        this.gender = gender;
+    }
+    
+    // Getters and Setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
+    
+    public LocalDate getBirthDate() { return birthDate; }
+    public void setBirthDate(LocalDate birthDate) { this.birthDate = birthDate; }
+    
+    public Gender getGender() { return gender; }
+    public void setGender(Gender gender) { this.gender = gender; }
+    
+    public List<String> getHobbies() { return hobbies; }
+    public void setHobbies(List<String> hobbies) { this.hobbies = hobbies; }
+    
+    public Address getAddress() { return address; }
+    public void setAddress(Address address) { this.address = address; }
+    
+    @Override
+    public String toString() {
+        return "User{name='" + name + "', email='" + email + "', age=" + age + 
+               ", birthDate=" + birthDate + ", gender=" + gender + 
+               ", hobbies=" + hobbies + ", address=" + address + "}";
+    }
+}
+
+// Gender.java
+package com.example.demo.model;
+
+public enum Gender {
+    MALE("Male"),
+    FEMALE("Female"),
+    OTHER("Other");
+    
+    private final String displayName;
+    
+    Gender(String displayName) {
+        this.displayName = displayName;
+    }
+    
+    public String getDisplayName() {
+        return displayName;
+    }
+}
+
+// Address.java
+package com.example.demo.model;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+
+public class Address {
+    @NotBlank(message = "Street is required")
+    private String street;
+    
+    @NotBlank(message = "City is required")
+    private String city;
+    
+    @NotBlank(message = "State is required")
+    private String state;
+    
+    @Pattern(regexp = "\\d{5}(-\\d{4})?", message = "Invalid ZIP code format")
+    private String zipCode;
+    
+    // Constructors
+    public Address() {}
+    
+    public Address(String street, String city, String state, String zipCode) {
+        this.street = street;
+        this.city = city;
+        this.state = state;
+        this.zipCode = zipCode;
+    }
+    
+    // Getters and Setters
+    public String getStreet() { return street; }
+    public void setStreet(String street) { this.street = street; }
+    
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    
+    public String getZipCode() { return zipCode; }
+    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
+    
+    @Override
+    public String toString() {
+        return "Address{street='" + street + "', city='" + city + 
+               "', state='" + state + "', zipCode='" + zipCode + "'}";
+    }
+}
+
+// ===============================
+// CUSTOM PROPERTY EDITOR
+// ===============================
+
+// CustomDateEditor.java
+package com.example.demo.editor;
+
+import java.beans.PropertyEditorSupport;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
+public class CustomDateEditor extends PropertyEditorSupport {
+    private final DateTimeFormatter formatter;
+    private final boolean allowEmpty;
+    
+    public CustomDateEditor(DateTimeFormatter formatter, boolean allowEmpty) {
+        this.formatter = formatter;
+        this.allowEmpty = allowEmpty;
+    }
+    
+    @Override
+    public void setAsText(String text) throws IllegalArgumentException {
+        if (allowEmpty && (text == null || text.trim().isEmpty())) {
+            setValue(null);
+            return;
+        }
+        
+        try {
+            setValue(LocalDate.parse(text, formatter));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Expected: " + 
+                formatter.toString(), e);
+        }
+    }
+    
+    @Override
+    public String getAsText() {
+        LocalDate date = (LocalDate) getValue();
+        return date != null ? date.format(formatter) : "";
+    }
+}
+
+// ===============================
+// MAIN CONTROLLER
+// ===============================
+
+// UserController.java
+package com.example.demo.controller;
+
+import com.example.demo.model.User;
+import com.example.demo.model.Gender;
+import com.example.demo.model.Address;
+import com.example.demo.editor.CustomDateEditor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+
+@Controller
+@RequestMapping("/users")
+public class UserController {
+    
+    // ===============================
+    // @InitBinder Methods
+    // ===============================
+    
+    /**
+     * Global InitBinder for all methods in this controller
+     * Demonstrates custom property editors and field validation setup
+     */
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        System.out.println("Global @InitBinder called for: " + binder.getObjectName());
+        
+        // Custom date editor for LocalDate fields
+        binder.registerCustomEditor(LocalDate.class, "birthDate", 
+            new CustomDateEditor(DateTimeFormatter.ofPattern("MM/dd/yyyy"), true));
+        
+        // Trim strings and convert empty strings to null
+        binder.registerCustomEditor(String.class, new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) {
+                setValue(text != null && !text.trim().isEmpty() ? text.trim() : null);
+            }
+        });
+        
+        // Set allowed fields (security feature)
+        binder.setAllowedFields("name", "email", "age", "birthDate", "gender", 
+                               "hobbies", "address.street", "address.city", 
+                               "address.state", "address.zipCode");
+        
+        // Set required fields
+        binder.setRequiredFields("name", "email", "age");
+    }
+    
+    /**
+     * Specific InitBinder for user creation
+     * Demonstrates method-specific binding rules
+     */
+    @InitBinder("newUser")
+    public void initNewUserBinder(WebDataBinder binder) {
+        System.out.println("Specific @InitBinder called for newUser");
+        
+        // Additional validation rules for new users
+        binder.setRequiredFields("name", "email", "age", "gender");
+        
+        // Custom validator could be added here
+        // binder.addValidators(new CustomUserValidator());
+    }
+    
+    // ===============================
+    // @ModelAttribute Methods
+    // ===============================
+    
+    /**
+     * Global model attribute - available to all handler methods
+     * Demonstrates populating dropdown data
+     */
+    @ModelAttribute("genders")
+    public Gender[] populateGenders() {
+        System.out.println("@ModelAttribute: populateGenders() called");
+        return Gender.values();
+    }
+    
+    /**
+     * Global model attribute for hobby options
+     */
+    @ModelAttribute("hobbyOptions")
+    public List<String> populateHobbyOptions() {
+        System.out.println("@ModelAttribute: populateHobbyOptions() called");
+        return Arrays.asList("Reading", "Sports", "Music", "Travel", "Cooking", 
+                           "Photography", "Gaming", "Art");
+    }
+    
+    /**
+     * Global model attribute for states
+     */
+    @ModelAttribute("states")
+    public List<String> populateStates() {
+        System.out.println("@ModelAttribute: populateStates() called");
+        return Arrays.asList("CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI");
+    }
+    
+    /**
+     * Model attribute that creates a default user for the form
+     * Demonstrates object initialization
+     */
+    @ModelAttribute("user")
+    public User createDefaultUser() {
+        System.out.println("@ModelAttribute: createDefaultUser() called");
+        User user = new User();
+        user.setAddress(new Address()); // Initialize nested object
+        return user;
+    }
+    
+    // ===============================
+    // Handler Methods
+    // ===============================
+    
+    /**
+     * Display the user form
+     * The @ModelAttribute will automatically populate the model
+     */
+    @GetMapping("/form")
+    public String showUserForm(Model model) {
+        System.out.println("Handler: showUserForm() called");
+        
+        // The 'user' model attribute is automatically available due to @ModelAttribute method
+        // Additional model data can be added here
+        model.addAttribute("pageTitle", "User Registration Form");
+        model.addAttribute("currentDate", LocalDate.now());
+        
+        return "user-form";
+    }
+    
+    /**
+     * Handle form submission
+     * Demonstrates @ModelAttribute with method parameter binding
+     */
+    @PostMapping("/submit")
+    public String submitUser(@Valid @ModelAttribute("user") User user, 
+                           BindingResult bindingResult, 
+                           Model model) {
+        System.out.println("Handler: submitUser() called");
+        System.out.println("Received user: " + user);
+        
+        if (bindingResult.hasErrors()) {
+            System.out.println("Validation errors found:");
+            bindingResult.getAllErrors().forEach(error -> 
+                System.out.println("  - " + error.getDefaultMessage()));
+            
+            model.addAttribute("pageTitle", "User Registration Form - Please Fix Errors");
+            return "user-form";
+        }
+        
+        // Simulate saving user
+        System.out.println("User saved successfully: " + user);
+        model.addAttribute("savedUser", user);
+        return "user-success";
+    }
+    
+    /**
+     * Edit existing user
+     * Demonstrates @ModelAttribute with path variable
+     */
+    @GetMapping("/edit/{userId}")
+    public String editUser(@PathVariable Long userId, Model model) {
+        System.out.println("Handler: editUser() called with ID: " + userId);
+        
+        // Simulate loading user from database
+        User existingUser = createSampleUser(userId);
+        model.addAttribute("user", existingUser);
+        model.addAttribute("pageTitle", "Edit User - " + existingUser.getName());
+        model.addAttribute("editMode", true);
+        
+        return "user-form";
+    }
+    
+    /**
+     * Handle user update
+     */
+    @PostMapping("/update")
+    public String updateUser(@Valid @ModelAttribute("user") User user, 
+                           BindingResult bindingResult, 
+                           Model model) {
+        System.out.println("Handler: updateUser() called");
+        System.out.println("Updated user: " + user);
+        
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("pageTitle", "Edit User - Please Fix Errors");
+            model.addAttribute("editMode", true);
+            return "user-form";
+        }
+        
+        model.addAttribute("savedUser", user);
+        model.addAttribute("updated", true);
+        return "user-success";
+    }
+    
+    /**
+     * Demonstrate @ModelAttribute with different binding
+     */
+    @PostMapping("/quick-save")
+    public String quickSave(@ModelAttribute("newUser") User user, Model model) {
+        System.out.println("Handler: quickSave() called");
+        System.out.println("Quick save user: " + user);
+        
+        // This will use the "newUser" InitBinder
+        model.addAttribute("savedUser", user);
+        model.addAttribute("quickSave", true);
+        return "user-success";
+    }
+    
+    // ===============================
+    // Helper Methods
+    // ===============================
+    
+    private User createSampleUser(Long userId) {
+        User user = new User("John Doe", "john.doe@example.com", 30, 
+                           LocalDate.of(1993, 5, 15), Gender.MALE);
+        user.setHobbies(Arrays.asList("Reading", "Sports"));
+        user.setAddress(new Address("123 Main St", "Anytown", "CA", "12345"));
+        return user;
+    }
+}
+
+// ===============================
+// CONFIGURATION
+// ===============================
+
+// WebConfig.java
+package com.example.demo.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    
+    @Override
+    public void configureViewResolvers(ViewResolverRegistry registry) {
+        // Configure Thymeleaf or JSP view resolver if needed
+        // This demo assumes Thymeleaf is configured by Spring Boot auto-configuration
+    }
+}
+=================
+<!-- user-form.html (src/main/resources/templates/user-form.html) -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">User Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        input[type="checkbox"] { width: auto; margin-right: 5px; }
+        .error { color: red; font-size: 12px; }
+        .button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        .button:hover { background-color: #0056b3; }
+        .fieldset { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .legend { font-weight: bold; color: #333; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .checkbox-item { display: flex; align-items: center; margin-right: 15px; }
+    </style>
+</head>
+<body>
+    <h1 th:text="${pageTitle}">User Registration Form</h1>
+    
+    <p><strong>Current Date:</strong> <span th:text="${currentDate}">2024-01-15</span></p>
+    
+    <div th:if="${editMode}" class="info">
+        <p><em>Editing existing user</em></p>
+    </div>
+    
+    <form th:action="@{${editMode} ? '/users/update' : '/users/submit'}" 
+          th:object="${user}" method="post">
+        
+        <!-- Basic Information -->
+        <fieldset class="fieldset">
+            <legend class="legend">Basic Information</legend>
+            
+            <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" th:field="*{name}" />
+                <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name Error</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" th:field="*{email}" />
+                <div class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email Error</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="age">Age *</label>
+                <input type="number" id="age" th:field="*{age}" min="18" max="120" />
+                <div class="error" th:if="${#fields.hasErrors('age')}" th:errors="*{age}">Age Error</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="birthDate">Birth Date (MM/dd/yyyy)</label>
+                <input type="text" id="birthDate" th:field="*{birthDate}" placeholder="MM/dd/yyyy" />
+                <div class="error" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}">Birth Date Error</div>
+                <small>Format: MM/dd/yyyy (e.g., 05/15/1990)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="gender">Gender *</label>
+                <select id="gender" th:field="*{gender}">
+                    <option value="">Select Gender</option>
+                    <option th:each="g : ${genders}" 
+                            th:value="${g}" 
+                            th:text="${g.displayName}">Gender</option>
+                </select>
+                <div class="error" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}">Gender Error</div>
+            </div>
+        </fieldset>
+        
+        <!-- Hobbies -->
+        <fieldset class="fieldset">
+            <legend class="legend">Hobbies</legend>
+            <div class="checkbox-group">
+                <div class="checkbox-item" th:each="hobby : ${hobbyOptions}">
+                    <input type="checkbox" th:field="*{hobbies}" th:value="${hobby}" />
+                    <label th:for="${#ids.prev('hobbies')}" th:text="${hobby}">Hobby</label>
+                </div>
+            </div>
+        </fieldset>
+        
+        <!-- Address -->
+        <fieldset class="fieldset">
+            <legend class="legend">Address</legend>
+            
+            <div class="form-group">
+                <label for="street">Street</label>
+                <input type="text" id="street" th:field="*{address.street}" />
+                <div class="error" th:if="${#fields.hasErrors('address.street')}" th:errors="*{address.street}">Street Error</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" id="city" th:field="*{address.city}" />
+                <div class="error" th:if="${#fields.hasErrors('address.city')}" th:errors="*{address.city}">City Error</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="state">State</label>
+                <select id="state" th:field="*{address.state}">
+                    <option value="">Select State</option>
+                    <option th:each="state : ${states}" 
+                            th:value="${state}" 
+                            th:text="${state}">State</option>
+                </select>
+                <div class="error" th:if="${#fields.hasErrors('address.state')}" th:errors="*{address.state}">State Error</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="zipCode">ZIP Code</label>
+                <input type="text" id="zipCode" th:field="*{address.zipCode}" placeholder="12345 or 12345-6789" />
+                <div class="error" th:if="${#fields.hasErrors('address.zipCode')}" th:errors="*{address.zipCode}">ZIP Code Error</div>
+            </div>
+        </fieldset>
+        
+        <div class="form-group">
+            <button type="submit" class="button" th:text="${editMode} ? 'Update User' : 'Submit'">Submit</button>
+            <a href="/users/form" class="button" style="background-color: #6c757d; text-decoration: none; margin-left: 10px;">Reset Form</a>
+        </div>
+    </form>
+    
+    <!-- Quick Save Form (demonstrates different @ModelAttribute binding) -->
+    <hr style="margin: 30px 0;">
+    <h3>Quick Save Demo</h3>
+    <p><em>This form uses a different @ModelAttribute binding ("newUser") to demonstrate @InitBinder specificity</em></p>
+    
+    <form th:action="@{/users/quick-save}" method="post">
+        <div class="form-group">
+            <label for="quickName">Name</label>
+            <input type="text" id="quickName" name="name" />
+        </div>
+        <div class="form-group">
+            <label for="quickEmail">Email</label>
+            <input type="email" id="quickEmail" name="email" />
+        </div>
+        <div class="form-group">
+            <button type="submit" class="button">Quick Save</button>
+        </div>
+    </form>
+    
+    <hr style="margin: 30px 0;">
+    <p><a href="/users/edit/1">Edit Sample User</a></p>
+</body>
+</html>
+
+<!-- user-success.html (src/main/resources/templates/user-success.html) -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .success { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .user-details { background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        .button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .button:hover { background-color: #0056b3; }
+        .field { margin-bottom: 10px; }
+        .field strong { display: inline-block; width: 120px; }
+    </style>
+</head>
+<body>
+    <div class="success">
+        <h2>
+            <span th:if="${updated}">✓ User Updated Successfully!</span>
+            <span th:if="${quickSave}">✓ Quick Save Successful!</span>
+            <span th:unless="${updated or quickSave}">✓ User Created Successfully!</span>
+        </h2>
+    </div>
+    
+    <div class="user-details">
+        <h3>User Details:</h3>
+        <div class="field"><strong>Name:</strong> <span th:text="${savedUser.name}">John Doe</span></div>
+        <div class="field"><strong>Email:</strong> <span th:text="${savedUser.email}">john@example.com</span></div>
+        <div class="field"><strong>Age:</strong> <span th:text="${savedUser.age}">30</span></div>
+        <div class="field" th:if="${savedUser.birthDate}">
+            <strong>Birth Date:</strong> <span th:text="${#temporals.format(savedUser.birthDate, 'MM/dd/yyyy')}">01/01/1990</span>
+        </div>
+        <div class="field" th:if="${savedUser.gender}">
+            <strong>Gender:</strong> <span th:text="${savedUser.gender.displayName}">Male</span>
+        </div>
+        <div class="field" th:if="${savedUser.hobbies and not #lists.isEmpty(savedUser.hobbies)}">
+            <strong>Hobbies:</strong> 
+            <span th:each="hobby, iterStat : ${savedUser.hobbies}">
+                <span th:text="${hobby}">Hobby</span><span th:if="${not iterStat.last}">, </span>
+            </span>
+        </div>
+        
+        <div th:if="${savedUser.address and (savedUser.address.street or savedUser.address.city)}">
+            <strong>Address:</strong>
+            <div style="margin-left: 120px;">
+                <div th:if="${savedUser.address.street}" th:text="${savedUser.address.street}">123 Main St</div>
+                <div>
+                    <span th:if="${savedUser.address.city}" th:text="${savedUser.address.city}">City</span>
+                    <span th:if="${savedUser.address.state}">, <span th:text="${savedUser.address.state}">ST</span></span>
+                    <span th:if="${savedUser.address.zipCode}"> <span th:text="${savedUser.address.zipCode}">12345</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div>
+        <a href="/users/form" class="button">Create Another User</a>
+        <a href="/users/edit/1" class="button" style="background-color: #6c757d; margin-left: 10px;">Edit Sample User</a>
+    </div>
+    
+    <hr style="margin: 30px 0;">
+    <h3>Raw Object Output (for debugging):</h3>
+    <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;" th:text="${savedUser}">User object</pre>
+</body>
+</html>
+=====================
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- pom.xml -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.0</version>
+        <relativePath/>
+    </parent>
+    
+    <groupId>com.example</groupId>
+    <artifactId>modelattribute-initbinder-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>ModelAttribute InitBinder Demo</name>
+    <description>Demo project for Spring Boot MVC @ModelAttribute and @InitBinder</description>
+    
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+    
+    <dependencies>
+        <!-- Spring Boot Web Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Thymeleaf Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Validation Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot DevTools (for hot reload during development) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        
+        <!-- Spring Boot Test Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+<!-- application.yml (src/main/resources/application.yml) -->
+server:
+  port: 8080
+  servlet:
+    context-path: /demo
+
+spring:
+  application:
+    name: modelattribute-initbinder-demo
+  
+  # Thymeleaf Configuration
+  thymeleaf:
+    cache: false  # Disable cache for development
+    encoding: UTF-8
+    mode: HTML
+    prefix: classpath:/templates/
+    suffix: .html
+  
+  # Web Configuration
+  mvc:
+    format:
+      date: MM/dd/yyyy
+      date-time: MM/dd/yyyy HH:mm:ss
+    throw-exception-if-no-handler-found: true
+  
+  # Logging Configuration
+logging:
+  level:
+    com.example.demo: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.validation: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Custom Application Properties
+app:
+  demo:
+    name: "Spring MVC @ModelAttribute and @InitBinder Demo"
+    description: "Demonstrates form binding, validation, and custom property editors"
+    features:
+      - "Form data binding with @ModelAttribute"
+      - "Custom property editors with @InitBinder"
+      - "Validation with Bean Validation"
+      - "Nested object binding"
+      - "Collection binding"
+      - "Custom date formatting"
+
+===============
+
+// UserControllerTest.java (src/test/java/com/example/demo/controller/UserControllerTest.java)
+package com.example.demo.controller;
+
+import com.example.demo.model.Gender;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void testShowUserForm() throws Exception {
+        mockMvc.perform(get("/users/form"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-form"))
+                .andExpect(model().attributeExists("user"))
+                .andExpect(model().attributeExists("genders"))
+                .andExpect(model().attributeExists("hobbyOptions"))
+                .andExpect(model().attributeExists("states"))
+                .andExpect(model().attribute("pageTitle", "User Registration Form"));
+    }
+
+    @Test
+    void testSubmitValidUser() throws Exception {
+        mockMvc.perform(post("/users/submit")
+                .param("name", "John Doe")
+                .param("email", "john.doe@example.com")
+                .param("age", "30")
+                .param("birthDate", "05/15/1993")
+                .param("gender", "MALE")
+                .param("hobbies", "Reading", "Sports")
+                .param("address.street", "123 Main St")
+                .param("address.city", "Anytown")
+                .param("address.state", "CA")
+                .param("address.zipCode", "12345"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-success"))
+                .andExpect(model().attributeExists("savedUser"));
+    }
+
+    @Test
+    void testSubmitInvalidUser() throws Exception {
+        mockMvc.perform(post("/users/submit")
+                .param("name", "") // Invalid: empty name
+                .param("email", "invalid-email") // Invalid: bad email format
+                .param("age", "15") // Invalid: under 18
+                .param("address.zipCode", "invalid")) // Invalid: bad ZIP format
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-form"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().attributeHasFieldErrors("user", "name"))
+                .andExpect(model().attributeHasFieldErrors("user", "email"))
+                .andExpect(model().attributeHasFieldErrors("user", "age"));
+    }
+
+    @Test
+    void testEditUser() throws Exception {
+        mockMvc.perform(get("/users/edit/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-form"))
+                .andExpect(model().attributeExists("user"))
+                .andExpect(model().attribute("editMode", true));
+    }
+
+    @Test
+    void testQuickSave() throws Exception {
+        mockMvc.perform(post("/users/quick-save")
+                .param("name", "Quick User")
+                .param("email", "quick@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-success"))
+                .andExpect(model().attribute("quickSave", true));
+    }
+
+    @Test
+    void testDateBinding() throws Exception {
+        // Test valid date format
+        mockMvc.perform(post("/users/submit")
+                .param("name", "Date Test")
+                .param("email", "date@test.com")
+                .param("age", "25")
+                .param("birthDate", "12/25/1998")
+                .param("gender", "FEMALE"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-success"));
+        
+        // Test invalid date format - should still work but date might be null
+        mockMvc.perform(post("/users/submit")
+                .param("name", "Date Test 2")
+                .param("email", "date2@test.com")
+                .param("age", "25")
+                .param("birthDate", "invalid-date")
+                .param("gender", "MALE"))
+                .andExpect(status().isOk()); // Form should still process
+    }
+}
+
+// ===============================
+// INTEGRATION TEST
+// ===============================
+
+// UserControllerIntegrationTest.java (src/test/java/com/example/demo/UserControllerIntegrationTest.java)
+package com.example.demo;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class UserControllerIntegrationTest {
+
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Test
+    void testUserFormPage() {
+        ResponseEntity<String> response = restTemplate.getForEntity(
+            "http://localhost:" + port + "/users/form", String.class);
+        
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("User Registration Form");
+        assertThat(response.getBody()).contains("name=\"name\"");
+        assertThat(response.getBody()).contains("name=\"email\"");
+    }
+
+    @Test
+    void testFormSubmission() {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("name", "Integration Test User");
+        form.add("email", "integration@test.com");
+        form.add("age", "28");
+        form.add("birthDate", "01/01/1995");
+        form.add("gender", "OTHER");
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+            "http://localhost:" + port + "/users/submit", form, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("User Created Successfully");
+        assertThat(response.getBody()).contains("Integration Test User");
+    }
+}
+
+// ===============================
+// CUSTOM VALIDATOR (BONUS)
+// ===============================
+
+// CustomUserValidator.java (src/main/java/com/example/demo/validator/CustomUserValidator.java)
+package com.example.demo.validator;
+
+import com.example.demo.model.User;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
+import org.springframework.validation.Validator;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.time.Period;
+
+@Component
+public class CustomUserValidator implements Validator {
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return User.class.equals(clazz);
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+        User user = (User) target;
+
+        // Custom validation: name cannot contain numbers
+        if (user.getName() != null && user.getName().matches(".*\\d.*")) {
+            errors.rejectValue("name", "user.name.containsNumbers", 
+                "Name cannot contain numbers");
+        }
+
+        // Custom validation: birth date consistency with age
+        if (user.getBirthDate() != null && user.getAge() != null) {
+            int calculatedAge = Period.between(user.getBirthDate(), LocalDate.now()).getYears();
+            if (Math.abs(calculatedAge - user.getAge()) > 1) {
+                errors.rejectValue("age", "user.age.inconsistent", 
+                    "Age doesn't match birth date");
+            }
+        }
+
+        // Custom validation: professional email domains
+        if (user.getEmail() != null && user.getEmail().contains("@")) {
+            String domain = user.getEmail().substring(user.getEmail().indexOf("@") + 1);
+            if (domain.equals("test.com") || domain.equals("example.com")) {
+                errors.rejectValue("email", "user.email.testDomain", 
+                    "Please use a real email domain");
+            }
+        }
+    }
+}
+
+// ===============================
+// ADDITIONAL CONTROLLER FOR ADVANCED DEMOS
+// ===============================
+
+// AdvancedBindingController.java (src/main/java/com/example/demo/controller/AdvancedBindingController.java)
+package com.example.demo.controller;
+
+import com.example.demo.model.User;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
+
+import java.beans.PropertyEditorSupport;
+import java.util.Arrays;
+import java.util.List;
+
+@Controller
+@RequestMapping("/advanced")
+public class AdvancedBindingController {
+
+    /**
+     * Demonstrates multiple InitBinder methods with different targets
+     */
+    @InitBinder("user")
+    public void initUserBinder(WebDataBinder binder) {
+        System.out.println("@InitBinder for 'user' object");
+        
+        // Allow only specific fields for security
+        binder.setAllowedFields("name", "email", "age");
+        
+        // Disallow certain fields
+        binder.setDisallowedFields("id", "createdDate");
+    }
+
+    @InitBinder("searchCriteria")
+    public void initSearchBinder(WebDataBinder binder) {
+        System.out.println("@InitBinder for 'searchCriteria' object");
+        
+        // Custom editor for comma-separated values
+        binder.registerCustomEditor(List.class, "keywords", new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) {
+                if (text != null && !text.trim().isEmpty()) {
+                    setValue(Arrays.asList(text.split("\\s*,\\s*")));
+                } else {
+                    setValue(null);
+                }
+            }
+        });
+    }
+
+    /**
+     * Demonstrates @ModelAttribute with method-level binding
+     */
+    @ModelAttribute
+    public void addGlobalAttributes(Model model) {
+        model.addAttribute("timestamp", System.currentTimeMillis());
+        model.addAttribute("appName", "Advanced Binding Demo");
+    }
+
+    @GetMapping("/demo")
+    public String showAdvancedDemo(@ModelAttribute("user") User user,
+                                  @ModelAttribute("searchCriteria") SearchCriteria searchCriteria,
+                                  Model model) {
+        model.addAttribute("message", "Advanced @ModelAttribute and @InitBinder Demo");
+        return "advanced-demo";
+    }
+
+    @PostMapping("/process")
+    public String processAdvanced(@ModelAttribute("user") User user,
+                                 @ModelAttribute("searchCriteria") SearchCriteria searchCriteria,
+                                 Model model) {
+        model.addAttribute("processedUser", user);
+        model.addAttribute("processedSearch", searchCriteria);
+        return "advanced-result";
+    }
+
+    // Inner class for demonstration
+    public static class SearchCriteria {
+        private String query;
+        private List<String> keywords;
+        private String category;
+
+        // Constructors, getters, and setters
+        public SearchCriteria() {}
+
+        public String getQuery() { return query; }
+        public void setQuery(String query) { this.query = query; }
+
+        public List<String> getKeywords() { return keywords; }
+        public void setKeywords(List<String> keywords) { this.keywords = keywords; }
+
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+
+        @Override
+        public String toString() {
+            return "SearchCriteria{query='" + query + "', keywords=" + keywords + 
+                   ", category='" + category + "'}";
+        }
+    }
+}
+
+// ===============================
+// GLOBAL CONTROLLER ADVICE
+// ===============================
+
+// GlobalControllerAdvice.java (src/main/java/com/example/demo/advice/GlobalControllerAdvice.java)
+package com.example.demo.advice;
+
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+@ControllerAdvice
+public class GlobalControllerAdvice {
+
+    /**
+     * Global InitBinder - applies to all controllers
+     * Demonstrates application-wide binding rules
+     */
+    @InitBinder
+    public void globalInitBinder(WebDataBinder binder) {
+        System.out.println("Global @InitBinder called for: " + binder.getObjectName());
+        
+        // Trim all string inputs globally
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+        
+        // Global security: prevent binding of sensitive fields
+        binder.setDisallowedFields("password", "ssn", "creditCard");
+    }
+
+    /**
+     * Global model attribute - available to all controllers
+     */
+    @ModelAttribute("globalTimestamp")
+    public String addGlobalTimestamp() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    /**
+     * Global model attribute for application info
+     */
+    @ModelAttribute("appInfo")
+    public AppInfo addAppInfo() {
+        return new AppInfo("Spring MVC Demo", "1.0.0", "Demonstrates @ModelAttribute and @InitBinder");
+    }
+
+    // Helper class for application info
+    public static class AppInfo {
+        private final String name;
+        private final String version;
+        private final String description;
+
+        public AppInfo(String name, String version, String description) {
+            this.name = name;
+            this.version = version;
+            this.description = description;
+        }
+
+        public String getName() { return name; }
+        public String getVersion() { return version; }
+        public String getDescription() { return description; }
+    }
+}
+
+==================   
+   # Spring Boot MVC @ModelAttribute and @InitBinder Demo
+
+A comprehensive demonstration of Spring MVC's `@ModelAttribute` and `@InitBinder` annotations, showcasing form binding, validation, custom property editors, and advanced data binding techniques.
+
+## 🚀 Quick Start
+
+1. **Clone and Build**
+   ```bash
+   mvn clean install
+   ```
+
+2. **Run the Application**
+   ```bash
+   mvn spring-boot:run
+   ```
+
+3. **Access the Demo**
+   - Main Form: http://localhost:8080/demo/users/form
+   - Advanced Demo: http://localhost:8080/demo/advanced/demo
+
+## 📋 Features Demonstrated
+
+### @ModelAttribute Features
+- ✅ **Global Model Attributes** - Data available to all handler methods
+- ✅ **Method Parameter Binding** - Automatic form data to object mapping
+- ✅ **Nested Object Binding** - Complex object hierarchies (User.Address)
+- ✅ **Collection Binding** - Lists and arrays (hobbies)
+- ✅ **Default Object Creation** - Pre-populated form objects
+- ✅ **Multiple Model Attributes** - Different binding targets
+
+### @InitBinder Features
+- ✅ **Global Data Binding** - Controller-wide binding rules
+- ✅ **Specific Object Binding** - Target-specific binding (`@InitBinder("user")`)
+- ✅ **Custom Property Editors** - Date formatting, string trimming
+- ✅ **Field Security** - Allowed/disallowed fields
+- ✅ **Required Fields** - Mandatory field validation
+- ✅ **Global Controller Advice** - Application-wide binding rules
+
+### Additional Features  
+- ✅ **Bean Validation** - JSR-303 validation annotations
+- ✅ **Custom Validators** - Business logic validation
+- ✅ **Error Handling** - Form validation and error display
+- ✅ **Thymeleaf Integration** - Modern templating
+- ✅ **Comprehensive Tests** - Unit and integration testing
+
+## 🏗️ Project Structure
+
+```
+src/
+├── main/
+│   ├── java/com/example/demo/
+│   │   ├── ModelAttributeInitBinderDemoApplication.java
+│   │   ├── controller/
+│   │   │   ├── UserController.java              # Main demo controller
+│   │   │   └── AdvancedBindingController.java   # Advanced features
+│   │   ├── model/
+│   │   │   ├── User.java                        # Main form model
+│   │   │   ├── Address.java                     # Nested object
+│   │   │   └── Gender.java                      # Enum example
+│   │   ├── editor/
+│   │   │   └── CustomDateEditor.java            # Custom property editor
+│   │   ├── validator/
+│   │   │   └── CustomUserValidator.java         # Custom validation
+│   │   ├── advice/
+│   │   │   └── GlobalControllerAdvice.java      # Global binding rules
+│   │   └── config/
+│   │       └── WebConfig.java                   # Web configuration
+│   └── resources/
+│       ├── templates/
+│       │   ├── user-form.html                   # Main form template
+│       │   └── user-success.html                # Success page
+│       └── application.yml                      # Configuration
+└── test/
+    └── java/com/example/demo/
+        ├── UserControllerTest.java               # Unit tests
+        └── UserControllerIntegrationTest.java    # Integration tests
+```
+
+## 📖 Key Concepts Explained
+
+### @ModelAttribute Deep Dive
+
+#### 1. Method-Level @ModelAttribute
+```java
+@ModelAttribute("genders")
+public Gender[] populateGenders() {
+    return Gender.values(); // Available to all handler methods
+}
+```
+- **Purpose**: Populate model data before any handler method executes
+- **Scope**: Available to all methods in the controller
+- **Use Cases**: Dropdown options, lookup data, common objects
+
+#### 2. Parameter-Level @ModelAttribute
+```java
+@PostMapping("/submit")
+public String submitUser(@ModelAttribute("user") User user, BindingResult result) {
+    // user object is automatically populated from form data
+}
+```
+- **Purpose**: Bind request parameters to method parameter objects
+- **Features**: Automatic type conversion, validation support, nested binding
+- **Benefits**: Clean separation of concerns, automatic data binding
+
+#### 3. Default Model Attribute Creation
+```java
+@ModelAttribute("user")
+public User createDefaultUser() {
+    User user = new User();
+    user.setAddress(new Address()); // Initialize nested objects
+    return user;
+}
+```
+
+### @InitBinder Deep Dive
+
+#### 1. Global InitBinder
+```java
+@InitBinder
+public void initBinder(WebDataBinder binder) {
+    // Applies to all model attributes in this controller
+    binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+}
+```
+
+#### 2. Specific InitBinder
+```java
+@InitBinder("user")
+public void initUserBinder(WebDataBinder binder) {
+    // Only applies to "user" model attribute
+    binder.setAllowedFields("name", "email", "age");
+}
+```
+
+#### 3. Custom Property Editors
+```java
+@InitBinder
+public void initBinder(WebDataBinder binder) {
+    binder.registerCustomEditor(LocalDate.class, "birthDate",
+        new CustomDateEditor(DateTimeFormatter.ofPattern("MM/dd/yyyy"), true));
+}
+```
+
+## 🔧 Advanced Configuration
+
+### Security Features
+```java
+@InitBinder
+public void securityBinder(WebDataBinder binder) {
+    // Prevent binding of sensitive fields
+    binder.setDisallowedFields("password", "ssn");
+    
+    // Only allow specific fields
+    binder.setAllowedFields("name", "email", "age");
+    
+    // Set required fields
+    binder.setRequiredFields("name", "email");
+}
+```
+
+### Custom Validation
+```java
+@Component
+public class CustomUserValidator implements Validator {
+    @Override
+    public void validate(Object target, Errors errors) {
+        User user = (User) target;
+        if (user.getName().matches(".*\\d.*")) {
+            errors.rejectValue("name", "name.containsNumbers");
+        }
+    }
+}
+```
+
+### Global Controller Advice
+```java
+@ControllerAdvice
+public class GlobalControllerAdvice {
+    @InitBinder
+    public void globalInitBinder(WebDataBinder binder) {
+        // Global binding rules for all controllers
+    }
+    
+    @ModelAttribute("timestamp")
+    public String addTimestamp() {
+        return LocalDateTime.now().toString();
+    }
+}
+```
+
+## 🧪 Testing
+
+### Unit Tests
+```bash
+mvn test -Dtest=UserControllerTest
+```
+Tests cover:
+- Form display with model attributes
+- Valid form submission
+- Validation error handling
+- Custom binding scenarios
+
+### Integration Tests
+```bash
+mvn test -Dtest=UserControllerIntegrationTest
+```
+Tests full request/response cycle with embedded server.
+
+## 🎯 Demo Scenarios
+
+### 1. Basic Form Binding
+- Navigate to `/users/form`
+- Fill out the user registration form
+- Observe automatic data binding and validation
+
+### 2. Date Format Binding
+- Enter dates in MM/dd/yyyy format
+- See custom `CustomDateEditor` in action
+- Try invalid formats to see error handling
+
+### 3. Nested Object Binding
+- Fill out address fields (address.street, address.city, etc.)
+- Observe automatic nested object creation and binding
+
+### 4. Collection Binding
+- Select multiple hobbies (checkboxes)
+- See how collections are automatically bound
+
+### 5. Validation Scenarios
+- Submit form with invalid data (empty name, invalid email, age < 18)
+- Observe validation errors and form redisplay
+
+### 6. Edit Mode
+- Visit `/users/edit/1` to see pre-populated form
+- Demonstrates model attribute initialization with existing data
+
+### 7. Quick Save Demo
+- Use the "Quick Save" form at bottom of main form
+- Demonstrates different `@InitBinder` rules with `@InitBinder("newUser")`
+
+## 🔍 Debugging Tips
+
+### Console Output
+The application logs detailed information about:
+- When `@ModelAttribute` methods are called
+- When `@InitBinder` methods are executed
+- Validation errors and binding results
+
+### Key Log Messages
+```
+@ModelAttribute: populateGenders() called
+Global @InitBinder called for: user
+Specific @InitBinder called for newUser
+Handler: submitUser() called
+Received user: User{name='John'...}
+Validation errors found: [Name is required]
+```
+
+### Common Issues and Solutions
+
+1. **Date Binding Fails**
+   - Check date format matches `CustomDateEditor` pattern
+   - Ensure `@InitBinder` is registering the editor correctly
+
+2. **Validation Not Working**
+   - Verify `@Valid` annotation on method parameter
+   - Check `BindingResult` parameter is immediately after `@ModelAttribute`
+
+3. **Nested Objects are Null**
+   - Initialize nested objects in `@ModelAttribute` method
+   - Ensure form field names match object structure (`address.street`)
+
+4. **Security: Fields Not Binding**
+   - Check `setAllowedFields()` and `setDisallowedFields()`
+   - Verify field names are correctly specified
+
+## 📚 Learning Objectives
+
+After exploring this demo, you should understand:
+
+1. **@ModelAttribute Lifecycle**: When and how model attributes are created and populated
+2. **@InitBinder Configuration**: How to customize data binding for specific use cases
+3. **Form Binding**: Automatic mapping between HTTP parameters and Java objects
+4. **Validation Integration**: How Bean Validation works with Spring MVC
+5. **Custom Property Editors**: Creating reusable data conversion logic
+6. **Security Considerations**: Protecting against unwanted field binding
+7. **Testing Strategies**: Unit and integration testing for MVC components
+
+## 🛠️ Customization Ideas
+
+Extend this demo by:
+- Adding file upload handling
+- Implementing AJAX form submission
+- Adding more complex validation rules
+- Creating custom validation annotations
+- Implementing multi-step form wizards
+- Adding internationalization (i18n)
+
+## 📄 Key Files to Study
+
+1. **`UserController.java`** - Main controller with comprehensive examples
+2. **`CustomDateEditor.java`** - Custom property editor implementation
+3. **`user-form.html`** - Thymeleaf template with form binding
+4. **`GlobalControllerAdvice.java`** - Application-wide configuration
+5. **`UserControllerTest.java`** - Testing patterns and best practices
+
+## 🤝 Contributing
+
+Feel free to extend this demo with additional examples or improvements:
+- More property editor examples
+- Advanced validation scenarios
+- Performance optimization techniques
+- Additional testing patterns
+
+---
+
+This demo provides a complete foundation for understanding Spring MVC's data binding and validation capabilities. Use it as a reference for building robust web applications with proper form handling and data validation.
