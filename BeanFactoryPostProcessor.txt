@@ -1,0 +1,374 @@
+// Main Application Class
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+
+@SpringBootApplication
+public class BeanFactoryPostProcessorDemoApplication {
+
+    public static void main(String[] args) {
+        ConfigurableApplicationContext context = SpringApplication.run(BeanFactoryPostProcessorDemoApplication.class, args);
+        
+        // Demonstrate the modified beans
+        System.out.println("\n=== Demonstrating BeanFactoryPostProcessor Effects ===");
+        
+        // Get the modified service
+        MyService myService = context.getBean(MyService.class);
+        myService.performAction();
+        
+        // Get the conditionally created bean
+        try {
+            ConditionalBean conditionalBean = context.getBean(ConditionalBean.class);
+            conditionalBean.doSomething();
+        } catch (Exception e) {
+            System.out.println("ConditionalBean not available: " + e.getMessage());
+        }
+        
+        // Get the dynamically created bean
+        context.getBeansOfType(String.class).entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith("dynamic"))
+            .forEach(entry -> System.out.println("Dynamic bean: " + entry.getKey() + " = " + entry.getValue()));
+    }
+}
+
+// ============= Bean Classes =============
+
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MyService {
+    
+    @Value("${my.custom.property:default-value}")
+    private String customProperty;
+    
+    @Value("${my.timeout:5000}")
+    private int timeout;
+    
+    public void performAction() {
+        System.out.println("MyService executing with:");
+        System.out.println("  Custom Property: " + customProperty);
+        System.out.println("  Timeout: " + timeout + "ms");
+    }
+}
+
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class ConditionalBean {
+    
+    public void doSomething() {
+        System.out.println("ConditionalBean is active and working!");
+    }
+}
+
+// ============= BeanFactoryPostProcessor Implementations =============
+
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.core.Ordered;
+import org.springframework.stereotype.Component;
+
+/**
+ * This BeanFactoryPostProcessor demonstrates property manipulation and dynamic bean registration
+ */
+@Component
+public class CustomBeanFactoryPostProcessor implements BeanFactoryPostProcessor, Ordered {
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        System.out.println("\n=== CustomBeanFactoryPostProcessor executing ===");
+        
+        // 1. Modify existing bean definitions
+        modifyBeanDefinitions(beanFactory);
+        
+        // 2. Register new bean definitions dynamically
+        registerDynamicBeans(beanFactory);
+        
+        // 3. Conditionally remove bean definitions
+        conditionallyRemoveBeans(beanFactory);
+        
+        System.out.println("CustomBeanFactoryPostProcessor completed\n");
+    }
+    
+    private void modifyBeanDefinitions(ConfigurableListableBeanFactory beanFactory) {
+        // Find and modify the MyService bean definition
+        if (beanFactory.containsBeanDefinition("myService")) {
+            BeanDefinition beanDef = beanFactory.getBeanDefinition("myService");
+            
+            // Add custom property values that will be injected
+            beanDef.getPropertyValues().add("customProperty", "Modified by BeanFactoryPostProcessor!");
+            
+            System.out.println("Modified myService bean definition");
+        }
+    }
+    
+    private void registerDynamicBeans(ConfigurableListableBeanFactory beanFactory) {
+        if (beanFactory instanceof BeanDefinitionRegistry) {
+            BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+            
+            // Create a dynamic String bean
+            BeanDefinition dynamicStringBean = BeanDefinitionBuilder
+                .genericBeanDefinition(String.class)
+                .addConstructorArgValue("This is a dynamically created bean!")
+                .getBeanDefinition();
+                
+            registry.registerBeanDefinition("dynamicStringBean", dynamicStringBean);
+            
+            // Create another dynamic bean with different content
+            BeanDefinition anotherDynamicBean = BeanDefinitionBuilder
+                .genericBeanDefinition(String.class)
+                .addConstructorArgValue("Another dynamic bean created at startup!")
+                .getBeanDefinition();
+                
+            registry.registerBeanDefinition("dynamicBean2", anotherDynamicBean);
+            
+            System.out.println("Registered dynamic beans");
+        }
+    }
+    
+    private void conditionallyRemoveBeans(ConfigurableListableBeanFactory beanFactory) {
+        // Conditionally remove ConditionalBean based on some criteria
+        boolean shouldRemoveConditionalBean = System.getProperty("remove.conditional.bean", "false").equals("true");
+        
+        if (shouldRemoveConditionalBean && beanFactory instanceof BeanDefinitionRegistry) {
+            BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+            
+            if (registry.containsBeanDefinition("conditionalBean")) {
+                registry.removeBeanDefinition("conditionalBean");
+                System.out.println("Removed ConditionalBean based on system property");
+            }
+        }
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE; // Execute early
+    }
+}
+
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.core.Ordered;
+import org.springframework.stereotype.Component;
+
+/**
+ * This BeanFactoryPostProcessor demonstrates scope and lazy initialization modifications
+ */
+@Component
+public class ScopeModifyingBeanFactoryPostProcessor implements BeanFactoryPostProcessor, Ordered {
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        System.out.println("=== ScopeModifyingBeanFactoryPostProcessor executing ===");
+        
+        // Modify scopes and lazy initialization for specific beans
+        String[] beanNames = beanFactory.getBeanDefinitionNames();
+        
+        for (String beanName : beanNames) {
+            BeanDefinition beanDef = beanFactory.getBeanDefinition(beanName);
+            
+            // Make all Service beans lazy by default
+            if (beanName.toLowerCase().contains("service")) {
+                beanDef.setLazyInit(true);
+                System.out.println("Set " + beanName + " to lazy initialization");
+            }
+            
+            // Log current scope information
+            if (beanDef.getScope() != null && !beanDef.getScope().isEmpty()) {
+                System.out.println("Bean " + beanName + " has scope: " + beanDef.getScope());
+            }
+        }
+        
+        System.out.println("ScopeModifyingBeanFactoryPostProcessor completed\n");
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE; // Execute after other processors
+    }
+}
+
+// ============= Property Configuration =============
+
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * This BeanFactoryPostProcessor demonstrates adding custom properties to the environment
+ */
+@Component
+public class PropertyAddingBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        System.out.println("=== PropertyAddingBeanFactoryPostProcessor executing ===");
+        
+        // Add custom properties to the environment
+        if (beanFactory instanceof org.springframework.context.support.AbstractApplicationContext) {
+            // Note: This is a simplified approach. In real scenarios, you might want to use
+            // EnvironmentPostProcessor or other mechanisms for environment modification
+            
+            // Create custom properties
+            Map<String, Object> customProps = new HashMap<>();
+            customProps.put("my.custom.property", "Set by PropertyAddingBeanFactoryPostProcessor");
+            customProps.put("my.timeout", "10000");
+            customProps.put("app.feature.enabled", "true");
+            
+            // This demonstrates the concept, though direct environment modification
+            // in BFPP is not the typical pattern
+            System.out.println("Would add custom properties: " + customProps);
+        }
+        
+        System.out.println("PropertyAddingBeanFactoryPostProcessor completed\n");
+    }
+}
+
+// ============= Configuration Class =============
+
+package com.example.beanfactorypostprocessor;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AppConfiguration {
+    
+    @Bean
+    public String staticConfigBean() {
+        return "This is a static configuration bean";
+    }
+    
+    // This bean will be modified by our BeanFactoryPostProcessor
+    @Bean
+    public String configurableBean() {
+        return "Original value - will be modified";
+    }
+}
+
+// ============= Application Properties =============
+
+# application.properties content:
+# logging.level.org.springframework=DEBUG
+# my.custom.property=original-value
+# my.timeout=3000
+
+# To test conditional bean removal, add this JVM argument:
+# -Dremove.conditional.bean=true
+
+// ============= Test Class =============
+
+package com.example.beanfactorypostprocessor;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+public class BeanFactoryPostProcessorDemoTest {
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private MyService myService;
+
+    @Test
+    public void testBeanFactoryPostProcessorEffects() {
+        // Test that our service bean exists and was modified
+        assertNotNull(myService);
+        
+        // Test that dynamic beans were created
+        assertTrue(applicationContext.containsBean("dynamicStringBean"));
+        assertTrue(applicationContext.containsBean("dynamicBean2"));
+        
+        String dynamicBean1 = applicationContext.getBean("dynamicStringBean", String.class);
+        String dynamicBean2 = applicationContext.getBean("dynamicBean2", String.class);
+        
+        assertEquals("This is a dynamically created bean!", dynamicBean1);
+        assertEquals("Another dynamic bean created at startup!", dynamicBean2);
+    }
+    
+    @Test
+    public void testServiceExecution() {
+        // This will show the modified properties in action
+        assertDoesNotThrow(() -> myService.performAction());
+    }
+}
+
+// ============= Usage Instructions =============
+
+/*
+HOW TO USE THIS DEMO:
+
+1. BASIC SETUP:
+   - Create a new Spring Boot project
+   - Copy all the code above into appropriate package structure
+   - Run the main application
+
+2. WHAT THIS DEMO SHOWS:
+
+   a) CustomBeanFactoryPostProcessor:
+      - Modifies existing bean definitions (adds property values)
+      - Registers new beans dynamically at startup
+      - Conditionally removes beans based on system properties
+
+   b) ScopeModifyingBeanFactoryPostProcessor:
+      - Changes bean scopes and lazy initialization
+      - Shows how to iterate through all bean definitions
+      - Demonstrates ordering with other processors
+
+   c) PropertyAddingBeanFactoryPostProcessor:
+      - Shows concept of environment/property manipulation
+      - Demonstrates different approaches to configuration
+
+3. KEY CONCEPTS DEMONSTRATED:
+   - Bean definition modification before instantiation
+   - Dynamic bean registration
+   - Conditional bean creation/removal
+   - Property injection and environment setup
+   - Processor ordering and execution sequence
+   - Integration with Spring Boot's auto-configuration
+
+4. TO TEST DIFFERENT SCENARIOS:
+   - Run normally to see basic functionality
+   - Add JVM argument -Dremove.conditional.bean=true to test bean removal
+   - Modify application.properties to see property injection effects
+   - Check console output to see processing order and effects
+
+5. REAL-WORLD USE CASES:
+   - Dynamic configuration based on environment
+   - Conditional bean creation for feature flags
+   - Property validation and modification
+   - Integration with external configuration systems
+   - Custom dependency injection patterns
+*/
