@@ -1,0 +1,396 @@
+// Main Application Class
+package com.example.importselector;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+
+@SpringBootApplication
+@EnableCustomMessaging
+public class ImportSelectorDemoApplication {
+
+    public static void main(String[] args) {
+        ApplicationContext context = SpringApplication.run(ImportSelectorDemoApplication.class, args);
+        
+        // Demo the imported beans
+        System.out.println("\n=== ImportSelector Demo Results ===");
+        
+        // Check which messaging service was imported
+        try {
+            MessagingService messagingService = context.getBean(MessagingService.class);
+            messagingService.sendMessage("Hello from ImportSelector Demo!");
+        } catch (Exception e) {
+            System.out.println("No messaging service found: " + e.getMessage());
+        }
+        
+        // Check which data processor was imported
+        try {
+            DataProcessor dataProcessor = context.getBean(DataProcessor.class);
+            dataProcessor.processData("Sample data from ImportSelector");
+        } catch (Exception e) {
+            System.out.println("No data processor found: " + e.getMessage());
+        }
+    }
+}
+
+// Custom annotation that triggers ImportSelector
+package com.example.importselector;
+
+import org.springframework.context.annotation.Import;
+import java.lang.annotation.*;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Import(CustomMessagingImportSelector.class)
+public @interface EnableCustomMessaging {
+    String messagingType() default "email";
+    boolean enableDataProcessing() default true;
+    String environment() default "development";
+}
+
+// The ImportSelector implementation
+package com.example.importselector;
+
+import org.springframework.context.annotation.ImportSelector;
+import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.type.AnnotationMetadata;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CustomMessagingImportSelector implements ImportSelector {
+
+    @Override
+    public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+        // Get the annotation attributes
+        AnnotationAttributes attributes = AnnotationAttributes.fromMap(
+            importingClassMetadata.getAnnotationAttributes(EnableCustomMessaging.class.getName())
+        );
+
+        List<String> imports = new ArrayList<>();
+
+        if (attributes != null) {
+            String messagingType = attributes.getString("messagingType");
+            boolean enableDataProcessing = attributes.getBoolean("enableDataProcessing");
+            String environment = attributes.getString("environment");
+
+            System.out.println("ImportSelector processing with:");
+            System.out.println("  - messagingType: " + messagingType);
+            System.out.println("  - enableDataProcessing: " + enableDataProcessing);
+            System.out.println("  - environment: " + environment);
+
+            // Conditionally import messaging configurations
+            switch (messagingType.toLowerCase()) {
+                case "email":
+                    imports.add("com.example.importselector.EmailMessagingConfiguration");
+                    break;
+                case "sms":
+                    imports.add("com.example.importselector.SmsMessagingConfiguration");
+                    break;
+                case "slack":
+                    imports.add("com.example.importselector.SlackMessagingConfiguration");
+                    break;
+                default:
+                    imports.add("com.example.importselector.DefaultMessagingConfiguration");
+            }
+
+            // Conditionally import data processing configuration
+            if (enableDataProcessing) {
+                if ("production".equalsIgnoreCase(environment)) {
+                    imports.add("com.example.importselector.ProductionDataProcessorConfiguration");
+                } else {
+                    imports.add("com.example.importselector.DevelopmentDataProcessorConfiguration");
+                }
+            }
+
+            // Always import common configuration
+            imports.add("com.example.importselector.CommonConfiguration");
+        }
+
+        return imports.toArray(new String[0]);
+    }
+}
+
+// Service interfaces
+package com.example.importselector;
+
+public interface MessagingService {
+    void sendMessage(String message);
+}
+
+package com.example.importselector;
+
+public interface DataProcessor {
+    void processData(String data);
+}
+
+// Messaging service implementations
+package com.example.importselector;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailMessagingService implements MessagingService {
+    @Override
+    public void sendMessage(String message) {
+        System.out.println("📧 Email: " + message);
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class SmsMessagingService implements MessagingService {
+    @Override
+    public void sendMessage(String message) {
+        System.out.println("📱 SMS: " + message);
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class SlackMessagingService implements MessagingService {
+    @Override
+    public void sendMessage(String message) {
+        System.out.println("💬 Slack: " + message);
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class DefaultMessagingService implements MessagingService {
+    @Override
+    public void sendMessage(String message) {
+        System.out.println("📝 Default: " + message);
+    }
+}
+
+// Data processor implementations
+package com.example.importselector;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class ProductionDataProcessor implements DataProcessor {
+    @Override
+    public void processData(String data) {
+        System.out.println("🏭 Production Processor: " + data + " (with security & monitoring)");
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class DevelopmentDataProcessor implements DataProcessor {
+    @Override
+    public void processData(String data) {
+        System.out.println("🔧 Development Processor: " + data + " (with debug info)");
+    }
+}
+
+// Configuration classes that get conditionally imported
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EmailMessagingConfiguration {
+    
+    @Bean
+    public MessagingService messagingService() {
+        return new EmailMessagingService();
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class SmsMessagingConfiguration {
+    
+    @Bean
+    public MessagingService messagingService() {
+        return new SmsMessagingService();
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class SlackMessagingConfiguration {
+    
+    @Bean
+    public MessagingService messagingService() {
+        return new SlackMessagingService();
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DefaultMessagingConfiguration {
+    
+    @Bean
+    public MessagingService messagingService() {
+        return new DefaultMessagingService();
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ProductionDataProcessorConfiguration {
+    
+    @Bean
+    public DataProcessor dataProcessor() {
+        return new ProductionDataProcessor();
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DevelopmentDataProcessorConfiguration {
+    
+    @Bean
+    public DataProcessor dataProcessor() {
+        return new DevelopmentDataProcessor();
+    }
+}
+
+package com.example.importselector;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class CommonConfiguration {
+    
+    @Bean
+    public String commonProperty() {
+        System.out.println("✅ Common configuration loaded");
+        return "common-value";
+    }
+}
+
+// Application properties (application.yml)
+# You can override the default values by setting these properties
+spring:
+  application:
+    name: import-selector-demo
+
+# Custom properties to demonstrate different configurations
+demo:
+  messaging-type: email  # Options: email, sms, slack
+  enable-data-processing: true
+  environment: development  # Options: development, production
+
+// Alternative main application with different configuration
+package com.example.importselector;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+
+// Example with different annotation parameters
+@SpringBootApplication
+@EnableCustomMessaging(messagingType = "slack", enableDataProcessing = true, environment = "production")
+public class AlternativeImportSelectorDemoApplication {
+
+    public static void main(String[] args) {
+        ApplicationContext context = SpringApplication.run(AlternativeImportSelectorDemoApplication.class, args);
+        
+        System.out.println("\n=== Alternative Configuration Demo ===");
+        
+        MessagingService messagingService = context.getBean(MessagingService.class);
+        messagingService.sendMessage("Hello from Alternative Configuration!");
+        
+        DataProcessor dataProcessor = context.getBean(DataProcessor.class);
+        dataProcessor.processData("Production data processing");
+    }
+}
+
+// Maven pom.xml dependencies
+/*
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+*/
+
+// Test class to demonstrate different scenarios
+package com.example.importselector;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@SpringBootTest
+class ImportSelectorDemoTest {
+
+    @Autowired
+    private ApplicationContext context;
+
+    @Test
+    void testDefaultConfiguration() {
+        // Test that the default email messaging service is loaded
+        MessagingService messagingService = context.getBean(MessagingService.class);
+        assert messagingService instanceof EmailMessagingService;
+        
+        // Test that development data processor is loaded
+        DataProcessor dataProcessor = context.getBean(DataProcessor.class);
+        assert dataProcessor instanceof DevelopmentDataProcessor;
+    }
+}
+
+@SpringBootTest(classes = AlternativeImportSelectorDemoApplication.class)
+class AlternativeImportSelectorDemoTest {
+
+    @Autowired
+    private ApplicationContext context;
+
+    @Test
+    void testAlternativeConfiguration() {
+        // Test that Slack messaging service is loaded
+        MessagingService messagingService = context.getBean(MessagingService.class);
+        assert messagingService instanceof SlackMessagingService;
+        
+        // Test that production data processor is loaded
+        DataProcessor dataProcessor = context.getBean(DataProcessor.class);
+        assert dataProcessor instanceof ProductionDataProcessor;
+    }
+}
