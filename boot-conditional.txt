@@ -1,0 +1,420 @@
+// Main Application Class
+package com.example.conditional;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ConditionalBeansApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ConditionalBeansApplication.class, args);
+    }
+}
+
+// ========== Service Interfaces ==========
+
+package com.example.conditional.service;
+
+public interface NotificationService {
+    void sendNotification(String message);
+}
+
+package com.example.conditional.service;
+
+public interface DatabaseService {
+    void saveData(String data);
+}
+
+package com.example.conditional.service;
+
+public interface CacheService {
+    void cache(String key, Object value);
+    Object get(String key);
+}
+
+// ========== Service Implementations ==========
+
+package com.example.conditional.service.impl;
+
+import com.example.conditional.service.NotificationService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+
+@Service
+@ConditionalOnProperty(name = "notification.type", havingValue = "email")
+public class EmailNotificationService implements NotificationService {
+    @Override
+    public void sendNotification(String message) {
+        System.out.println("📧 Sending email notification: " + message);
+    }
+}
+
+package com.example.conditional.service.impl;
+
+import com.example.conditional.service.NotificationService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+
+@Service
+@ConditionalOnProperty(name = "notification.type", havingValue = "sms")
+public class SmsNotificationService implements NotificationService {
+    @Override
+    public void sendNotification(String message) {
+        System.out.println("📱 Sending SMS notification: " + message);
+    }
+}
+
+package com.example.conditional.service.impl;
+
+import com.example.conditional.service.DatabaseService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+
+@Service
+@ConditionalOnProperty(name = "database.type", havingValue = "mysql", matchIfMissing = false)
+public class MySqlDatabaseService implements DatabaseService {
+    @Override
+    public void saveData(String data) {
+        System.out.println("🐬 Saving to MySQL database: " + data);
+    }
+}
+
+package com.example.conditional.service.impl;
+
+import com.example.conditional.service.DatabaseService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+
+@Service
+@ConditionalOnProperty(name = "database.type", havingValue = "postgresql")
+public class PostgreSqlDatabaseService implements DatabaseService {
+    @Override
+    public void saveData(String data) {
+        System.out.println("🐘 Saving to PostgreSQL database: " + data);
+    }
+}
+
+// ========== Configuration Classes ==========
+
+package com.example.conditional.config;
+
+import com.example.conditional.service.CacheService;
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+@Configuration
+public class CacheConfiguration {
+
+    @Bean
+    @ConditionalOnProperty(name = "cache.enabled", havingValue = "true")
+    @ConditionalOnMissingBean(CacheService.class)
+    public CacheService redisCacheService() {
+        return new CacheService() {
+            @Override
+            public void cache(String key, Object value) {
+                System.out.println("🔴 Caching in Redis: " + key + " = " + value);
+            }
+
+            @Override
+            public Object get(String key) {
+                System.out.println("🔴 Getting from Redis cache: " + key);
+                return "cached_" + key;
+            }
+        };
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "cache.enabled", havingValue = "false", matchIfMissing = true)
+    public CacheService noCacheService() {
+        return new CacheService() {
+            @Override
+            public void cache(String key, Object value) {
+                System.out.println("❌ Cache disabled - not caching: " + key);
+            }
+
+            @Override
+            public Object get(String key) {
+                System.out.println("❌ Cache disabled - returning null for: " + key);
+                return null;
+            }
+        };
+    }
+}
+
+package com.example.conditional.config;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ExternalLibraryConfiguration {
+
+    // This bean will only be created if Jackson is on the classpath
+    @Bean
+    @ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
+    public String jacksonAvailableBean() {
+        return "Jackson JSON processing is available";
+    }
+
+    // This bean will only be created if Jackson is NOT on the classpath
+    @Bean
+    @ConditionalOnMissingClass("com.fasterxml.jackson.databind.ObjectMapper")
+    public String jacksonNotAvailableBean() {
+        return "Jackson JSON processing is NOT available";
+    }
+}
+
+// ========== Custom Conditional Annotations ==========
+
+package com.example.conditional.condition;
+
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+
+public class WindowsCondition implements Condition {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        return System.getProperty("os.name").toLowerCase().contains("windows");
+    }
+}
+
+package com.example.conditional.condition;
+
+import org.springframework.context.annotation.Conditional;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Conditional(WindowsCondition.class)
+public @interface ConditionalOnWindows {
+}
+
+package com.example.conditional.config;
+
+import com.example.conditional.condition.ConditionalOnWindows;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class OperatingSystemConfiguration {
+
+    @Bean
+    @ConditionalOnWindows
+    public String windowsSpecificBean() {
+        return "This bean is only available on Windows OS";
+    }
+
+    @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnExpression("!'${os.name}'.toLowerCase().contains('windows')")
+    public String nonWindowsBean() {
+        return "This bean is available on non-Windows OS";
+    }
+}
+
+// ========== Profile-based Configuration ==========
+
+package com.example.conditional.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+@Configuration
+public class ProfileBasedConfiguration {
+
+    @Bean
+    @Profile("development")
+    public String devModeBean() {
+        return "Development mode is active";
+    }
+
+    @Bean
+    @Profile("production")
+    public String prodModeBean() {
+        return "Production mode is active";
+    }
+
+    @Bean
+    @Profile("!test")
+    public String notTestModeBean() {
+        return "Not in test mode";
+    }
+}
+
+// ========== Demo Controller ==========
+
+package com.example.conditional.controller;
+
+import com.example.conditional.service.CacheService;
+import com.example.conditional.service.DatabaseService;
+import com.example.conditional.service.NotificationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/demo")
+public class ConditionalBeansController {
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
+
+    @Autowired(required = false)
+    private DatabaseService databaseService;
+
+    @Autowired
+    private CacheService cacheService;
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Value("${spring.profiles.active:default}")
+    private String activeProfile;
+
+    @GetMapping("/test")
+    public Map<String, Object> testConditionalBeans() {
+        Map<String, Object> result = new HashMap<>();
+
+        // Test notification service
+        if (notificationService != null) {
+            notificationService.sendNotification("Test notification");
+            result.put("notificationService", notificationService.getClass().getSimpleName());
+        } else {
+            result.put("notificationService", "No notification service configured");
+        }
+
+        // Test database service
+        if (databaseService != null) {
+            databaseService.saveData("Test data");
+            result.put("databaseService", databaseService.getClass().getSimpleName());
+        } else {
+            result.put("databaseService", "No database service configured");
+        }
+
+        // Test cache service
+        cacheService.cache("test-key", "test-value");
+        Object cachedValue = cacheService.get("test-key");
+        result.put("cacheService", cacheService.getClass().getSimpleName());
+        result.put("cachedValue", cachedValue);
+
+        // Check for conditional beans
+        result.put("activeProfile", activeProfile);
+        result.put("jacksonAvailable", applicationContext.containsBean("jacksonAvailableBean"));
+        result.put("windowsSpecific", applicationContext.containsBean("windowsSpecificBean"));
+        result.put("devMode", applicationContext.containsBean("devModeBean"));
+        result.put("prodMode", applicationContext.containsBean("prodModeBean"));
+
+        return result;
+    }
+
+    @GetMapping("/beans")
+    public Map<String, String> listConditionalBeans() {
+        Map<String, String> beans = new HashMap<>();
+        
+        String[] beanNames = applicationContext.getBeanNamesForType(Object.class);
+        for (String beanName : beanNames) {
+            if (beanName.contains("Service") || beanName.contains("Bean") || 
+                beanName.contains("notification") || beanName.contains("database") ||
+                beanName.contains("cache") || beanName.contains("windows") ||
+                beanName.contains("jackson") || beanName.contains("dev") || 
+                beanName.contains("prod")) {
+                try {
+                    Object bean = applicationContext.getBean(beanName);
+                    beans.put(beanName, bean.getClass().getSimpleName());
+                } catch (Exception e) {
+                    beans.put(beanName, "Error: " + e.getMessage());
+                }
+            }
+        }
+        
+        return beans;
+    }
+}
+
+// ========== Application Properties Examples ==========
+
+# application.properties
+# Uncomment different combinations to test various configurations
+
+# Notification Configuration
+notification.type=email
+# notification.type=sms
+
+# Database Configuration
+database.type=mysql
+# database.type=postgresql
+
+# Cache Configuration
+cache.enabled=true
+# cache.enabled=false
+
+# Profile Configuration
+spring.profiles.active=development
+# spring.profiles.active=production
+# spring.profiles.active=test
+
+# Custom property for expression-based conditions
+os.name=${os.name}
+
+# ========== Build Configuration ==========
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>conditional-beans-demo</artifactId>
+    <version>1.0.0</version>
+    <name>conditional-beans-demo</name>
+    <description>Demo project for Spring Boot Conditional Bean Configuration</description>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
