@@ -1,0 +1,315 @@
+// Main Spring Boot Application
+package com.example.beanpostprocessor;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+
+@SpringBootApplication
+public class BeanPostProcessorDemoApplication {
+    
+    public static void main(String[] args) {
+        ConfigurableApplicationContext context = SpringApplication.run(BeanPostProcessorDemoApplication.class, args);
+        
+        // Test our beans
+        System.out.println("\n=== Testing Beans ===");
+        
+        UserService userService = context.getBean(UserService.class);
+        userService.processUser();
+        
+        EmailService emailService = context.getBean(EmailService.class);
+        emailService.sendEmail();
+        
+        context.close();
+    }
+}
+
+// Custom annotation for auditing
+package com.example.beanpostprocessor.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Auditable {
+    String value() default "";
+}
+
+// Custom annotation for logging
+package com.example.beanpostprocessor.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LogExecution {
+    boolean enabled() default true;
+}
+
+// Service interfaces and implementations
+package com.example.beanpostprocessor.service;
+
+public interface UserService {
+    void processUser();
+}
+
+package com.example.beanpostprocessor.service;
+
+import com.example.beanpostprocessor.annotation.Auditable;
+import com.example.beanpostprocessor.annotation.LogExecution;
+import org.springframework.stereotype.Service;
+
+@Service
+@Auditable("UserService")
+@LogExecution
+public class UserServiceImpl implements UserService {
+    
+    private String serviceName = "UserService";
+    
+    @Override
+    public void processUser() {
+        System.out.println(serviceName + ": Processing user data...");
+    }
+    
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+    
+    public String getServiceName() {
+        return serviceName;
+    }
+}
+
+package com.example.beanpostprocessor.service;
+
+public interface EmailService {
+    void sendEmail();
+}
+
+package com.example.beanpostprocessor.service;
+
+import com.example.beanpostprocessor.annotation.LogExecution;
+import org.springframework.stereotype.Service;
+
+@Service
+@LogExecution
+public class EmailServiceImpl implements EmailService {
+    
+    private String provider = "DefaultProvider";
+    
+    @Override
+    public void sendEmail() {
+        System.out.println("EmailService: Sending email via " + provider);
+    }
+    
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+    
+    public String getProvider() {
+        return provider;
+    }
+}
+
+// BeanPostProcessor implementations
+package com.example.beanpostprocessor.processor;
+
+import com.example.beanpostprocessor.annotation.Auditable;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.stereotype.Component;
+
+@Component
+public class AuditableBeanPostProcessor implements BeanPostProcessor {
+    
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        Auditable auditable = AnnotationUtils.findAnnotation(bean.getClass(), Auditable.class);
+        
+        if (auditable != null) {
+            System.out.println("🔍 AUDIT: Bean '" + beanName + "' is marked for auditing: " + auditable.value());
+            
+            // Example: Modify bean properties before initialization
+            if (bean instanceof com.example.beanpostprocessor.service.UserServiceImpl) {
+                ((com.example.beanpostprocessor.service.UserServiceImpl) bean)
+                    .setServiceName("AuditedUserService");
+            }
+        }
+        
+        return bean;
+    }
+    
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        Auditable auditable = AnnotationUtils.findAnnotation(bean.getClass(), Auditable.class);
+        
+        if (auditable != null) {
+            System.out.println("✅ AUDIT: Bean '" + beanName + "' initialization completed and registered for auditing");
+        }
+        
+        return bean;
+    }
+}
+
+package com.example.beanpostprocessor.processor;
+
+import com.example.beanpostprocessor.annotation.LogExecution;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.stereotype.Component;
+import java.lang.reflect.Proxy;
+
+@Component
+public class LoggingBeanPostProcessor implements BeanPostProcessor {
+    
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        LogExecution logExecution = AnnotationUtils.findAnnotation(bean.getClass(), LogExecution.class);
+        
+        if (logExecution != null && logExecution.enabled()) {
+            System.out.println("📝 LOGGING: Creating proxy for bean '" + beanName + "'");
+            
+            // Create a proxy to intercept method calls
+            return Proxy.newProxyInstance(
+                bean.getClass().getClassLoader(),
+                bean.getClass().getInterfaces(),
+                (proxy, method, args) -> {
+                    System.out.println("🚀 EXECUTING: " + beanName + "." + method.getName() + "()");
+                    long startTime = System.currentTimeMillis();
+                    
+                    try {
+                        Object result = method.invoke(bean, args);
+                        long duration = System.currentTimeMillis() - startTime;
+                        System.out.println("✨ COMPLETED: " + beanName + "." + method.getName() + "() in " + duration + "ms");
+                        return result;
+                    } catch (Exception e) {
+                        System.out.println("❌ ERROR: " + beanName + "." + method.getName() + "() failed: " + e.getMessage());
+                        throw e;
+                    }
+                }
+            );
+        }
+        
+        return bean;
+    }
+}
+
+package com.example.beanpostprocessor.processor;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.stereotype.Component;
+
+@Component
+public class GenericBeanPostProcessor implements BeanPostProcessor {
+    
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        if (beanName.contains("Service")) {
+            System.out.println("⚙️  GENERIC: Preprocessing service bean: " + beanName);
+            
+            // Example: Set default properties for all service beans
+            if (bean instanceof com.example.beanpostprocessor.service.EmailServiceImpl) {
+                ((com.example.beanpostprocessor.service.EmailServiceImpl) bean)
+                    .setProvider("ProcessedEmailProvider");
+            }
+        }
+        
+        return bean;
+    }
+    
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (beanName.contains("Service")) {
+            System.out.println("🏁 GENERIC: Postprocessing service bean: " + beanName);
+        }
+        
+        return bean;
+    }
+}
+
+// Configuration class demonstrating programmatic BeanPostProcessor registration
+package com.example.beanpostprocessor.config;
+
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class BeanPostProcessorConfig {
+    
+    @Bean
+    public static BeanPostProcessor customBeanPostProcessor() {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+                if (beanName.equals("userServiceImpl")) {
+                    System.out.println("🔧 CUSTOM CONFIG: Special handling for userServiceImpl");
+                }
+                return bean;
+            }
+            
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+                System.out.println("📋 CUSTOM CONFIG: Bean '" + beanName + "' of type '" + 
+                    bean.getClass().getSimpleName() + "' is ready");
+                return bean;
+            }
+        };
+    }
+}
+
+// pom.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>beanpostprocessor-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>beanpostprocessor-demo</name>
+    <description>Demo project for Spring Boot BeanPostProcessor</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+// application.properties
+logging.level.com.example.beanpostprocessor=DEBUG
+spring.main.banner-mode=off
