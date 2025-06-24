@@ -1,0 +1,358 @@
+// 1. Custom Field Validator - Email Domain Validator
+package com.example.validation.validator;
+
+import com.example.validation.annotation.ValidEmailDomain;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+public class EmailDomainValidator implements ConstraintValidator<ValidEmailDomain, String> {
+    
+    private String[] allowedDomains;
+    
+    @Override
+    public void initialize(ValidEmailDomain constraintAnnotation) {
+        this.allowedDomains = constraintAnnotation.allowedDomains();
+    }
+    
+    @Override
+    public boolean isValid(String email, ConstraintValidatorContext context) {
+        if (email == null || email.isEmpty()) {
+            return true; // Let @NotNull handle null validation
+        }
+        
+        String[] parts = email.split("@");
+        if (parts.length != 2) {
+            return false;
+        }
+        
+        String domain = parts[1].toLowerCase();
+        for (String allowedDomain : allowedDomains) {
+            if (domain.equals(allowedDomain.toLowerCase())) {
+                return true;
+            }
+        }
+        
+        // Custom error message with domain list
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate(
+            "Email domain must be one of: " + String.join(", ", allowedDomains)
+        ).addConstraintViolation();
+        
+        return false;
+    }
+}
+
+// 2. Custom Annotation for Email Domain
+package com.example.validation.annotation;
+
+import com.example.validation.validator.EmailDomainValidator;
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.*;
+
+@Documented
+@Constraint(validatedBy = EmailDomainValidator.class)
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ValidEmailDomain {
+    
+    String message() default "Email domain is not allowed";
+    
+    Class<?>[] groups() default {};
+    
+    Class<? extends Payload>[] payload() default {};
+    
+    String[] allowedDomains() default {"gmail.com", "yahoo.com", "company.com"};
+}
+
+// 3. Class-Level Validator - Password Confirmation
+package com.example.validation.validator;
+
+import com.example.validation.annotation.PasswordMatches;
+import com.example.validation.dto.UserRegistrationDto;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+
+public class PasswordMatchesValidator implements ConstraintValidator<PasswordMatches, UserRegistrationDto> {
+    
+    @Override
+    public void initialize(PasswordMatches constraintAnnotation) {
+        // No initialization needed
+    }
+    
+    @Override
+    public boolean isValid(UserRegistrationDto dto, ConstraintValidatorContext context) {
+        if (dto.getPassword() == null || dto.getConfirmPassword() == null) {
+            return true; // Let individual field validators handle null checks
+        }
+        
+        boolean matches = dto.getPassword().equals(dto.getConfirmPassword());
+        
+        if (!matches) {
+            // Add error to specific field
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate("Passwords do not match")
+                   .addPropertyNode("confirmPassword")
+                   .addConstraintViolation();
+        }
+        
+        return matches;
+    }
+}
+
+// 4. Class-Level Annotation
+package com.example.validation.annotation;
+
+import com.example.validation.validator.PasswordMatchesValidator;
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.*;
+
+@Documented
+@Constraint(validatedBy = PasswordMatchesValidator.class)
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface PasswordMatches {
+    
+    String message() default "Passwords do not match";
+    
+    Class<?>[] groups() default {};
+    
+    Class<? extends Payload>[] payload() default {};
+}
+
+// 5. DTO with Custom Validations
+package com.example.validation.dto;
+
+import com.example.validation.annotation.PasswordMatches;
+import com.example.validation.annotation.ValidEmailDomain;
+import javax.validation.constraints.*;
+
+@PasswordMatches
+public class UserRegistrationDto {
+    
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
+    private String username;
+    
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please provide a valid email address")
+    @ValidEmailDomain(allowedDomains = {"gmail.com", "company.com", "organization.org"})
+    private String email;
+    
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", 
+             message = "Password must contain at least one lowercase letter, one uppercase letter, and one digit")
+    private String password;
+    
+    @NotBlank(message = "Password confirmation is required")
+    private String confirmPassword;
+    
+    @Min(value = 18, message = "Age must be at least 18")
+    @Max(value = 120, message = "Age must be less than 120")
+    private Integer age;
+    
+    // Constructors
+    public UserRegistrationDto() {}
+    
+    public UserRegistrationDto(String username, String email, String password, String confirmPassword, Integer age) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.confirmPassword = confirmPassword;
+        this.age = age;
+    }
+    
+    // Getters and Setters
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    
+    public String getConfirmPassword() { return confirmPassword; }
+    public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
+    
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
+}
+
+// 6. Controller with Validation
+package com.example.validation.controller;
+
+import com.example.validation.dto.UserRegistrationDto;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDto userDto, 
+                                        BindingResult bindingResult) {
+        
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            
+            // Collect field errors
+            for (FieldError error : bindingResult.getFieldErrors()) {
+                errors.put(error.getField(), error.getDefaultMessage());
+            }
+            
+            // Collect global errors (class-level validation)
+            bindingResult.getGlobalErrors().forEach(error -> {
+                errors.put("global", error.getDefaultMessage());
+            });
+            
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Validation failed",
+                "errors", errors
+            ));
+        }
+        
+        // Process registration logic here
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "User registered successfully",
+            "username", userDto.getUsername()
+        ));
+    }
+    
+    // Alternative endpoint showing manual validation
+    @PostMapping("/register-manual")
+    public ResponseEntity<?> registerUserManual(@RequestBody UserRegistrationDto userDto) {
+        
+        // Manual validation example
+        Map<String, String> errors = new HashMap<>();
+        
+        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty()) {
+            errors.put("username", "Username is required");
+        } else if (userDto.getUsername().length() < 3) {
+            errors.put("username", "Username must be at least 3 characters");
+        }
+        
+        if (userDto.getEmail() == null || !userDto.getEmail().contains("@")) {
+            errors.put("email", "Valid email is required");
+        }
+        
+        if (!errors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "errors", errors
+            ));
+        }
+        
+        return ResponseEntity.ok(Map.of("success", true, "message", "Registration successful"));
+    }
+}
+
+// 7. Global Exception Handler
+package com.example.validation.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+public class ValidationExceptionHandler {
+    
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+        
+        Map<String, String> errors = new HashMap<>();
+        
+        ex.getBindingResult().getFieldErrors().forEach(error -> 
+            errors.put(error.getField(), error.getDefaultMessage())
+        );
+        
+        ex.getBindingResult().getGlobalErrors().forEach(error ->
+            errors.put("global", error.getDefaultMessage())
+        );
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", "Validation failed");
+        response.put("errors", errors);
+        
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolationException(
+            ConstraintViolationException ex) {
+        
+        Map<String, String> errors = new HashMap<>();
+        
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            String fieldName = violation.getPropertyPath().toString();
+            String message = violation.getMessage();
+            errors.put(fieldName, message);
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", "Validation failed");
+        response.put("errors", errors);
+        
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+}
+
+// 8. Configuration Class (Optional)
+package com.example.validation.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
+
+@Configuration
+@Validated
+public class ValidationConfig {
+    // Additional validation configuration if needed
+}
+
+// 9. Main Application Class
+package com.example.validation;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ValidationApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ValidationApplication.class, args);
+    }
+}
+
+// 10. Maven Dependencies (add to pom.xml)
+/*
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+</dependencies>
+*/
