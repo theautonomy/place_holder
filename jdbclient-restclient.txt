@@ -1,0 +1,522 @@
+// pom.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>jdbc-rest-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>jdbc-rest-demo</name>
+    <description>Demo project for JdbcClient and RestClient</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+// src/main/java/com/example/jdbcrestdemo/JdbcRestDemoApplication.java
+package com.example.jdbcrestdemo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class JdbcRestDemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(JdbcRestDemoApplication.class, args);
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/model/User.java
+package com.example.jdbcrestdemo.model;
+
+public class User {
+    private Long id;
+    private String name;
+    private String email;
+    
+    public User() {}
+    
+    public User(Long id, String name, String email) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    @Override
+    public String toString() {
+        return "User{id=" + id + ", name='" + name + "', email='" + email + "'}";
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/model/Post.java
+package com.example.jdbcrestdemo.model;
+
+public class Post {
+    private Long id;
+    private Long userId;
+    private String title;
+    private String body;
+    
+    public Post() {}
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    
+    public String getBody() { return body; }
+    public void setBody(String body) { this.body = body; }
+    
+    @Override
+    public String toString() {
+        return "Post{id=" + id + ", userId=" + userId + ", title='" + title + "', body='" + body + "'}";
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/repository/UserRepository.java
+package com.example.jdbcrestdemo.repository;
+
+import com.example.jdbcrestdemo.model.User;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public class UserRepository {
+    
+    private final JdbcClient jdbcClient;
+    
+    public UserRepository(JdbcClient jdbcClient) {
+        this.jdbcClient = jdbcClient;
+    }
+    
+    public List<User> findAll() {
+        return jdbcClient.sql("SELECT * FROM users")
+                .query(User.class)
+                .list();
+    }
+    
+    public Optional<User> findById(Long id) {
+        return jdbcClient.sql("SELECT * FROM users WHERE id = ?")
+                .param(id)
+                .query(User.class)
+                .optional();
+    }
+    
+    public Optional<User> findByEmail(String email) {
+        return jdbcClient.sql("SELECT * FROM users WHERE email = :email")
+                .param("email", email)
+                .query(User.class)
+                .optional();
+    }
+    
+    public User save(User user) {
+        if (user.getId() == null) {
+            // Insert new user
+            Number generatedId = jdbcClient.sql("INSERT INTO users (name, email) VALUES (?, ?)")
+                    .param(user.getName())
+                    .param(user.getEmail())
+                    .update()
+                    .generatedKeys()
+                    .single();
+            user.setId(generatedId.longValue());
+        } else {
+            // Update existing user
+            jdbcClient.sql("UPDATE users SET name = ?, email = ? WHERE id = ?")
+                    .param(user.getName())
+                    .param(user.getEmail())
+                    .param(user.getId())
+                    .update();
+        }
+        return user;
+    }
+    
+    public void deleteById(Long id) {
+        jdbcClient.sql("DELETE FROM users WHERE id = ?")
+                .param(id)
+                .update();
+    }
+    
+    public long count() {
+        return jdbcClient.sql("SELECT COUNT(*) FROM users")
+                .query(Long.class)
+                .single();
+    }
+    
+    public List<User> findByNameContaining(String name) {
+        return jdbcClient.sql("SELECT * FROM users WHERE name LIKE ?")
+                .param("%" + name + "%")
+                .query(User.class)
+                .list();
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/service/ExternalApiService.java
+package com.example.jdbcrestdemo.service;
+
+import com.example.jdbcrestdemo.model.Post;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.List;
+
+@Service
+public class ExternalApiService {
+    
+    private final RestClient restClient;
+    
+    public ExternalApiService(RestClient.Builder restClientBuilder) {
+        this.restClient = restClientBuilder
+                .baseUrl("https://jsonplaceholder.typicode.com")
+                .build();
+    }
+    
+    public List<Post> getAllPosts() {
+        return restClient.get()
+                .uri("/posts")
+                .retrieve()
+                .body(List.class);
+    }
+    
+    public Post getPostById(Long id) {
+        return restClient.get()
+                .uri("/posts/{id}", id)
+                .retrieve()
+                .body(Post.class);
+    }
+    
+    public List<Post> getPostsByUserId(Long userId) {
+        return restClient.get()
+                .uri("/posts?userId={userId}", userId)
+                .retrieve()
+                .body(List.class);
+    }
+    
+    public Post createPost(Post post) {
+        return restClient.post()
+                .uri("/posts")
+                .body(post)
+                .retrieve()
+                .body(Post.class);
+    }
+    
+    public Post updatePost(Long id, Post post) {
+        return restClient.put()
+                .uri("/posts/{id}", id)
+                .body(post)
+                .retrieve()
+                .body(Post.class);
+    }
+    
+    public void deletePost(Long id) {
+        restClient.delete()
+                .uri("/posts/{id}", id)
+                .retrieve()
+                .toBodilessEntity();
+    }
+    
+    // Example with custom headers and error handling
+    public Post getPostWithCustomHeaders(Long id) {
+        return restClient.get()
+                .uri("/posts/{id}", id)
+                .header("Custom-Header", "demo-value")
+                .header("Accept", "application/json")
+                .retrieve()
+                .onStatus(status -> status.value() == 404, 
+                    (request, response) -> {
+                        throw new RuntimeException("Post not found with id: " + id);
+                    })
+                .body(Post.class);
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/service/UserService.java
+package com.example.jdbcrestdemo.service;
+
+import com.example.jdbcrestdemo.model.User;
+import com.example.jdbcrestdemo.repository.UserRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class UserService {
+    
+    private final UserRepository userRepository;
+    
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+    
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+    
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+    
+    public User createUser(User user) {
+        return userRepository.save(user);
+    }
+    
+    public User updateUser(User user) {
+        return userRepository.save(user);
+    }
+    
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+    
+    public long getUserCount() {
+        return userRepository.count();
+    }
+    
+    public List<User> searchUsersByName(String name) {
+        return userRepository.findByNameContaining(name);
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/controller/UserController.java
+package com.example.jdbcrestdemo.controller;
+
+import com.example.jdbcrestdemo.model.User;
+import com.example.jdbcrestdemo.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    
+    private final UserService userService;
+    
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+    
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userService.getAllUsers();
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        return userService.getUserById(id)
+                .map(user -> ResponseEntity.ok(user))
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/search")
+    public List<User> searchUsers(@RequestParam String name) {
+        return userService.searchUsersByName(name);
+    }
+    
+    @GetMapping("/email/{email}")
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+        return userService.getUserByEmail(email)
+                .map(user -> ResponseEntity.ok(user))
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User createdUser = userService.createUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+        user.setId(id);
+        User updatedUser = userService.updateUser(user);
+        return ResponseEntity.ok(updatedUser);
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/count")
+    public long getUserCount() {
+        return userService.getUserCount();
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/controller/PostController.java
+package com.example.jdbcrestdemo.controller;
+
+import com.example.jdbcrestdemo.model.Post;
+import com.example.jdbcrestdemo.service.ExternalApiService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/posts")
+public class PostController {
+    
+    private final ExternalApiService externalApiService;
+    
+    public PostController(ExternalApiService externalApiService) {
+        this.externalApiService = externalApiService;
+    }
+    
+    @GetMapping
+    public List<Post> getAllPosts() {
+        return externalApiService.getAllPosts();
+    }
+    
+    @GetMapping("/{id}")
+    public Post getPostById(@PathVariable Long id) {
+        return externalApiService.getPostById(id);
+    }
+    
+    @GetMapping("/user/{userId}")
+    public List<Post> getPostsByUserId(@PathVariable Long userId) {
+        return externalApiService.getPostsByUserId(userId);
+    }
+    
+    @PostMapping
+    public Post createPost(@RequestBody Post post) {
+        return externalApiService.createPost(post);
+    }
+    
+    @PutMapping("/{id}")
+    public Post updatePost(@PathVariable Long id, @RequestBody Post post) {
+        return externalApiService.updatePost(id, post);
+    }
+    
+    @DeleteMapping("/{id}")
+    public void deletePost(@PathVariable Long id) {
+        externalApiService.deletePost(id);
+    }
+    
+    @GetMapping("/{id}/custom")
+    public Post getPostWithCustomHeaders(@PathVariable Long id) {
+        return externalApiService.getPostWithCustomHeaders(id);
+    }
+}
+
+// src/main/java/com/example/jdbcrestdemo/config/DatabaseConfig.java
+package com.example.jdbcrestdemo.config;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.simple.JdbcClient;
+
+@Configuration
+public class DatabaseConfig {
+    
+    @Bean
+    CommandLineRunner initDatabase(JdbcClient jdbcClient) {
+        return args -> {
+            // Create users table
+            jdbcClient.sql("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL
+                )
+                """).update();
+            
+            // Insert sample data
+            jdbcClient.sql("INSERT INTO users (name, email) VALUES (?, ?)")
+                    .param("John Doe").param("john.doe@example.com")
+                    .update();
+            
+            jdbcClient.sql("INSERT INTO users (name, email) VALUES (?, ?)")
+                    .param("Jane Smith").param("jane.smith@example.com")
+                    .update();
+            
+            jdbcClient.sql("INSERT INTO users (name, email) VALUES (?, ?)")
+                    .param("Bob Johnson").param("bob.johnson@example.com")
+                    .update();
+        };
+    }
+}
+
+# src/main/resources/application.properties
+# Database Configuration
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+# H2 Console Configuration
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+
+# JPA Configuration
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=none
+
+# Server Configuration
+server.port=8080
+
+# Logging Configuration
+logging.level.org.springframework.jdbc=DEBUG
+logging.level.org.springframework.web.client=DEBUG
