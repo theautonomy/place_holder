@@ -1,0 +1,940 @@
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
+
+// Sample data classes
+class Employee {
+    private String name;
+    private int age;
+    private String department;
+    private double salary;
+    private List<String> skills;
+
+    public Employee(String name, int age, String department, double salary, List<String> skills) {
+        this.name = name;
+        this.age = age;
+        this.department = department;
+        this.salary = salary;
+        this.skills = skills;
+    }
+
+    // Getters
+    public String getName() { return name; }
+    public int getAge() { return age; }
+    public String getDepartment() { return department; }
+    public double getSalary() { return salary; }
+    public List<String> getSkills() { return skills; }
+
+    @Override
+    public String toString() {
+        return String.format("Employee{name='%s', age=%d, department='%s', salary=%.2f, skills=%s}",
+                name, age, department, salary, skills);
+    }
+}
+
+class Product {
+    private String name;
+    private String category;
+    private double price;
+    private int stock;
+
+    public Product(String name, String category, double price, int stock) {
+        this.name = name;
+        this.category = category;
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public String getName() { return name; }
+    public String getCategory() { return category; }
+    public double getPrice() { return price; }
+    public int getStock() { return stock; }
+
+    @Override
+    public String toString() {
+        return String.format("Product{name='%s', category='%s', price=%.2f, stock=%d}",
+                name, category, price, stock);
+    }
+}
+
+public class Java8FunctionalDemo {
+    
+    // Sample data
+    private static List<Employee> employees = Arrays.asList(
+        new Employee("Alice", 28, "Engineering", 75000, Arrays.asList("Java", "Python", "SQL")),
+        new Employee("Bob", 32, "Marketing", 65000, Arrays.asList("SEO", "Analytics", "Content")),
+        new Employee("Charlie", 45, "Engineering", 95000, Arrays.asList("Java", "Microservices", "AWS")),
+        new Employee("Diana", 29, "HR", 55000, Arrays.asList("Recruiting", "Training")),
+        new Employee("Eve", 35, "Engineering", 85000, Arrays.asList("Python", "Machine Learning", "AWS")),
+        new Employee("Frank", 26, "Sales", 50000, Arrays.asList("CRM", "Negotiation")),
+        new Employee("Grace", 38, "Engineering", 90000, Arrays.asList("Java", "Spring", "Docker"))
+    );
+
+    private static List<Product> products = Arrays.asList(
+        new Product("Laptop", "Electronics", 999.99, 50),
+        new Product("Mouse", "Electronics", 29.99, 200),
+        new Product("Desk", "Furniture", 299.99, 25),
+        new Product("Chair", "Furniture", 199.99, 30),
+        new Product("Monitor", "Electronics", 249.99, 75),
+        new Product("Book", "Education", 19.99, 100),
+        new Product("Pen", "Office", 2.99, 500)
+    );
+
+    public static void main(String[] args) {
+        System.out.println("=== JAVA 8 FUNCTIONAL PROGRAMMING DEMO ===\n");
+
+        // 1. BASIC LAMBDA EXPRESSIONS
+        basicLambdaExpressions();
+
+        // 2. FUNCTIONAL INTERFACES
+        functionalInterfaces();
+
+        // 3. STREAM OPERATIONS
+        streamOperations();
+
+        // 4. ADVANCED STREAM OPERATIONS
+        advancedStreamOperations();
+
+        // 5. COLLECTORS
+        collectorsDemo();
+
+        // 6. PARALLEL STREAMS
+        parallelStreamsDemo();
+
+        // 7. OPTIONAL
+        optionalDemo();
+
+        // 8. METHOD REFERENCES
+        methodReferencesDemo();
+    }
+
+    // 1. Basic Lambda Expressions
+    private static void basicLambdaExpressions() {
+        System.out.println("1. BASIC LAMBDA EXPRESSIONS");
+        System.out.println("============================");
+
+        // Traditional approach vs Lambda
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "Diana");
+
+        // Old way
+        Collections.sort(names, new Comparator<String>() {
+            @Override
+            public int compare(String a, String b) {
+                return a.compareTo(b);
+            }
+        });
+
+        // Lambda way
+        names.sort((a, b) -> a.compareTo(b));
+        // Even shorter with method reference
+        names.sort(String::compareTo);
+
+        System.out.println("Sorted names: " + names);
+
+        // Different lambda syntax variations
+        Function<Integer, Integer> square1 = (Integer x) -> { return x * x; }; // Full syntax
+        Function<Integer, Integer> square2 = (x) -> x * x; // Type inference
+        Function<Integer, Integer> square3 = x -> x * x; // Single parameter
+
+        System.out.println("Square of 5: " + square3.apply(5));
+        // Bonus: Advanced Optional patterns
+        demonstrateAdvancedOptionalPatterns();
+
+        System.out.println();
+    }
+
+    // Advanced Optional patterns demonstration
+    private static void demonstrateAdvancedOptionalPatterns() {
+        System.out.println("\n=== ADVANCED OPTIONAL PATTERNS ===");
+        
+        // 1. Optional with try-catch replacement
+        System.out.println("\n1. Optional for Exception Handling:");
+        Optional<Integer> safeParseInt = parseIntSafely("123");
+        safeParseInt.ifPresentOrElse(
+            num -> System.out.println("  Parsed number: " + num),
+            () -> System.out.println("  Failed to parse number")
+        );
+        
+        Optional<Integer> failedParse = parseIntSafely("abc");
+        System.out.println("  Parsing 'abc' successful: " + failedParse.isPresent());
+        
+        // 2. Optional for configuration values
+        System.out.println("\n2. Optional for Configuration:");
+        String configValue = getConfigValue("database.url")
+            .orElse("jdbc:h2:mem:testdb"); // Default fallback
+        System.out.println("  Database URL: " + configValue);
+        
+        int timeout = getConfigValue("timeout")
+            .flatMap(OptionalUtilities::parseIntSafely)
+            .orElse(30); // Default timeout
+        System.out.println("  Timeout value: " + timeout + " seconds");
+        
+        // 3. Optional chain with multiple data sources
+        System.out.println("\n3. Multiple Data Source Fallback:");
+        String userInfo = findUserInPrimaryDB("user123")
+            .or(() -> findUserInSecondaryDB("user123"))
+            .or(() -> findUserInCache("user123"))
+            .map(user -> "Found user: " + user)
+            .orElse("User not found in any system");
+        System.out.println("  " + userInfo);
+        
+        // 4. Optional for builder pattern
+        System.out.println("\n4. Optional in Builder Pattern:");
+        EmailBuilder.newEmail()
+            .to("recipient@example.com")
+            .subject("Optional Demo")
+            .body("Hello from Optional!")
+            .cc("cc@example.com")
+            .build()
+            .ifPresent(email -> System.out.println("  Email created: " + email));
+    }
+    
+    // Utility method for safe integer parsing
+    private static Optional<Integer> parseIntSafely(String str) {
+        try {
+            return Optional.of(Integer.parseInt(str));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+    
+    // Simulate configuration lookup
+    private static Optional<String> getConfigValue(String key) {
+        Map<String, String> config = Map.of(
+            "database.url", "jdbc:postgresql://localhost/mydb",
+            "app.name", "OptionalDemo"
+        );
+        return Optional.ofNullable(config.get(key));
+    }
+    
+    // Simulate multiple data sources
+    private static Optional<String> findUserInPrimaryDB(String userId) {
+        return Optional.empty(); // Simulate not found
+    }
+    
+    private static Optional<String> findUserInSecondaryDB(String userId) {
+        return userId.equals("user123") ? 
+            Optional.of("John Doe (Secondary DB)") : Optional.empty();
+    }
+    
+    private static Optional<String> findUserInCache(String userId) {
+        return Optional.of("Cached User"); // Always has a cached version
+    }
+    
+    // Example of Optional in builder pattern
+    static class EmailBuilder {
+        private String to;
+        private String subject;
+        private String body;
+        private Optional<String> cc = Optional.empty();
+        private Optional<String> bcc = Optional.empty();
+        
+        public static EmailBuilder newEmail() {
+            return new EmailBuilder();
+        }
+        
+        public EmailBuilder to(String to) {
+            this.to = to;
+            return this;
+        }
+        
+        public EmailBuilder subject(String subject) {
+            this.subject = subject;
+            return this;
+        }
+        
+        public EmailBuilder body(String body) {
+            this.body = body;
+            return this;
+        }
+        
+        public EmailBuilder cc(String cc) {
+            this.cc = Optional.ofNullable(cc);
+            return this;
+        }
+        
+        public EmailBuilder bcc(String bcc) {
+            this.bcc = Optional.ofNullable(bcc);
+            return this;
+        }
+        
+        public Optional<String> build() {
+            if (to == null || subject == null || body == null) {
+                return Optional.empty();
+            }
+            
+            StringBuilder email = new StringBuilder()
+                .append("To: ").append(to).append("\n")
+                .append("Subject: ").append(subject).append("\n");
+            
+            cc.ifPresent(ccAddr -> email.append("CC: ").append(ccAddr).append("\n"));
+            bcc.ifPresent(bccAddr -> email.append("BCC: ").append(bccAddr).append("\n"));
+            
+            email.append("Body: ").append(body);
+            
+            return Optional.of(email.toString());
+        }
+    }
+
+    // 2. Functional Interfaces
+    private static void functionalInterfaces() {
+        System.out.println("2. FUNCTIONAL INTERFACES");
+        System.out.println("=========================");
+
+        // Predicate - returns boolean
+        Predicate<Employee> isEngineer = emp -> "Engineering".equals(emp.getDepartment());
+        Predicate<Employee> isHighEarner = emp -> emp.getSalary() > 80000;
+
+        // Function - transforms input to output
+        Function<Employee, String> getEmployeeInfo = emp -> 
+            emp.getName() + " (" + emp.getDepartment() + ")";
+
+        // Consumer - consumes input, returns nothing
+        Consumer<Employee> printEmployee = emp -> 
+            System.out.println("Employee: " + emp.getName());
+
+        // Supplier - supplies value
+        Supplier<Employee> createEmployee = () -> 
+            new Employee("New Employee", 25, "IT", 60000, Arrays.asList("Java"));
+
+        // Using functional interfaces
+        System.out.println("Engineers:");
+        employees.stream()
+            .filter(isEngineer)
+            .forEach(printEmployee);
+
+        System.out.println("\nHigh-earning Engineers:");
+        employees.stream()
+            .filter(isEngineer.and(isHighEarner))
+            .map(getEmployeeInfo)
+            .forEach(System.out::println);
+
+        System.out.println("\nNew employee: " + createEmployee.get().getName());
+        System.out.println();
+    }
+
+    // 3. Stream Operations
+    private static void streamOperations() {
+        System.out.println("3. STREAM OPERATIONS");
+        System.out.println("====================");
+
+        // Filter - select elements matching criteria
+        System.out.println("Employees earning more than $70,000:");
+        employees.stream()
+            .filter(emp -> emp.getSalary() > 70000)
+            .forEach(emp -> System.out.println("  " + emp.getName() + ": $" + emp.getSalary()));
+
+        // Map - transform elements
+        System.out.println("\nEmployee names in uppercase:");
+        employees.stream()
+            .map(emp -> emp.getName().toUpperCase())
+            .forEach(name -> System.out.println("  " + name));
+
+        // Sorted - sort elements
+        System.out.println("\nEmployees sorted by salary (ascending):");
+        employees.stream()
+            .sorted(Comparator.comparing(Employee::getSalary))
+            .forEach(emp -> System.out.println("  " + emp.getName() + ": $" + emp.getSalary()));
+
+        // Limit and Skip
+        System.out.println("\nTop 3 highest paid employees:");
+        employees.stream()
+            .sorted(Comparator.comparing(Employee::getSalary).reversed())
+            .limit(3)
+            .forEach(emp -> System.out.println("  " + emp.getName() + ": $" + emp.getSalary()));
+
+        // Distinct
+        System.out.println("\nUnique departments:");
+        employees.stream()
+            .map(Employee::getDepartment)
+            .distinct()
+            .forEach(dept -> System.out.println("  " + dept));
+
+        System.out.println();
+    }
+
+    // 4. Advanced Stream Operations
+    private static void advancedStreamOperations() {
+        System.out.println("4. ADVANCED STREAM OPERATIONS");
+        System.out.println("==============================");
+
+        // FlatMap - flatten nested structures
+        System.out.println("All skills across all employees:");
+        employees.stream()
+            .flatMap(emp -> emp.getSkills().stream())
+            .distinct()
+            .sorted()
+            .forEach(skill -> System.out.println("  " + skill));
+
+        // Reduce - aggregate elements
+        double totalSalary = employees.stream()
+            .mapToDouble(Employee::getSalary)
+            .reduce(0.0, Double::sum);
+        System.out.println("\nTotal salary budget: $" + totalSalary);
+
+        // Find operations
+        Optional<Employee> youngestEmployee = employees.stream()
+            .min(Comparator.comparing(Employee::getAge));
+        youngestEmployee.ifPresent(emp -> 
+            System.out.println("Youngest employee: " + emp.getName() + " (age " + emp.getAge() + ")"));
+
+        // Match operations
+        boolean hasEngineer = employees.stream()
+            .anyMatch(emp -> "Engineering".equals(emp.getDepartment()));
+        System.out.println("Has engineers: " + hasEngineer);
+
+        boolean allAdults = employees.stream()
+            .allMatch(emp -> emp.getAge() >= 18);
+        System.out.println("All employees are adults: " + allAdults);
+
+        // Count
+        long engineerCount = employees.stream()
+            .filter(emp -> "Engineering".equals(emp.getDepartment()))
+            .count();
+        System.out.println("Number of engineers: " + engineerCount);
+
+        System.out.println();
+    }
+
+    // 5. Collectors
+    private static void collectorsDemo() {
+        System.out.println("5. COLLECTORS");
+        System.out.println("==============");
+
+        // Collect to List
+        List<String> engineerNames = employees.stream()
+            .filter(emp -> "Engineering".equals(emp.getDepartment()))
+            .map(Employee::getName)
+            .collect(Collectors.toList());
+        System.out.println("Engineer names: " + engineerNames);
+
+        // Collect to Set
+        Set<String> departments = employees.stream()
+            .map(Employee::getDepartment)
+            .collect(Collectors.toSet());
+        System.out.println("Unique departments: " + departments);
+
+        // Group by
+        Map<String, List<Employee>> employeesByDept = employees.stream()
+            .collect(Collectors.groupingBy(Employee::getDepartment));
+        System.out.println("\nEmployees by department:");
+        employeesByDept.forEach((dept, empList) -> {
+            System.out.println("  " + dept + ": " + 
+                empList.stream().map(Employee::getName).collect(Collectors.joining(", ")));
+        });
+
+        // Partition by
+        Map<Boolean, List<Employee>> partitionedByAge = employees.stream()
+            .collect(Collectors.partitioningBy(emp -> emp.getAge() > 30));
+        System.out.println("\nEmployees over 30: " + 
+            partitionedByAge.get(true).stream().map(Employee::getName).collect(Collectors.joining(", ")));
+        System.out.println("Employees 30 or under: " + 
+            partitionedByAge.get(false).stream().map(Employee::getName).collect(Collectors.joining(", ")));
+
+        // Statistical collectors
+        DoubleSummaryStatistics salaryStats = employees.stream()
+            .collect(Collectors.summarizingDouble(Employee::getSalary));
+        System.out.println("\nSalary statistics:");
+        System.out.println("  Average: $" + String.format("%.2f", salaryStats.getAverage()));
+        System.out.println("  Min: $" + salaryStats.getMin());
+        System.out.println("  Max: $" + salaryStats.getMax());
+        System.out.println("  Total: $" + salaryStats.getSum());
+
+        // Custom collector - joining with custom formatting
+        String employeeSummary = employees.stream()
+            .map(emp -> emp.getName() + "($" + emp.getSalary() + ")")
+            .collect(Collectors.joining(", ", "Employees: [", "]"));
+        System.out.println("\n" + employeeSummary);
+
+        System.out.println();
+    }
+
+    // 6. Parallel Streams
+    private static void parallelStreamsDemo() {
+        System.out.println("6. PARALLEL STREAMS");
+        System.out.println("===================");
+
+        // Generate large dataset for demonstration
+        List<Integer> numbers = IntStream.rangeClosed(1, 1_000_000)
+            .boxed()
+            .collect(Collectors.toList());
+
+        // Sequential processing
+        long startTime = System.currentTimeMillis();
+        long sequentialSum = numbers.stream()
+            .mapToLong(i -> i * i)
+            .sum();
+        long sequentialTime = System.currentTimeMillis() - startTime;
+
+        // Parallel processing
+        startTime = System.currentTimeMillis();
+        long parallelSum = numbers.parallelStream()
+            .mapToLong(i -> i * i)
+            .sum();
+        long parallelTime = System.currentTimeMillis() - startTime;
+
+        System.out.println("Sequential sum: " + sequentialSum + " (Time: " + sequentialTime + "ms)");
+        System.out.println("Parallel sum: " + parallelSum + " (Time: " + parallelTime + "ms)");
+        System.out.println("Speedup: " + String.format("%.2f", (double) sequentialTime / parallelTime) + "x");
+
+        // Note: Parallel streams work best with:
+        // - Large datasets
+        // - CPU-intensive operations
+        // - Stateless operations
+        // - Operations that can be easily parallelized
+
+        System.out.println();
+    }
+
+    // 7. Optional
+    private static void optionalDemo() {
+        System.out.println("7. OPTIONAL - AVOIDING NULL CHECKS");
+        System.out.println("===================================");
+
+        // Creating Optionals
+        Optional<String> nonEmpty = Optional.of("Hello");
+        Optional<String> empty = Optional.empty();
+        Optional<String> nullable = Optional.ofNullable(null);
+
+        // 1. Basic Optional usage to avoid null checks
+        System.out.println("1. Basic Optional Usage:");
+        Optional<Employee> foundEmployee = findEmployeeByName("Alice");
+        foundEmployee.ifPresent(emp -> System.out.println("  Found: " + emp.getName()));
+
+        Optional<Employee> notFound = findEmployeeByName("John");
+        System.out.println("  Employee 'John' found: " + notFound.isPresent());
+
+        // 2. Optional chaining to avoid nested null checks
+        System.out.println("\n2. Optional Chaining:");
+        String employeeDepartment = findEmployeeByName("Bob")
+            .map(Employee::getDepartment)
+            .orElse("Unknown Department");
+        System.out.println("  Bob's department: " + employeeDepartment);
+
+        // 3. Complex chaining with nested object access
+        System.out.println("\n3. Complex Object Navigation:");
+        // Traditional null-checking approach (what we're avoiding):
+        /*
+        Employee emp = findEmployeeByNameOldWay("Alice");
+        String firstSkill = null;
+        if (emp != null) {
+            List<String> skills = emp.getSkills();
+            if (skills != null && !skills.isEmpty()) {
+                firstSkill = skills.get(0);
+            }
+        }
+        if (firstSkill == null) {
+            firstSkill = "No skills";
+        }
+        */
+
+        // Functional approach with Optional:
+        String firstSkill = findEmployeeByName("Alice")
+            .map(Employee::getSkills)
+            .filter(skills -> !skills.isEmpty())
+            .map(skills -> skills.get(0))
+            .orElse("No skills");
+        System.out.println("  Alice's first skill: " + firstSkill);
+
+        // 4. Optional with default values and lazy evaluation
+        System.out.println("\n4. Default Values and Lazy Evaluation:");
+        Employee defaultEmployee = findEmployeeByName("NonExistent")
+            .orElse(new Employee("Default", 0, "None", 0, Arrays.asList()));
+        System.out.println("  Default employee: " + defaultEmployee.getName());
+
+        // orElseGet for expensive default creation (lazy evaluation)
+        Employee lazyDefault = findEmployeeByName("NonExistent")
+            .orElseGet(() -> createDefaultEmployee());
+        System.out.println("  Lazy default employee: " + lazyDefault.getName());
+
+        // 5. Optional with exceptions
+        System.out.println("\n5. Optional with Exceptions:");
+        try {
+            Employee required = findEmployeeByName("NonExistent")
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        } catch (RuntimeException e) {
+            System.out.println("  Exception caught: " + e.getMessage());
+        }
+
+        // orElseThrow with specific exception types
+        try {
+            Employee critical = findEmployeeByName("Missing")
+                .orElseThrow(() -> new IllegalArgumentException("Critical employee missing"));
+        } catch (IllegalArgumentException e) {
+            System.out.println("  Specific exception: " + e.getMessage());
+        }
+
+        // 6. Optional filtering to replace conditional logic
+        System.out.println("\n6. Optional Filtering:");
+        findEmployeeByName("Charlie")
+            .filter(emp -> emp.getSalary() > 80000)
+            .ifPresent(emp -> System.out.println("  " + emp.getName() + " is a high earner"));
+
+        findEmployeeByName("Frank")
+            .filter(emp -> emp.getSalary() > 80000)
+            .ifPresentOrElse(
+                emp -> System.out.println("  " + emp.getName() + " is a high earner"),
+                () -> System.out.println("  Frank is not a high earner")
+            );
+
+        // 7. Optional in method return types
+        System.out.println("\n7. Optional in Method Returns:");
+        String managerInfo = getEmployeeManager("Alice")
+            .map(manager -> "Manager: " + manager.getName())
+            .orElse("No manager assigned");
+        System.out.println("  " + managerInfo);
+
+        // 8. Optional with flatMap for nested Optionals
+        System.out.println("\n8. FlatMap with Nested Optionals:");
+        Optional<String> departmentManager = findEmployeeByName("Bob")
+            .flatMap(emp -> getDepartmentManager(emp.getDepartment()))
+            .map(Employee::getName);
+        System.out.println("  Bob's department manager: " + 
+            departmentManager.orElse("No department manager"));
+
+        // 9. Optional collections and streams
+        System.out.println("\n9. Optional with Collections:");
+        List<String> skills = findEmployeeByName("Alice")
+            .map(Employee::getSkills)
+            .orElse(Collections.emptyList());
+        System.out.println("  Alice's skills count: " + skills.size());
+
+        // Convert collection to Optional
+        Optional<String> bestSkill = findEmployeeByName("Charlie")
+            .map(Employee::getSkills)
+            .flatMap(skillList -> skillList.stream()
+                .filter(skill -> skill.contains("Java"))
+                .findFirst());
+        bestSkill.ifPresent(skill -> System.out.println("  Charlie's Java skill: " + skill));
+
+        // 10. Optional transformation chains
+        System.out.println("\n10. Complex Transformation Chains:");
+        
+        // Traditional approach with multiple null checks:
+        /*
+        Employee emp = findEmployeeByNameOldWay("Eve");
+        String result = "Unknown";
+        if (emp != null) {
+            String dept = emp.getDepartment();
+            if (dept != null && dept.equals("Engineering")) {
+                double salary = emp.getSalary();
+                if (salary > 80000) {
+                    String name = emp.getName();
+                    if (name != null) {
+                        result = name.toUpperCase() + " - SENIOR ENGINEER";
+                    }
+                }
+            }
+        }
+        */
+
+        // Functional approach:
+        String seniorEngineer = findEmployeeByName("Eve")
+            .filter(emp -> "Engineering".equals(emp.getDepartment()))
+            .filter(emp -> emp.getSalary() > 80000)
+            .map(Employee::getName)
+            .map(name -> name.toUpperCase() + " - SENIOR ENGINEER")
+            .orElse("Not a senior engineer");
+        System.out.println("  Eve's status: " + seniorEngineer);
+
+        // 11. Optional with side effects
+        System.out.println("\n11. Optional with Side Effects:");
+        findEmployeeByName("Diana")
+            .ifPresentOrElse(
+                emp -> {
+                    System.out.println("  Processing employee: " + emp.getName());
+                    // Could perform logging, notifications, etc.
+                },
+                () -> {
+                    System.out.println("  Employee not found - logging this event");
+                    // Could log the missing employee event
+                }
+            );
+
+        // 12. Optional in business logic
+        System.out.println("\n12. Optional in Business Logic:");
+        
+        // Salary calculation with Optional
+        Double bonusEligibleSalary = findEmployeeByName("Grace")
+            .filter(emp -> emp.getAge() > 30)
+            .filter(emp -> "Engineering".equals(emp.getDepartment()))
+            .map(Employee::getSalary)
+            .filter(salary -> salary > 75000)
+            .orElse(null);
+
+        if (bonusEligibleSalary != null) {
+            System.out.println("  Grace is eligible for bonus on salary: $" + bonusEligibleSalary);
+        } else {
+            System.out.println("  Grace is not eligible for bonus");
+        }
+
+        // Better approach - keep it in Optional context
+        String bonusMessage = findEmployeeByName("Grace")
+            .filter(emp -> emp.getAge() > 30)
+            .filter(emp -> "Engineering".equals(emp.getDepartment()))
+            .filter(emp -> emp.getSalary() > 75000)
+            .map(emp -> emp.getName() + " is eligible for bonus on salary: $" + emp.getSalary())
+            .orElse("Grace is not eligible for bonus");
+        System.out.println("  " + bonusMessage);
+
+        // 13. Optional with validation chains
+        System.out.println("\n13. Validation Chains with Optional:");
+        String validationResult = validateEmployee("Alice")
+            .map(emp -> emp.getName() + " passed all validations")
+            .orElse("Employee failed validation");
+        System.out.println("  " + validationResult);
+
+        System.out.println();
+    }
+
+    // 8. Method References
+    private static void methodReferencesDemo() {
+        System.out.println("8. METHOD REFERENCES");
+        System.out.println("====================");
+
+        List<String> names = Arrays.asList("alice", "bob", "charlie");
+
+        // Static method reference
+        names.stream()
+            .map(String::toUpperCase) // equivalent to: s -> s.toUpperCase()
+            .forEach(System.out::println); // equivalent to: s -> System.out.println(s)
+
+        // Instance method reference
+        String prefix = "Employee: ";
+        names.stream()
+            .map(prefix::concat) // equivalent to: s -> prefix.concat(s)
+            .forEach(System.out::println);
+
+        // Constructor reference
+        List<Integer> lengths = names.stream()
+            .map(String::length)
+            .collect(Collectors.toList());
+        System.out.println("Name lengths: " + lengths);
+
+        // Method reference with existing objects
+        employees.stream()
+            .map(Employee::getName) // equivalent to: emp -> emp.getName()
+            .sorted(String::compareToIgnoreCase) // equivalent to: (a, b) -> a.compareToIgnoreCase(b)
+            .forEach(System.out::println);
+
+        System.out.println();
+    }
+
+    // Helper methods for Optional demo
+    private static Optional<Employee> findEmployeeByName(String name) {
+        return employees.stream()
+            .filter(emp -> emp.getName().equals(name))
+            .findFirst();
+    }
+
+    // Simulates creating an expensive default object
+    private static Employee createDefaultEmployee() {
+        System.out.println("    Creating expensive default employee...");
+        return new Employee("Default Employee", 25, "Temp", 45000, Arrays.asList("General"));
+    }
+
+    // Simulates getting an employee's manager (may not exist)
+    private static Optional<Employee> getEmployeeManager(String employeeName) {
+        // Simulate manager relationships
+        Map<String, String> managerMap = Map.of(
+            "Alice", "Charlie",
+            "Bob", "Diana",
+            "Frank", "Bob"
+        );
+        
+        return Optional.ofNullable(managerMap.get(employeeName))
+            .flatMap(managerName -> findEmployeeByName(managerName));
+    }
+
+    // Simulates getting a department manager
+    private static Optional<Employee> getDepartmentManager(String department) {
+        Map<String, String> deptManagers = Map.of(
+            "Engineering", "Charlie",
+            "Marketing", "Bob",
+            "HR", "Diana"
+        );
+        
+        return Optional.ofNullable(deptManagers.get(department))
+            .flatMap(managerName -> findEmployeeByName(managerName));
+    }
+
+    // Validation method that returns Optional
+    private static Optional<Employee> validateEmployee(String name) {
+        return findEmployeeByName(name)
+            .filter(emp -> emp.getAge() >= 18) // Must be adult
+            .filter(emp -> emp.getSalary() > 0) // Must have positive salary
+            .filter(emp -> emp.getName() != null && !emp.getName().trim().isEmpty()) // Must have name
+            .filter(emp -> emp.getSkills() != null && !emp.getSkills().isEmpty()); // Must have skills
+    }
+
+    // Additional Optional utility methods
+    private static class OptionalUtilities {
+        
+        // Combine multiple Optionals
+        public static Optional<String> combineEmployeeInfo(String name1, String name2) {
+            Optional<Employee> emp1 = findEmployeeByName(name1);
+            Optional<Employee> emp2 = findEmployeeByName(name2);
+            
+            if (emp1.isPresent() && emp2.isPresent()) {
+                return Optional.of(emp1.get().getName() + " and " + emp2.get().getName() + 
+                    " work in " + emp1.get().getDepartment() + " and " + emp2.get().getDepartment());
+            }
+            return Optional.empty();
+        }
+        
+        // Optional with multiple conditions
+        public static Optional<Employee> findQualifiedEngineer() {
+            return employees.stream()
+                .filter(emp -> "Engineering".equals(emp.getDepartment()))
+                .filter(emp -> emp.getAge() > 25)
+                .filter(emp -> emp.getSalary() > 70000)
+                .filter(emp -> emp.getSkills().contains("Java"))
+                .findFirst();
+        }
+        
+        // Convert nullable method to Optional
+        public static Optional<String> getEmployeeEmail(String name) {
+            // Simulate a method that might return null
+            String email = getEmailFromDatabase(name); // This might return null
+            return Optional.ofNullable(email);
+        }
+        
+        private static String getEmailFromDatabase(String name) {
+            // Simulate database lookup that might return null
+            Map<String, String> emails = Map.of(
+                "Alice", "alice@company.com",
+                "Bob", "bob@company.com"
+                // Charlie, Diana, etc. not in map - will return null
+            );
+            return emails.get(name);
+        }
+        
+        // Safe parsing utility
+        public static Optional<Integer> parseIntSafely(String str) {
+            try {
+                return Optional.of(Integer.parseInt(str));
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+        }
+        
+        public static Optional<Double> parseDoubleSafely(String str) {
+            try {
+                return Optional.of(Double.parseDouble(str));
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+        }
+    }
+
+    // Bonus: Real-world use cases
+    static {
+        System.out.println("=== REAL-WORLD USE CASES ===");
+        System.out.println("1. Data Processing: Filter, transform, and aggregate large datasets");
+        System.out.println("2. Collection Operations: Replace traditional loops with functional operations");
+        System.out.println("3. Event Handling: Use lambdas for concise event handlers");
+        System.out.println("4. Configuration: Functional-style configuration and builders");
+        System.out.println("5. Validation: Chain validation rules using functional approaches");
+        System.out.println("6. Async Programming: Combine with CompletableFuture for reactive programming");
+        System.out.println("7. Testing: Cleaner test code with functional assertions");
+        System.out.println("8. API Design: More flexible APIs using functional interfaces");
+        System.out.println();
+    }
+}
+
+
+/*
+Perfect! I've significantly expanded the Optional section with comprehensive examples showing how to avoid null checks in various real-world scenarios. Here are the key additions:
+
+## **13 New Optional Patterns Added:**
+
+### **1. Basic Optional Usage**
+- Simple presence checking and value extraction
+
+### **2. Optional Chaining**
+- Avoiding nested null checks with method chaining
+
+### **3. Complex Object Navigation**
+- Shows the "before and after" - traditional null checking vs Optional approach
+- Demonstrates accessing nested properties safely
+
+### **4. Default Values & Lazy Evaluation**
+- `orElse()` vs `orElseGet()` for expensive object creation
+- Lazy evaluation to avoid unnecessary computations
+
+### **5. Exception Handling**
+- `orElseThrow()` with custom exceptions
+- Different exception types for different scenarios
+
+### **6. Optional Filtering**
+- Replacing conditional logic with `filter()`
+- `ifPresentOrElse()` for complete conditional handling
+
+### **7. Method Return Types**
+- How to design APIs that return Optional instead of null
+
+### **8. FlatMap with Nested Optionals**
+- Handling cases where methods return `Optional<Optional<T>>`
+- Flattening optional chains
+
+### **9. Optional with Collections**
+- Safe collection access
+- Converting collections to Optional values
+- Stream integration with Optional
+
+### **10. Complex Transformation Chains**
+- Multiple filter and map operations
+- Shows dramatic difference from traditional null-checking approach
+
+### **11. Side Effects**
+- `ifPresentOrElse()` for logging, notifications, etc.
+- Handling both success and failure cases
+
+### **12. Business Logic Integration**
+- Real-world examples in business rules
+- Salary calculations, eligibility checks
+
+### **13. Validation Chains**
+- Chaining multiple validation rules
+- Early termination on first failure
+
+## **Advanced Optional Patterns:**
+
+### **Exception Handling Replacement**
+- Using Optional instead of try-catch for parsing
+- Safe conversion methods
+
+### **Configuration Management**
+- Handling missing configuration values
+- Default fallbacks and type conversions
+
+### **Multiple Data Source Fallback**
+- Chain of responsibility pattern with Optional
+- `or()` method for fallback strategies
+
+### **Builder Pattern Integration**
+- Optional fields in builders
+- Validation through Optional return types
+
+## **Key Benefits Demonstrated:**
+
+1. **Eliminates NullPointerException** - No more runtime null errors
+2. **Makes null-handling explicit** - Forces developers to handle missing values
+3. **Improves code readability** - Functional chains vs nested if statements
+4. **Enables method chaining** - Fluent API style programming
+5. **Supports lazy evaluation** - Expensive operations only when needed
+6. **Better API design** - Clear contracts about what might be missing
+
+## **Real-World Use Cases:**
+
+- **Database queries** that might return no results
+- **Configuration loading** with defaults
+- **User input validation** with graceful failures
+- **API responses** that might have missing fields
+- **File operations** that might fail
+- **Service calls** that might timeout
+- **Data transformations** that might have missing intermediate values
+
+The examples show how Optional transforms verbose, error-prone null-checking code into clean, functional chains that are both safer and more readable. This is one of the most practical applications of Java 8's functional programming features!
+*/
+  
