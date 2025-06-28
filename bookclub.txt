@@ -1,0 +1,1389 @@
+//
+package com.bookclub;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class BookClubApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(BookClubApplication.class, args);
+    }
+}
+
+//
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+    
+    <groupId>com.bookclub</groupId>
+    <artifactId>book-club-app</artifactId>
+    <version>1.0.0</version>
+    <name>book-club-app</name>
+    <description>Book Club Reading Experience Sharing</description>
+    
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-spring-boot-starter-3</artifactId>
+            <version>3.1.9</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+//
+spring:
+  datasource:
+    url: jdbc:h2:mem:bookclub
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    
+  jte:
+    template-location: classpath:/templates/
+    
+server:
+  port: 8080
+
+logging:
+  level:
+    com.bookclub: DEBUG
+
+//
+package com.bookclub.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(unique = true, nullable = false)
+    private String username;
+    
+    @Column(nullable = false)
+    private String email;
+    
+    @Column(nullable = false)
+    private String password;
+    
+    private String displayName;
+    private String bio;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<ReadingStatus> readingStatuses;
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Discussion> discussions;
+    
+    // Constructors
+    public User() {}
+    
+    public User(String username, String email, String password) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.displayName = username;
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    
+    public String getDisplayName() { return displayName; }
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
+    
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public List<ReadingStatus> getReadingStatuses() { return readingStatuses; }
+    public void setReadingStatuses(List<ReadingStatus> readingStatuses) { this.readingStatuses = readingStatuses; }
+    
+    public List<Discussion> getDiscussions() { return discussions; }
+    public void setDiscussions(List<Discussion> discussions) { this.discussions = discussions; }
+}
+
+@Entity
+@Table(name = "books")
+public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false)
+    private String title;
+    
+    @Column(nullable = false)
+    private String author;
+    
+    private String isbn;
+    private String genre;
+    private Integer pages;
+    private String description;
+    private String coverUrl;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
+    private List<ReadingStatus> readingStatuses;
+    
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
+    private List<Discussion> discussions;
+    
+    // Constructors
+    public Book() {}
+    
+    public Book(String title, String author) {
+        this.title = title;
+        this.author = author;
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+    
+    public String getGenre() { return genre; }
+    public void setGenre(String genre) { this.genre = genre; }
+    
+    public Integer getPages() { return pages; }
+    public void setPages(Integer pages) { this.pages = pages; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public String getCoverUrl() { return coverUrl; }
+    public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public List<ReadingStatus> getReadingStatuses() { return readingStatuses; }
+    public void setReadingStatuses(List<ReadingStatus> readingStatuses) { this.readingStatuses = readingStatuses; }
+    
+    public List<Discussion> getDiscussions() { return discussions; }
+    public void setDiscussions(List<Discussion> discussions) { this.discussions = discussions; }
+}
+
+@Entity
+@Table(name = "reading_status")
+public class ReadingStatus {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    
+    @ManyToOne
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
+    
+    @Enumerated(EnumType.STRING)
+    private Status status;
+    
+    private Integer currentPage = 0;
+    private Integer rating; // 1-5 stars
+    private String review;
+    
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+    
+    @Column(name = "finished_at")
+    private LocalDateTime finishedAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+    
+    public enum Status {
+        WANT_TO_READ, CURRENTLY_READING, FINISHED, ABANDONED
+    }
+    
+    // Constructors
+    public ReadingStatus() {}
+    
+    public ReadingStatus(User user, Book book, Status status) {
+        this.user = user;
+        this.book = book;
+        this.status = status;
+        if (status == Status.CURRENTLY_READING) {
+            this.startedAt = LocalDateTime.now();
+        }
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    
+    public Book getBook() { return book; }
+    public void setBook(Book book) { this.book = book; }
+    
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
+    
+    public Integer getCurrentPage() { return currentPage; }
+    public void setCurrentPage(Integer currentPage) { this.currentPage = currentPage; }
+    
+    public Integer getRating() { return rating; }
+    public void setRating(Integer rating) { this.rating = rating; }
+    
+    public String getReview() { return review; }
+    public void setReview(String review) { this.review = review; }
+    
+    public LocalDateTime getStartedAt() { return startedAt; }
+    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
+    
+    public LocalDateTime getFinishedAt() { return finishedAt; }
+    public void setFinishedAt(LocalDateTime finishedAt) { this.finishedAt = finishedAt; }
+    
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+}
+
+@Entity
+@Table(name = "discussions")
+public class Discussion {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @ManyToOne
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
+    
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    
+    @Column(nullable = false)
+    private String title;
+    
+    @Column(columnDefinition = "TEXT")
+    private String content;
+    
+    private boolean spoiler = false;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    // Constructors
+    public Discussion() {}
+    
+    public Discussion(Book book, User user, String title, String content) {
+        this.book = book;
+        this.user = user;
+        this.title = title;
+        this.content = content;
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public Book getBook() { return book; }
+    public void setBook(Book book) { this.book = book; }
+    
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    
+    public boolean isSpoiler() { return spoiler; }
+    public void setSpoiler(boolean spoiler) { this.spoiler = spoiler; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+}
+
+//
+
+package com.bookclub.repository;
+
+import com.bookclub.model.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+}
+
+@Repository
+public interface BookRepository extends JpaRepository<Book, Long> {
+    List<Book> findByTitleContainingIgnoreCase(String title);
+    List<Book> findByAuthorContainingIgnoreCase(String author);
+    List<Book> findByGenre(String genre);
+    
+    @Query("SELECT DISTINCT b.genre FROM Book b WHERE b.genre IS NOT NULL ORDER BY b.genre")
+    List<String> findAllGenres();
+    
+    @Query("SELECT b FROM Book b WHERE " +
+           "LOWER(b.title) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(b.author) LIKE LOWER(CONCAT('%', :search, '%'))")
+    List<Book> searchBooks(@Param("search") String search);
+}
+
+@Repository
+public interface ReadingStatusRepository extends JpaRepository<ReadingStatus, Long> {
+    List<ReadingStatus> findByUser(User user);
+    List<ReadingStatus> findByUserAndStatus(User user, ReadingStatus.Status status);
+    Optional<ReadingStatus> findByUserAndBook(User user, Book book);
+    
+    @Query("SELECT rs FROM ReadingStatus rs WHERE rs.user = :user ORDER BY rs.updatedAt DESC")
+    List<ReadingStatus> findByUserOrderByUpdatedAtDesc(@Param("user") User user);
+    
+    @Query("SELECT COUNT(rs) FROM ReadingStatus rs WHERE rs.user = :user AND rs.status = :status")
+    long countByUserAndStatus(@Param("user") User user, @Param("status") ReadingStatus.Status status);
+}
+
+@Repository
+public interface DiscussionRepository extends JpaRepository<Discussion, Long> {
+    List<Discussion> findByBook(Book book);
+    List<Discussion> findByUser(User user);
+    List<Discussion> findByBookOrderByCreatedAtDesc(Book book);
+    
+    @Query("SELECT d FROM Discussion d ORDER BY d.createdAt DESC")
+    List<Discussion> findAllOrderByCreatedAtDesc();
+    
+    @Query("SELECT d FROM Discussion d WHERE d.book = :book AND d.spoiler = false ORDER BY d.createdAt DESC")
+    List<Discussion> findNonSpoilerDiscussionsByBook(@Param("book") Book book);
+}
+
+//
+package com.bookclub.service;
+
+import com.bookclub.model.*;
+import com.bookclub.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class UserService {
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
+    public User createUser(String username, String email, String password) {
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        
+        User user = new User(username, email, passwordEncoder.encode(password));
+        return userRepository.save(user);
+    }
+    
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+    
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
+    
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+    
+    public User updateProfile(User user, String displayName, String bio) {
+        user.setDisplayName(displayName);
+        user.setBio(bio);
+        return userRepository.save(user);
+    }
+    
+    public boolean validatePassword(User user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
+}
+
+@Service
+public class BookService {
+    
+    @Autowired
+    private BookRepository bookRepository;
+    
+    public Book createBook(String title, String author, String isbn, String genre, 
+                          Integer pages, String description, String coverUrl) {
+        Book book = new Book(title, author);
+        book.setIsbn(isbn);
+        book.setGenre(genre);
+        book.setPages(pages);
+        book.setDescription(description);
+        book.setCoverUrl(coverUrl);
+        return bookRepository.save(book);
+    }
+    
+    public List<Book> findAll() {
+        return bookRepository.findAll();
+    }
+    
+    public Optional<Book> findById(Long id) {
+        return bookRepository.findById(id);
+    }
+    
+    public List<Book> searchBooks(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return findAll();
+        }
+        return bookRepository.searchBooks(query.trim());
+    }
+    
+    public List<String> getAllGenres() {
+        return bookRepository.findAllGenres();
+    }
+    
+    public List<Book> findByGenre(String genre) {
+        return bookRepository.findByGenre(genre);
+    }
+}
+
+@Service
+public class ReadingStatusService {
+    
+    @Autowired
+    private ReadingStatusRepository readingStatusRepository;
+    
+    public ReadingStatus updateReadingStatus(User user, Book book, ReadingStatus.Status status) {
+        Optional<ReadingStatus> existingStatus = readingStatusRepository.findByUserAndBook(user, book);
+        
+        ReadingStatus readingStatus;
+        if (existingStatus.isPresent()) {
+            readingStatus = existingStatus.get();
+            readingStatus.setStatus(status);
+        } else {
+            readingStatus = new ReadingStatus(user, book, status);
+        }
+        
+        // Set timestamps based on status
+        if (status == ReadingStatus.Status.CURRENTLY_READING && readingStatus.getStartedAt() == null) {
+            readingStatus.setStartedAt(LocalDateTime.now());
+        } else if (status == ReadingStatus.Status.FINISHED) {
+            readingStatus.setFinishedAt(LocalDateTime.now());
+        }
+        
+        readingStatus.setUpdatedAt(LocalDateTime.now());
+        return readingStatusRepository.save(readingStatus);
+    }
+    
+    public ReadingStatus updateProgress(User user, Book book, int currentPage) {
+        Optional<ReadingStatus> existingStatus = readingStatusRepository.findByUserAndBook(user, book);
+        
+        ReadingStatus readingStatus;
+        if (existingStatus.isPresent()) {
+            readingStatus = existingStatus.get();
+        } else {
+            readingStatus = new ReadingStatus(user, book, ReadingStatus.Status.CURRENTLY_READING);
+        }
+        
+        readingStatus.setCurrentPage(currentPage);
+        readingStatus.setUpdatedAt(LocalDateTime.now());
+        
+        // Auto-complete if reached the end
+        if (book.getPages() != null && currentPage >= book.getPages()) {
+            readingStatus.setStatus(ReadingStatus.Status.FINISHED);
+            readingStatus.setFinishedAt(LocalDateTime.now());
+        }
+        
+        return readingStatusRepository.save(readingStatus);
+    }
+    
+    public ReadingStatus addReview(User user, Book book, int rating, String review) {
+        Optional<ReadingStatus> existingStatus = readingStatusRepository.findByUserAndBook(user, book);
+        
+        if (existingStatus.isPresent()) {
+            ReadingStatus readingStatus = existingStatus.get();
+            readingStatus.setRating(rating);
+            readingStatus.setReview(review);
+            readingStatus.setUpdatedAt(LocalDateTime.now());
+            return readingStatusRepository.save(readingStatus);
+        } else {
+            throw new IllegalStateException("Cannot review a book that hasn't been added to reading list");
+        }
+    }
+    
+    public List<ReadingStatus> getUserReadingStatuses(User user) {
+        return readingStatusRepository.findByUserOrderByUpdatedAtDesc(user);
+    }
+    
+    public List<ReadingStatus> getUserReadingStatusesByStatus(User user, ReadingStatus.Status status) {
+        return readingStatusRepository.findByUserAndStatus(user, status);
+    }
+    
+    public Optional<ReadingStatus> getUserBookStatus(User user, Book book) {
+        return readingStatusRepository.findByUserAndBook(user, book);
+    }
+    
+    public long countBooksByStatus(User user, ReadingStatus.Status status) {
+        return readingStatusRepository.countByUserAndStatus(user, status);
+    }
+}
+
+@Service
+public class DiscussionService {
+    
+    @Autowired
+    private DiscussionRepository discussionRepository;
+    
+    public Discussion createDiscussion(Book book, User user, String title, String content, boolean spoiler) {
+        Discussion discussion = new Discussion(book, user, title, content);
+        discussion.setSpoiler(spoiler);
+        return discussionRepository.save(discussion);
+    }
+    
+    public List<Discussion> getBookDiscussions(Book book) {
+        return discussionRepository.findByBookOrderByCreatedAtDesc(book);
+    }
+    
+    public List<Discussion> getNonSpoilerBookDiscussions(Book book) {
+        return discussionRepository.findNonSpoilerDiscussionsByBook(book);
+    }
+    
+    public List<Discussion> getRecentDiscussions() {
+        return discussionRepository.findAllOrderByCreatedAtDesc();
+    }
+    
+    public List<Discussion> getUserDiscussions(User user) {
+        return discussionRepository.findByUser(user);
+    }
+    
+    public Optional<Discussion> findById(Long id) {
+        return discussionRepository.findById(id);
+    }
+}
+
+//
+
+package com.bookclub.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+    
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/", "/register", "/login", "/books", "/books/**", 
+                               "/css/**", "/js/**", "/images/**", "/h2-console/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/")
+                .permitAll()
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/h2-console/**")
+            )
+            .headers(headers -> headers
+                .frameOptions().sameOrigin() // For H2 console
+            );
+            
+        return http.build();
+    }
+}
+
+//
+
+package com.bookclub.controller;
+
+import com.bookclub.model.*;
+import com.bookclub.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@Controller
+public class HomeController {
+    
+    @Autowired
+    private BookService bookService;
+    
+    @Autowired
+    private DiscussionService discussionService;
+    
+    @GetMapping("/")
+    public String home(Model model) {
+        List<Book> recentBooks = bookService.findAll();
+        List<Discussion> recentDiscussions = discussionService.getRecentDiscussions();
+        
+        model.addAttribute("recentBooks", recentBooks.size() > 6 ? recentBooks.subList(0, 6) : recentBooks);
+        model.addAttribute("recentDiscussions", recentDiscussions.size() > 5 ? recentDiscussions.subList(0, 5) : recentDiscussions);
+        
+        return "index";
+    }
+}
+
+@Controller
+public class AuthController {
+    
+    @Autowired
+    private UserService userService;
+    
+    @GetMapping("/login")
+    public String login(@RequestParam(value = "error", required = false) String error, Model model) {
+        if (error != null) {
+            model.addAttribute("error", "Invalid username or password");
+        }
+        return "auth/login";
+    }
+    
+    @GetMapping("/register")
+    public String register() {
+        return "auth/register";
+    }
+    
+    @PostMapping("/register")
+    public String registerUser(@RequestParam String username,
+                              @RequestParam String email,
+                              @RequestParam String password,
+                              @RequestParam String confirmPassword,
+                              Model model) {
+        try {
+            if (!password.equals(confirmPassword)) {
+                model.addAttribute("error", "Passwords do not match");
+                return "auth/register";
+            }
+            
+            userService.createUser(username, email, password);
+            return "redirect:/login?registered=true";
+            
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+            return "auth/register";
+        }
+    }
+}
+
+@Controller
+public class BookController {
+    
+    @Autowired
+    private BookService bookService;
+    
+    @Autowired
+    private ReadingStatusService readingStatusService;
+    
+    @Autowired
+    private DiscussionService discussionService;
+    
+    @Autowired
+    private UserService userService;
+    
+    @GetMapping("/books")
+    public String books(@RequestParam(required = false) String search,
+                       @RequestParam(required = false) String genre,
+                       Model model) {
+        List<Book> books;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            books = bookService.searchBooks(search);
+        } else if (genre != null && !genre.trim().isEmpty()) {
+            books = bookService.findByGenre(genre);
+        } else {
+            books = bookService.findAll();
+        }
+        
+        model.addAttribute("books", books);
+        model.addAttribute("genres", bookService.getAllGenres());
+        model.addAttribute("currentSearch", search);
+        model.addAttribute("currentGenre", genre);
+        
+        return "books/list";
+    }
+    
+    @GetMapping("/books/{id}")
+    public String bookDetail(@PathVariable Long id, Model model, Authentication auth) {
+        Optional<Book> bookOpt = bookService.findById(id);
+        if (bookOpt.isEmpty()) {
+            return "redirect:/books";
+        }
+        
+        Book book = bookOpt.get();
+        List<Discussion> discussions = discussionService.getBookDiscussions(book);
+        
+        model.addAttribute("book", book);
+        model.addAttribute("discussions", discussions);
+        
+        if (auth != null) {
+            Optional<User> userOpt = userService.findByUsername(auth.getName());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                Optional<ReadingStatus> status = readingStatusService.getUserBookStatus(user, book);
+                model.addAttribute("userStatus", status.orElse(null));
+                model.addAttribute("currentUser", user);
+            }
+        }
+        
+        return "books/detail";
+    }
+    
+    @PostMapping("/books/{id}/status")
+    public String updateBookStatus(@PathVariable Long id,
+                                  @RequestParam String status,
+                                  Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<Book> bookOpt = bookService.findById(id);
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        
+        if (bookOpt.isPresent() && userOpt.isPresent()) {
+            ReadingStatus.Status statusEnum = ReadingStatus.Status.valueOf(status);
+            readingStatusService.updateReadingStatus(userOpt.get(), bookOpt.get(), statusEnum);
+        }
+        
+        return "redirect:/books/" + id;
+    }
+    
+    @PostMapping("/books/{id}/progress")
+    public String updateProgress(@PathVariable Long id,
+                                @RequestParam int currentPage,
+                                Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<Book> bookOpt = bookService.findById(id);
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        
+        if (bookOpt.isPresent() && userOpt.isPresent()) {
+            readingStatusService.updateProgress(userOpt.get(), bookOpt.get(), currentPage);
+        }
+        
+        return "redirect:/books/" + id;
+    }
+    
+    @PostMapping("/books/{id}/review")
+    public String addReview(@PathVariable Long id,
+                           @RequestParam int rating,
+                           @RequestParam String review,
+                           Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<Book> bookOpt = bookService.findById(id);
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        
+        if (bookOpt.isPresent() && userOpt.isPresent()) {
+            readingStatusService.addReview(userOpt.get(), bookOpt.get(), rating, review);
+        }
+        
+        return "redirect:/books/" + id;
+    }
+    
+    @GetMapping("/books/add")
+    public String addBookForm() {
+        return "books/add";
+    }
+    
+    @PostMapping("/books/add")
+    public String addBook(@RequestParam String title,
+                         @RequestParam String author,
+                         @RequestParam(required = false) String isbn,
+                         @RequestParam(required = false) String genre,
+                         @RequestParam(required = false) Integer pages,
+                         @RequestParam(required = false) String description,
+                         @RequestParam(required = false) String coverUrl) {
+        Book book = bookService.createBook(title, author, isbn, genre, pages, description, coverUrl);
+        return "redirect:/books/" + book.getId();
+    }
+}
+
+@Controller
+public class DiscussionController {
+    
+    @Autowired
+    private DiscussionService discussionService;
+    
+    @Autowired
+    private BookService bookService;
+    
+    @Autowired
+    private UserService userService;
+    
+    @PostMapping("/books/{bookId}/discussions")
+    public String createDiscussion(@PathVariable Long bookId,
+                                  @RequestParam String title,
+                                  @RequestParam String content,
+                                  @RequestParam(required = false) boolean spoiler,
+                                  Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<Book> bookOpt = bookService.findById(bookId);
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        
+        if (bookOpt.isPresent() && userOpt.isPresent()) {
+            discussionService.createDiscussion(bookOpt.get(), userOpt.get(), title, content, spoiler);
+        }
+        
+        return "redirect:/books/" + bookId;
+    }
+}
+
+@Controller
+public class DashboardController {
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private ReadingStatusService readingStatusService;
+    
+    @Autowired
+    private DiscussionService discussionService;
+    
+    @GetMapping("/dashboard")
+    public String dashboard(Model model, Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        if (userOpt.isEmpty()) {
+            return "redirect:/login";
+        }
+        
+        User user = userOpt.get();
+        List<ReadingStatus> currentlyReading = readingStatusService.getUserReadingStatusesByStatus(user, ReadingStatus.Status.CURRENTLY_READING);
+        List<ReadingStatus> recentActivity = readingStatusService.getUserReadingStatuses(user);
+        List<Discussion> userDiscussions = discussionService.getUserDiscussions(user);
+        
+        // Reading statistics
+        long totalBooks = readingStatusService.countBooksByStatus(user, ReadingStatus.Status.FINISHED);
+        long currentBooks = readingStatusService.countBooksByStatus(user, ReadingStatus.Status.CURRENTLY_READING);
+        long wantToRead = readingStatusService.countBooksByStatus(user, ReadingStatus.Status.WANT_TO_READ);
+        
+        model.addAttribute("user", user);
+        model.addAttribute("currentlyReading", currentlyReading);
+        model.addAttribute("recentActivity", recentActivity.size() > 10 ? recentActivity.subList(0, 10) : recentActivity);
+        model.addAttribute("userDiscussions", userDiscussions.size() > 5 ? userDiscussions.subList(0, 5) : userDiscussions);
+        model.addAttribute("totalBooks", totalBooks);
+        model.addAttribute("currentBooks", currentBooks);
+        model.addAttribute("wantToRead", wantToRead);
+        
+        return "dashboard/index";
+    }
+    
+    @GetMapping("/profile")
+    public String profile(Model model, Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        if (userOpt.isEmpty()) {
+            return "redirect:/login";
+        }
+        
+        model.addAttribute("user", userOpt.get());
+        return "profile/index";
+    }
+    
+    @PostMapping("/profile")
+    public String updateProfile(@RequestParam String displayName,
+                               @RequestParam(required = false) String bio,
+                               Authentication auth) {
+        if (auth == null) {
+            return "redirect:/login";
+        }
+        
+        Optional<User> userOpt = userService.findByUsername(auth.getName());
+        if (userOpt.isPresent()) {
+            userService.updateProfile(userOpt.get(), displayName, bio);
+        }
+        
+        return "redirect:/profile";
+    }
+}
+
+//
+@template.layout.main(title = "BookClub - Share Your Reading Experience")
+
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
+                    <span class="block">Share Your</span>
+                    <span class="block text-indigo-600">Reading Journey</span>
+                </h1>
+                <p class="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+                    Connect with fellow book lovers, track your reading progress, and discover your next great read.
+                </p>
+                <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+                    <div class="rounded-md shadow">
+                        <a href="/books" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
+                            Explore Books
+                        </a>
+                    </div>
+                    <div class="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                        <a href="/register" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                            Join Community
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Books Section -->
+    @if(!recentBooks.isEmpty())
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">Featured Books</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for(book : recentBooks)
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">${book.title}</h3>
+                    <p class="text-gray-600 mb-2">by ${book.author}</p>
+                    @if(book.genre != null)
+                    <span class="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">${book.genre}</span>
+                    @endif
+                    <div class="mt-4">
+                        <a href="/books/${book.id}" class="text-indigo-600 hover:text-indigo-900 font-medium">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endfor
+        </div>
+    </div>
+    @endif
+
+    <!-- Recent Discussions Section -->
+    @if(!recentDiscussions.isEmpty())
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 class="text-2xl font-bold text-gray-900 mb-8">Recent Discussions</h2>
+            <div class="space-y-4">
+                @for(discussion : recentDiscussions)
+                <div class="border rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-gray-900">${discussion.title}</h3>
+                            <p class="text-sm text-gray-600 mt-1">
+                                On "${discussion.book.title}" by ${discussion.user.displayName}
+                            </p>
+                            @if(discussion.spoiler)
+                            <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mt-2">
+                                Spoiler Alert
+                            </span>
+                            @endif
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            ${discussion.createdAt.toString().substring(0, 10)}
+                        </div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+        </div>
+    </div>
+    @endif
+</div>
+
+<!-- File: src/main/jte/layout/main.jte -->
+@param String title
+@param String? content
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <style>
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-indigo-600">BookClub</a>
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="/books" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Books</a>
+                        <a href="/books/add" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Add Book</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <!-- Check if user is authenticated -->
+                        <div class="flex items-center space-x-4">
+                            <a href="/dashboard" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                            <a href="/profile" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Profile</a>
+                            <form method="post" action="/logout" class="inline">
+                                <button type="submit" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Logout</button>
+                            </form>
+                        </div>
+                        <!-- If not authenticated -->
+                        <div class="flex items-center space-x-4">
+                            <a href="/login" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                            <a href="/register" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">Register</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        ${content}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-auto">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-gray-500 text-sm">
+                © 2025 BookClub. Share your reading journey with fellow book lovers.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+//
+<!-- File: src/main/jte/auth/login.jte -->
+@template.layout.main(title = "Login - BookClub")
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Sign in to your account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Or
+                <a href="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    create a new account
+                </a>
+            </p>
+        </div>
+        
+        @if(error != null)
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            ${error}
+        </div>
+        @endif
+        
+        @if(param.registered != null)
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+            Registration successful! Please sign in.
+        </div>
+        @endif
+        
+        <form class="mt-8 space-y-6" method="post" action="/login">
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input id="username" name="username" type="text" required 
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                           placeholder="Username">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" required 
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                           placeholder="Password">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Sign in
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- File: src/main/jte/auth/register.jte -->
+@template.layout.main(title = "Register - BookClub")
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Already have an account?
+                <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Sign in here
+                </a>
+            </p>
+        </div>
+        
+        @if(error != null)
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            ${error}
+        </div>
+        @endif
+        
+        <form class="mt-8 space-y-6" method="post" action="/register">
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="username" name="username" type="text" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Choose a username">
+                </div>
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input id="email" name="email" type="email" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Enter your email">
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="password" name="password" type="password" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Choose a password">
+                </div>
+                
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Confirm your password">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+//
+
+<!-- File: src/main/jte/books/list.jte -->
+@template.layout.main(title = "Books - BookClub")
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Discover Books</h1>
+        <a href="/books/add" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+            Add New Book
+        </a>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+        <form method="get" action="/books" class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <input type="text" name="search" value="${currentSearch ?: ''}" 
+                       placeholder="Search by title or author..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <select name="genre" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">All Genres</option>
+                    @for(genre : genres)
+                    <option value="${genre}" ${currentGenre != null && currentGenre.equals(genre) ? "selected" : ""}>${genre}</option>
+                    @endfor
+                </select>
+            </div>
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Books Grid -->
+    @if(books.isEmpty())
+    <div class="text-center py-12">
+        <div class="text-gray-500 text-lg">No books found.</div>
+        <a href="/books/add" class="text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
+            Be the first to add a book!
+        </a>
+    </div>
+    @else
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @for(book : books)
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            @if(book.coverUrl != null)
+            <img src="${book.coverUrl}" alt="${book.title}" class="w-full h-48 object-cover">
+            @else
+            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                <span class="text-gray-500">No Cover</span>
+            </div>
+            @endif
+            <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">${book.title}</h3>
+                <p class="text-gray-600 mb-2">by ${book.author}</p>
+                
+                @if(book.genre != null)
+                <span class="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full mb-2">
+                    ${book.genre}
+                </span>
+                @endif
+                
+                @if(book.
+
+                
