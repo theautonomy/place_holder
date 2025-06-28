@@ -316,6 +316,11 @@ public class BookmarkController {
         return "fragments/bookmark-list";
     }
     
+    @GetMapping("/bookmarks/{id}/cancel-edit")
+    public String cancelEdit(@PathVariable Long id) {
+        return "fragments/empty-edit-form";
+    }
+    
     @DeleteMapping("/bookmarks/{id}")
     public String deleteBookmark(@PathVariable Long id, Model model) {
         bookmarkService.deleteBookmark(id);
@@ -576,7 +581,7 @@ gg.jte.usePreCompiledTemplates=false
                             <button 
                                 hx-get="/bookmarks/${bookmark.getId()}/edit"
                                 hx-target="#edit-form-${bookmark.getId()}"
-                                hx-swap="outerHTML"
+                                hx-swap="innerHTML"
                                 class="text-gray-600 hover:text-blue-600 p-2 hover:bg-blue-50 rounded transition duration-150 ease-in-out"
                                 title="Edit bookmark"
                             >
@@ -631,7 +636,7 @@ gg.jte.usePreCompiledTemplates=false
         </div>
     @endif
     
-    <form hx-put="/bookmarks/${bookmark.getId()}" hx-target="#bookmark-list" hx-swap="outerHTML">
+    <form>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
                 <label for="edit-title-${bookmark.getId()}" class="block text-sm font-medium text-gray-700 mb-2">
@@ -679,6 +684,9 @@ gg.jte.usePreCompiledTemplates=false
         <div class="flex gap-3">
             <button 
                 type="submit" 
+                hx-put="/bookmarks/${bookmark.getId()}"
+                hx-target="#bookmark-list"
+                hx-swap="outerHTML"
                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition duration-200 ease-in-out flex items-center gap-2"
             >
                 <i class="fas fa-check"></i>
@@ -686,9 +694,9 @@ gg.jte.usePreCompiledTemplates=false
             </button>
             <button 
                 type="button"
-                hx-get="/"
-                hx-target="body"
-                hx-swap="outerHTML"
+                hx-get="/bookmarks/${bookmark.getId()}/cancel-edit"
+                hx-target="#edit-form-${bookmark.getId()}"
+                hx-swap="innerHTML"
                 class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition duration-200 ease-in-out flex items-center gap-2"
             >
                 <i class="fas fa-times"></i>
@@ -697,3 +705,6 @@ gg.jte.usePreCompiledTemplates=false
         </div>
     </form>
 </div>
+
+// src/main/resources/templates/fragments/empty-edit-form.jte
+<!-- Empty template to clear edit form -->
