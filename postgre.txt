@@ -1,0 +1,12 @@
+docker run -e POSTGRES_USER=myuser \
+           -e POSTGRES_PASSWORD=mypassword \
+           -e POSTGRES_DB=mydatabase \
+           --name my_postgres \
+           -p 5432:5432 \
+           -d pgvector/pgvector:pg16
+
+
+           spring.datasource.url=jdbc:postgresql://localhost:5432/mydatabase
+spring.datasource.username=myuser
+spring.datasource.password=mypassword
+spring.datasource.driver-class-name=org.postgresql.Driver
