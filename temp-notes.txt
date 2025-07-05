@@ -107,6 +107,16 @@
                 .build();
     }
 
+///
+
+Option 1 (Warm and personal):
+"Congratulations on reaching your 3-year milestone with our team! Your dedication and hard work have made such a positive impact, and it's been great having you as a colleague. Here's to many more years of success together!"
+Option 2 (Professional and appreciative):
+"Happy 3-year work anniversary! Your contributions to our team have been invaluable, and your expertise and reliability are truly appreciated. Thank you for being such a wonderful colleague to work with."
+Option 3 (Celebratory and brief):
+"Three years already - time flies when you're working with great people! Congratulations on your anniversary and thank you for all the excellent work you do. Here's to celebrating this milestone and looking forward to what's ahead!"
+
+///
 
 ///
 <textarea id="searchInput"
