@@ -1,4 +1,28 @@
-    Filter.Expression typeFilter =
+In-person or verbal:
+
+"Congratulations on 10 years! Your leadership on [specific project/product] has really made a difference."
+"A decade of great work - thanks for all the guidance and collaboration over the years."
+
+Written message (email/card):
+
+"Congratulations on reaching this incredible 10-year milestone! Your vision and dedication as a product owner have driven so many successful launches. Here's to many more years of innovation together."
+"10 years of turning ideas into reality - congratulations! Working with you has taught me so much about what great product ownership looks like."
+
+Team recognition:
+
+Suggest the team acknowledge it in a standup or team meeting
+Organize a small celebration or lunch
+Create a shared card that multiple team members can sign
+
+Professional touch:
+
+Mention specific products or features they've championed
+Acknowledge their mentorship if they've helped guide your work
+Reference how they've improved processes or user experience
+
+The key is being genuine and specific rather than generic. Think about what this person has actually contributed to your team or projects, and let that guide your congratulations. A product owner typically appreciates recognition of their strategic impact and collaborative leadership.RetryClaude can make mistakes. Please double-check responses.
+////
+Filter.Expression typeFilter =
                             new Filter.Expression(
                                     Filter.ExpressionType.EQ,
                                     new Filter.Key("category"),
