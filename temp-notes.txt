@@ -1,3 +1,19 @@
+  "errorLens.enabled": true,
+    "errorLens.followCursor": "activeLine",
+    "errorLens.alignMessage": {
+        "start": 40,
+        "end": 0,
+        "padding": [
+            0,
+            0.5
+        ],
+    },
+    "errorLens.enabledDiagnosticLevels": [
+        "error",
+        "info",
+        "warning"
+    ],
+////
 In-person or verbal:
 
 "Congratulations on 10 years! Your leadership on [specific project/product] has really made a difference."
