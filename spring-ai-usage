@@ -1,0 +1,32 @@
+Spring AI is a framework that brings AI capabilities to Spring applications using familiar Spring patterns. Here are the typical use cases:
+
+**Core AI Integration Patterns**
+
+Spring AI provides a Spring-friendly API and abstractions for developing AI applications, with features like ChatClient API for communicating with AI Chat Models, Advisors API for encapsulating recurring Generative AI patterns, and support for Chat Conversation Memory.
+
+**Chat Applications and Conversational AI**
+Building chatbots and conversational interfaces is one of the most common use cases. Developers create end-to-end chat applications capable of answering user questions, often integrated with ChatBot functionality using RAG (Retrieval Augmented Generation) techniques.
+
+**Retrieval-Augmented Generation (RAG) Applications**
+RAG applications customize AI chatbot experiences with private data, using vector stores like Elasticsearch or MongoDB Atlas to retrieve only the most relevant information, enhancing both accuracy and cost-efficiency. Common RAG implementations include:
+
+- Q&A over documentation or "Chat with your documentation" systems
+- Customer support chatbots enhanced with company-specific knowledge
+- File-based question answering systems for uploaded documents
+
+**Document Processing and Analysis**
+Spring AI includes a document ingestion ETL framework for Data Engineering, enabling applications to process and analyze various document types for AI-powered insights.
+
+**Multi-Modal AI Applications**
+Spring AI supports models that process input and output as language, image, and audio, allowing developers to build applications that work with different media types.
+
+**Enterprise AI Integration**
+Spring AI integrates with various AI models and platforms such as TensorFlow, OpenAI, and Hugging Face, providing an integrated API for processing natural language processing (NLP) applications.
+
+**AI Model Evaluation and Safety**
+The framework includes utilities to help evaluate generated content and protect against hallucinated responses, crucial for production AI applications.
+
+**Spring Boot Integration**
+Spring Boot Auto Configuration and Starters for AI Models and Vector Stores make it easy to add AI capabilities to existing Spring applications with minimal configuration.
+
+The framework is particularly valuable for Java developers who want to leverage AI capabilities while maintaining the familiar Spring programming model and dependency injection patterns.
