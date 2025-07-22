@@ -1,0 +1,7 @@
+Compatibility with Jakarta EE versions
+
+    Struts 2 versions 6.x and earlier are generally compatible with Java EE 7 and 8, and Jakarta EE 8, but not with Jakarta EE 9 and higher. This is because they use the javax.* namespace for packages like Servlets and JSPs, while Jakarta EE 9+ has switched to the jakarta.* namespace due to licensing changes when Java EE was transferred to the Eclipse Foundation.
+    Struts 2 versions 7.x and later have full support for Jakarta EE 9 and higher, using the jakarta.* namespace. According to Apache Struts announcements, version 7.0.0 released with support for Jakarta EE 10 and JDK 17. This means that Struts 2 versions 7.x and later are compatible with modern application servers like Tomcat 10+ and Payara 6+, which implement Jakarta EE 9 or higher. 
+
+    Spring Framework 6.0 raises the minimum requirements to Java 17+ and Jakarta EE 9+.
+    https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-6.0-Release-Notes
