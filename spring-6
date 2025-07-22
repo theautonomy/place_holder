@@ -9,3 +9,5 @@ Compatibility with Jakarta EE versions
 
 https://stackoverflow.com/questions/76665484/is-struts-core-6-x-x-compatible-with-jakartaee-10
 The latest struts2 version, 6.3.0.1, supports only JEE 8 / Jakarta EE 8 or earlier.
+
+https://issues.apache.org/jira/projects/WW/issues/WW-5141?filter=allissues
