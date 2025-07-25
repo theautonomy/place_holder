@@ -1,4 +1,22 @@
-  "errorLens.enabled": true,
+Here are several example congratulations for a director's 20-year anniversary:
+Formal Email Example:
+"Dear [Director's Name],
+Congratulations on reaching your 20-year anniversary with [Company Name]! This remarkable milestone reflects your unwavering dedication and exceptional leadership.
+Over the past two decades, you've guided our department through significant growth, from expanding our team by 150% to successfully launching the new product line that now generates 40% of our revenue. Your open-door policy and mentorship have shaped countless careers, including my own.
+Thank you for your vision, integrity, and commitment to excellence. We're fortunate to have your continued leadership as we move forward.
+Best regards,
+[Your name]"
+Team Card Message:
+"Dear [Name],
+Twenty years of outstanding leadership deserves our heartfelt congratulations! You've built more than just successful projects - you've created a culture where people thrive. From your innovative problem-solving during the 2019 restructure to your patient guidance with new hires, you've made a lasting impact on all of us.
+Thank you for being both an inspiring leader and a wonderful mentor. Here's to celebrating this achievement and many more successful years ahead!
+With appreciation,
+The [Department] Team"
+Casual In-Person Congratulation:
+"[Name], I wanted to personally congratulate you on your 20-year anniversary. It's incredible to think about everything you've accomplished - transforming our client relationships, building such a strong team culture, and always being someone we can count on for wise counsel. Thank you for being such an exceptional leader. This milestone is well-deserved!"
+Each example balances professionalism with genuine appreciation and includes specific details that make the congratulation more meaningful.
+==================
+"errorLens.enabled": true,
     "errorLens.followCursor": "activeLine",
     "errorLens.alignMessage": {
         "start": 40,
