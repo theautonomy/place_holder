@@ -1,0 +1,225 @@
+// 1. Custom PropertySourceFactory
+import org.springframework.core.env.PropertiesPropertySource;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.support.DefaultPropertySourceFactory;
+import org.springframework.core.io.support.EncodedResource;
+import org.springframework.core.io.support.PropertySourceFactory;
+
+import java.io.IOException;
+import java.util.Properties;
+
+public class CaseInsensitivePropertySourceFactory implements PropertySourceFactory {
+
+    @Override
+    public PropertySource<?> createPropertySource(String name, EncodedResource resource) throws IOException {
+        // Use default factory to load properties first
+        DefaultPropertySourceFactory defaultFactory = new DefaultPropertySourceFactory();
+        PropertySource<?> defaultPropertySource = defaultFactory.createPropertySource(name, resource);
+        
+        // Create case-insensitive wrapper
+        return new CaseInsensitivePropertySource(
+            defaultPropertySource.getName(), 
+            (Properties) defaultPropertySource.getSource()
+        );
+    }
+}
+
+// 2. Case-Insensitive PropertySource wrapper
+import org.springframework.core.env.PropertiesPropertySource;
+import java.util.Properties;
+
+public class CaseInsensitivePropertySource extends PropertiesPropertySource {
+    
+    public CaseInsensitivePropertySource(String name, Properties source) {
+        super(name, createCaseInsensitiveProperties(source));
+    }
+    
+    private static Properties createCaseInsensitiveProperties(Properties original) {
+        Properties caseInsensitive = new Properties() {
+            @Override
+            public String getProperty(String key) {
+                // First try exact match
+                String value = super.getProperty(key);
+                if (value != null) {
+                    return value;
+                }
+                
+                // If not found, try case-insensitive search
+                for (Object k : keySet()) {
+                    if (k.toString().equalsIgnoreCase(key)) {
+                        return super.getProperty(k.toString());
+                    }
+                }
+                return null;
+            }
+            
+            @Override
+            public Object get(Object key) {
+                if (key instanceof String) {
+                    return getProperty((String) key);
+                }
+                return super.get(key);
+            }
+            
+            @Override
+            public boolean containsKey(Object key) {
+                if (super.containsKey(key)) {
+                    return true;
+                }
+                
+                if (key instanceof String) {
+                    String keyStr = (String) key;
+                    for (Object k : keySet()) {
+                        if (k.toString().equalsIgnoreCase(keyStr)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        };
+        
+        // Copy all properties to the case-insensitive wrapper
+        caseInsensitive.putAll(original);
+        return caseInsensitive;
+    }
+}
+
+// 3. Configuration class using the custom factory
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
+@Configuration
+@PropertySource(
+    value = "classpath:application-custom.properties",
+    factory = CaseInsensitivePropertySourceFactory.class
+)
+public class CaseInsensitivePropertyConfig {
+    // Configuration class content
+}
+
+// 4. Example usage in a component
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PropertyTestComponent {
+    
+    @Value("${database.URL:default}")  // Will match database.url case-insensitively
+    private String databaseUrl;
+    
+    @Value("${SERVER.port:8080}")      // Will match server.port case-insensitively
+    private int serverPort;
+    
+    private final Environment environment;
+    
+    public PropertyTestComponent(Environment environment) {
+        this.environment = environment;
+    }
+    
+    public void demonstrateUsage() {
+        // These will all work regardless of case in the properties file
+        String url1 = environment.getProperty("database.url");
+        String url2 = environment.getProperty("DATABASE.URL"); 
+        String url3 = environment.getProperty("Database.Url");
+        
+        System.out.println("database.url: " + url1);
+        System.out.println("DATABASE.URL: " + url2);  
+        System.out.println("Database.Url: " + url3);
+        
+        System.out.println("Injected values:");
+        System.out.println("Database URL: " + databaseUrl);
+        System.out.println("Server Port: " + serverPort);
+    }
+}
+
+// 5. Alternative approach with @ConfigurationProperties
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConfigurationProperties(prefix = "app")
+@PropertySource(
+    value = "classpath:app-config.properties",
+    factory = CaseInsensitivePropertySourceFactory.class
+)
+public class AppProperties {
+    
+    private String name;
+    private String version;
+    private DatabaseConfig database = new DatabaseConfig();
+    
+    // Getters and setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getVersion() { return version; }
+    public void setVersion(String version) { this.version = version; }
+    
+    public DatabaseConfig getDatabase() { return database; }
+    public void setDatabase(DatabaseConfig database) { this.database = database; }
+    
+    public static class DatabaseConfig {
+        private String url;
+        private String username;
+        private String password;
+        
+        // Getters and setters
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+        
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+    }
+}
+
+// 6. Test class to demonstrate functionality
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PropertyTestRunner implements CommandLineRunner {
+    
+    private final PropertyTestComponent testComponent;
+    private final AppProperties appProperties;
+    
+    public PropertyTestRunner(PropertyTestComponent testComponent, AppProperties appProperties) {
+        this.testComponent = testComponent;
+        this.appProperties = appProperties;
+    }
+    
+    @Override
+    public void run(String... args) {
+        System.out.println("=== Case-Insensitive Property Source Demo ===");
+        
+        testComponent.demonstrateUsage();
+        
+        System.out.println("\n=== Configuration Properties ===");
+        System.out.println("App Name: " + appProperties.getName());
+        System.out.println("App Version: " + appProperties.getVersion());
+        System.out.println("DB URL: " + appProperties.getDatabase().getUrl());
+        System.out.println("DB Username: " + appProperties.getDatabase().getUsername());
+    }
+}
+
+///
+
+
+# application-custom.properties
+# These properties have mixed case intentionally
+Database.URL=jdbc:mysql://localhost:3306/mydb
+SERVER.port=9090
+application.NAME=My Spring App
+logging.LEVEL.root=INFO
+
+# app-config.properties  
+# Properties for @ConfigurationProperties example
+APP.name=Case Insensitive App
+app.VERSION=1.0.0
+App.Database.Url=jdbc:postgresql://localhost:5432/appdb
+app.database.USERNAME=admin
+APP.DATABASE.password=secret123
