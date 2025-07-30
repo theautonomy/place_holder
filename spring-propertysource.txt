@@ -224,7 +224,42 @@ App.Database.Url=jdbc:postgresql://localhost:5432/appdb
 app.database.USERNAME=admin
 APP.DATABASE.password=secret123
 
+I'll show you how to create a custom PropertySourceFactory that loads properties in a case-insensitive manner in Spring.Now let me create the corresponding property files to demonstrate how this works:Here's a complete example of implementing a case-insensitive PropertySourceFactory in Spring:
 
+## Key Components:
+
+1. **CaseInsensitivePropertySourceFactory**: Implements `PropertySourceFactory` and wraps the default property loading with case-insensitive behavior.
+
+2. **CaseInsensitivePropertySource**: Extends `PropertiesPropertySource` and overrides key methods (`getProperty`, `get`, `containsKey`) to perform case-insensitive lookups.
+
+3. **Configuration Usage**: Shows how to use the custom factory with `@PropertySource`.
+
+## How it works:
+
+- When a property is requested, it first tries an exact match
+- If no exact match is found, it performs a case-insensitive search through all keys
+- This allows properties like `database.url`, `DATABASE.URL`, or `Database.Url` to all resolve to the same value
+
+## Usage Examples:
+
+With the property file containing `Database.URL=jdbc:mysql://localhost:3306/mydb`, all of these will work:
+
+```java
+@Value("${database.url}")        // Works
+@Value("${DATABASE.URL}")        // Works  
+@Value("${Database.Url}")        // Works
+```
+
+The same applies when using `Environment.getProperty()` or `@ConfigurationProperties`.
+
+## Benefits:
+
+- Backward compatibility with existing property files
+- Flexibility for different naming conventions
+- Works with both `@Value` annotations and `@ConfigurationProperties`
+- Maintains Spring's property resolution order and placeholder support
+
+This approach is particularly useful when migrating between systems with different property naming conventions or when working with external configuration files that don't follow consistent casing rules.
 
 \\\\\\\\\
 
@@ -578,6 +613,69 @@ app.environment=development
 app.debug=true
 app.max-connections=100
 
+
+I'll show you how to create a custom PropertySourceFactory that can load property files with case-insensitive filenames.Now let me create example property files with different case variations:Here's a comprehensive solution for loading property files with case-insensitive filenames:
+
+## Key Features:
+
+### 1. **CaseInsensitiveFilenamePropertySourceFactory**
+- Basic implementation that handles classpath resources
+- Uses `ResourcePatternResolver` to search for files in directories
+- Performs case-insensitive filename matching
+
+### 2. **EnhancedCaseInsensitivePropertySourceFactory**  
+- Advanced implementation supporting both classpath and file system resources
+- Handles different resource types (classpath, file system)
+- More robust error handling and resource discovery
+
+## How It Works:
+
+1. **Initial Check**: First tries to load the file with the exact name specified
+2. **Case-Insensitive Search**: If not found, searches the directory for files with matching names (ignoring case)
+3. **Resource Creation**: Creates a new resource pointing to the found file
+4. **Fallback**: If no match is found, delegates to the default factory (which will throw appropriate exceptions)
+
+## Usage Examples:
+
+```java
+// These will all find the actual file "application.properties"
+@PropertySource(value = "classpath:APPLICATION.PROPERTIES", factory = ...)
+@PropertySource(value = "classpath:Application.Properties", factory = ...)  
+@PropertySource(value = "classpath:application.properties", factory = ...)
+
+// These will find "config/database.properties" 
+@PropertySource(value = "classpath:config/DATABASE.PROPERTIES", factory = ...)
+@PropertySource(value = "classpath:config/Database.Properties", factory = ...)
+```
+
+## Supported Scenarios:
+
+- **Classpath resources**: `classpath:APPLICATION.PROPERTIES` → finds `application.properties`
+- **Subdirectories**: `classpath:config/SERVER.PROPERTIES` → finds `config/server.properties`
+- **File system**: `file:/path/to/MYAPP.PROPERTIES` → finds `myapp.properties`
+- **Multiple files**: Works with arrays of property source values
+
+## Benefits:
+
+1. **Backward Compatibility**: Existing lowercase filenames work unchanged
+2. **Flexibility**: Allows different naming conventions in configuration
+3. **Migration Support**: Helpful when moving between systems with different file naming standards
+4. **Error Handling**: Provides clear error messages when files aren't found
+5. **Performance**: Only performs case-insensitive search when exact match fails
+
+## Directory Structure Example:
+
+```
+src/main/resources/
+├── application.properties     # Found by APPLICATION.PROPERTIES
+├── database.properties        # Found by DATABASE.PROPERTIES  
+├── server.properties         # Found by SERVER.PROPERTIES
+├── settings.properties       # Found by SETTINGS.PROPERTIES
+└── config/
+    └── app.properties        # Found by config/APP.PROPERTIES
+```
+
+This solution is particularly useful in enterprise environments where configuration files might be created by different teams with varying naming conventions, or when integrating with legacy systems that use different case patterns.
 
 
 ======
@@ -952,3 +1050,953 @@ debug.enabled=false
 # CONFIG_FILE_NAME=custom
 # APP_NAME=myapp
 # SPRING_PROFILES_ACTIVE=dev
+
+Yes! You can use Spring Expression Language (SpEL) to manipulate filenames in `@PropertySource` annotations. Here are several approaches to achieve this:Now let me create example property files that would be loaded by these SpEL expressions:Yes! You can definitely use Spring Expression Language (SpEL) to manipulate filenames in `@PropertySource` annotations. Here's a comprehensive solution:
+
+## Key Features:
+
+### 1. **SpEL Expression Support**
+- Custom `PropertySourceFactory` that evaluates SpEL expressions in URIs
+- Template parsing with `#{...}` syntax
+- Access to environment variables, system properties, and utility methods
+
+### 2. **Built-in Utility Methods**
+- **StringUtils**: `toLowerCase()`, `toUpperCase()`, `replace()`, `concat()`
+- **FileUtils**: `getBaseName()`, `getExtension()`, `changeExtension()`
+- **SpringUtils**: Access to Spring Environment and active profiles
+
+## SpEL Expression Examples:
+
+### Basic Case Conversion:
+```java
+@PropertySource(
+    value = "classpath:#{#stringUtils.toLowerCase('APPLICATION')}.properties"
+)
+// Loads: application.properties
+```
+
+### Environment Variable with Fallback:
+```java
+@PropertySource(
+    value = "classpath:#{#env['CONFIG_FILE_NAME'] ?: 'default'}.properties"
+)
+// Loads: custom.properties (if CONFIG_FILE_NAME=custom) or default.properties
+```
+
+### Profile-Based Loading:
+```java
+@PropertySource(
+    value = "classpath:application-#{#spring.activeProfiles[0]}.properties"
+)
+// Loads: application-dev.properties (if dev profile is active)
+```
+
+### Complex Filename Manipulation:
+```java
+@PropertySource(
+    value = "classpath:#{#stringUtils.concat('config/', #stringUtils.toLowerCase(#env['APP_NAME']), '.properties')}"
+)
+// Loads: config/myapp.properties (if APP_NAME=MYAPP)
+```
+
+## Available SpEL Variables:
+
+- **`#stringUtils`**: String manipulation methods
+- **`#fileUtils`**: File name utility methods  
+- **`#env`**: Environment variables (`System.getenv()`)
+- **`#props`**: System properties (`System.getProperties()`)
+- **`#spring`**: Spring Environment access (properties, profiles)
+
+## Advanced Examples:
+
+### Date-Based Configuration:
+```java
+@PropertySource(
+    value = "classpath:config-#{T(java.time.LocalDate).now().toString()}.properties"
+)
+```
+
+### Conditional Loading:
+```java
+@PropertySource(
+    value = "classpath:#{#spring.getProperty('use.external.config', 'false').equals('true') ? 'external' : 'internal'}.properties"
+)
+```
+
+### File Extension Change:
+```java
+@PropertySource(
+    value = "classpath:#{#fileUtils.changeExtension('config.yml', 'properties')}"
+)
+// Changes: config.yml → config.properties
+```
+
+## Benefits:
+
+1. **Dynamic Configuration**: Load different files based on runtime conditions
+2. **Environment Flexibility**: Adapt to different deployment environments
+3. **Naming Convention Support**: Handle various file naming patterns  
+4. **Reduced Configuration**: Less need for multiple `@Profile` annotations
+5. **Expression Power**: Full SpEL capabilities for complex logic
+
+## Use Cases:
+
+- **Multi-environment deployments**: Different configs per environment
+- **Legacy system integration**: Adapt to existing file naming conventions
+- **Dynamic configuration**: Load configs based on runtime parameters
+- **Microservice configurations**: Environment-specific property loading
+
+This approach provides much more flexibility than static filename configuration while maintaining the declarative nature of Spring's `@PropertySource` annotation.
+
+
+////
+
+// 1. Using property placeholders (most common approach)
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
+@Configuration
+@PropertySource("classpath:application-${spring.profiles.active:default}.properties")
+public class ProfileBasedConfig {
+    // This automatically loads application-dev.properties if 'dev' profile is active
+    // Falls back to application-default.properties if no profile is active
+}
+
+@Configuration
+@PropertySource("classpath:${config.filename:application}.properties")
+public class PropertyBasedConfig {
+    // Uses config.filename property or defaults to 'application'
+    // Set via: -Dconfig.filename=myapp or in application.properties
+}
+
+// 2. Multiple configurations with different approaches
+@Configuration
+@PropertySource({
+    "classpath:application.properties",
+    "classpath:application-${spring.profiles.active}.properties"
+})
+public class MultiFileConfig {
+    // Loads base config + profile-specific config
+}
+
+@Configuration
+@PropertySource("classpath:${app.name:myapp}/${spring.profiles.active:default}/config.properties")
+public class NestedDirectoryConfig {
+    // Example: myapp/dev/config.properties
+}
+
+// 3. Using system properties and environment variables
+@Configuration
+@PropertySource("file:${user.home}/.${spring.application.name:app}/config.properties")
+public class UserHomeConfig {
+    // Loads from user's home directory
+}
+
+@Configuration
+@PropertySource("classpath:${CONFIG_FILE_NAME:application}.properties")
+public class EnvironmentVariableConfig {
+    // Uses CONFIG_FILE_NAME environment variable
+}
+
+// 4. Conditional loading with @Profile
+import org.springframework.context.annotation.Profile;
+
+@Configuration
+@Profile("dev")
+@PropertySource("classpath:development.properties")
+public class DevConfig {
+}
+
+@Configuration
+@Profile("prod")
+@PropertySource("classpath:production.properties")  
+public class ProdConfig {
+}
+
+@Configuration
+@Profile("!prod") // NOT prod profile
+@PropertySource("classpath:non-production.properties")
+public class NonProdConfig {
+}
+
+// 5. Using @ConfigurationProperties with SpEL
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConfigurationProperties(prefix = "app")
+@PropertySource("classpath:${app.config.file:application}.properties")
+public class FlexibleAppConfig {
+    private String name;
+    private String version;
+    private String environment;
+    
+    // Getters and setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getVersion() { return version; }
+    public void setVersion(String version) { this.version = version; }
+    
+    public String getEnvironment() { return environment; }
+    public void setEnvironment(String environment) { this.environment = environment; }
+}
+
+// 6. Programmatic approach using Environment
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.io.support.ResourcePropertySource;
+
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+
+@Configuration
+public class ProgrammaticPropertySourceConfig {
+    
+    private final ConfigurableEnvironment environment;
+    
+    public ProgrammaticPropertySourceConfig(ConfigurableEnvironment environment) {
+        this.environment = environment;
+    }
+    
+    @PostConstruct
+    public void addDynamicPropertySources() {
+        try {
+            // Get dynamic filename from environment
+            String profile = environment.getProperty("spring.profiles.active", "default");
+            String appName = environment.getProperty("app.name", "application");
+            String filename = appName.toLowerCase() + "-" + profile + ".properties";
+            
+            // Add property source programmatically
+            String location = "classpath:" + filename;
+            ResourcePropertySource propertySource = new ResourcePropertySource(location);
+            environment.getPropertySources().addLast(propertySource);
+            
+            System.out.println("Loaded dynamic property source: " + filename);
+            
+        } catch (IOException e) {
+            System.err.println("Could not load dynamic property source: " + e.getMessage());
+        }
+    }
+}
+
+// 7. Using ApplicationContextInitializer for early property loading
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.io.support.ResourcePropertySource;
+
+public class DynamicPropertySourceInitializer 
+    implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    
+    @Override
+    public void initialize(ConfigurableApplicationContext applicationContext) {
+        ConfigurableEnvironment environment = applicationContext.getEnvironment();
+        
+        try {
+            // Build filename dynamically
+            String envName = System.getenv("ENVIRONMENT");
+            if (envName != null) {
+                String filename = "config-" + envName.toLowerCase() + ".properties";
+                ResourcePropertySource propertySource = new ResourcePropertySource("classpath:" + filename);
+                environment.getPropertySources().addFirst(propertySource);
+            }
+        } catch (Exception e) {
+            // Handle silently or log
+        }
+    }
+}
+
+// 8. Using Spring Boot's application.properties features
+// In application.properties, you can use:
+/*
+# Include additional property files
+spring.config.import=classpath:additional-${spring.profiles.active}.properties
+
+# Or use spring.config.location
+# spring.config.location=classpath:custom-${spring.profiles.active}.properties
+
+# Set via command line:
+# java -jar app.jar --spring.config.location=classpath:custom-config.properties
+*/
+
+// 9. Configuration with multiple placeholder strategies
+@Configuration
+public class AdvancedPlaceholderConfig {
+    
+    // Environment variable with system property fallback
+    @PropertySource("classpath:${CONFIG_FILE:${config.file:application}}.properties")
+    static class EnvOrSystemConfig {}
+    
+    // Nested property resolution
+    @PropertySource("classpath:${app.${app.type:web}.config.file:application}.properties")
+    static class NestedPropertyConfig {}
+    
+    // Multiple files with patterns
+    @PropertySource({
+        "classpath:base.properties",
+        "classpath:${app.component:core}.properties",
+        "classpath:${app.component:core}-${spring.profiles.active:default}.properties"
+    })
+    static class ComponentBasedConfig {}
+}
+
+// 10. Using @Value with SpEL for dynamic property access
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DynamicPropertyAccess {
+    
+    // Load property file name from another property
+    @Value("#{environment.getProperty('config.filename', 'application')}")
+    private String configFilename;
+    
+    // Conditional property loading
+    @Value("#{environment.getProperty('use.external.config', 'false').equals('true') ? " +
+           "environment.getProperty('external.config.file') : 'application.properties'}")
+    private String selectedConfigFile;
+    
+    // Case manipulation using SpEL
+    @Value("#{environment.getProperty('app.name', 'myapp').toLowerCase()}")
+    private String appNameLower;
+    
+    public void printDynamicValues() {
+        System.out.println("Config filename: " + configFilename);
+        System.out.println("Selected config file: " + selectedConfigFile);
+        System.out.println("App name (lowercase): " + appNameLower);
+    }
+}
+
+// 11. Boot configuration with external configuration
+import org.springframework.boot.context.config.ConfigDataLocationResolver;
+import org.springframework.boot.context.config.ConfigDataLocationResolverContext;
+import org.springframework.boot.context.config.ConfigDataLocation;
+import org.springframework.boot.context.config.Profiles;
+
+// For Spring Boot 2.4+, you can create custom config data location resolvers
+// But for simple cases, use application.properties:
+
+/*
+# In application.properties:
+spring.config.import=optional:classpath:config-${ENVIRONMENT:dev}.properties
+spring.config.import=optional:file:${CONFIG_DIR:./config}/app-${spring.profiles.active}.properties
+
+# Or use configuration processor:
+spring.config.activate.on-profile=dev
+spring.config.import=classpath:development-config.properties
+
+spring.config.activate.on-profile=prod  
+spring.config.import=classpath:production-config.properties
+*/
+
+// 12. Example usage and test
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PropertySourceDemo implements CommandLineRunner {
+    
+    private final Environment environment;
+    private final DynamicPropertyAccess dynamicAccess;
+    
+    public PropertySourceDemo(Environment environment, DynamicPropertyAccess dynamicAccess) {
+        this.environment = environment;
+        this.dynamicAccess = dynamicAccess;
+    }
+    
+    @Override
+    public void run(String... args) {
+        System.out.println("=== Built-in Property Source Manipulation Demo ===");
+        System.out.println("Active profiles: " + String.join(", ", environment.getActiveProfiles()));
+        System.out.println("Application name: " + environment.getProperty("spring.application.name", "unknown"));
+        System.out.println("Config filename property: " + environment.getProperty("config.filename", "not set"));
+        
+        System.out.println("\n=== Dynamic Property Access ===");
+        dynamicAccess.printDynamicValues();
+        
+        System.out.println("\n=== Available placeholder patterns ===");
+        System.out.println("${spring.profiles.active:default} - Active profile with fallback");
+        System.out.println("${config.filename:application} - Custom property with fallback");
+        System.out.println("${user.home} - System property");
+        System.out.println("${CONFIG_FILE_NAME:app} - Environment variable with fallback");
+    }
+}
+
+
+# application.properties (base configuration)
+spring.application.name=demo-app
+app.name=Demo Application
+config.filename=custom-config
+app.config.file=special-config
+
+# application-dev.properties (dev profile)
+app.name=Demo Application (Development)
+app.environment=development
+database.url=jdbc:h2:mem:devdb
+logging.level.root=DEBUG
+
+# application-prod.properties (prod profile)  
+app.name=Demo Application (Production)
+app.environment=production
+database.url=jdbc:mysql://prod-server:3306/proddb
+logging.level.root=WARN
+
+# application-default.properties (default fallback)
+app.name=Demo Application (Default)
+app.environment=default
+database.url=jdbc:h2:mem:defaultdb
+
+# custom-config.properties (loaded via config.filename property)
+custom.setting=This is from custom config
+custom.value=12345
+
+# special-config.properties (loaded via app.config.file property)
+special.feature.enabled=true
+special.feature.timeout=30000
+
+# development.properties (loaded via @Profile("dev"))
+dev.specific.setting=Development only setting
+dev.debug.enabled=true
+
+# production.properties (loaded via @Profile("prod"))
+prod.specific.setting=Production only setting
+prod.monitoring.enabled=true
+
+# non-production.properties (loaded via @Profile("!prod"))
+test.data.enabled=true
+mock.services.enabled=true
+
+# Example environment-based files:
+# config-dev.properties (if ENVIRONMENT=DEV)
+environment.name=Development Environment
+environment.config.loaded=true
+
+# config-staging.properties (if ENVIRONMENT=STAGING)  
+environment.name=Staging Environment
+environment.config.loaded=true
+
+# config-production.properties (if ENVIRONMENT=PRODUCTION)
+environment.name=Production Environment  
+environment.config.loaded=true
+
+# Example for programmatic loading:
+# myapp-dev.properties (loaded programmatically)
+programmatic.config=Loaded via programmatic approach
+dynamic.setting=This was loaded dynamically
+
+# Example for nested directories:
+# myapp/dev/config.properties
+nested.config=Loaded from nested directory
+nested.environment=dev
+
+# Example for user home directory:
+# ~/.demo-app/config.properties (in user home)
+user.specific.setting=User specific configuration
+user.home.config=true
+
+# Command line examples to test:
+# java -jar app.jar --spring.profiles.active=dev
+# java -jar app.jar --config.filename=myconfig
+# java -jar app.jar --app.name=TestApp
+# CONFIG_FILE_NAME=external java -jar app.jar
+# ENVIRONMENT=staging java -jar app.jar
+
+
+Yes! Spring already supports SpEL expressions in `@PropertySource` values through property placeholders and the Environment. Here are several ways to achieve filename manipulation without implementing a custom factory:Yes! Spring provides several built-in ways to manipulate filenames in `@PropertySource` without implementing a custom factory:
+
+## 1. **Property Placeholders (Most Common)**
+
+```java
+// Profile-based loading
+@PropertySource("classpath:application-${spring.profiles.active:default}.properties")
+
+// Custom property with fallback
+@PropertySource("classpath:${config.filename:application}.properties")
+
+// Environment variable
+@PropertySource("classpath:${CONFIG_FILE_NAME:application}.properties")
+```
+
+## 2. **Spring Boot's Built-in Configuration**
+
+### In `application.properties`:
+```properties
+# Import additional files dynamically
+spring.config.import=classpath:config-${spring.profiles.active}.properties
+
+# Multiple imports
+spring.config.import=classpath:base.properties,classpath:${ENVIRONMENT:dev}-config.properties
+```
+
+### Command line usage:
+```bash
+# Dynamic profile loading
+java -jar app.jar --spring.profiles.active=dev
+
+# Custom config location
+java -jar app.jar --spring.config.location=classpath:custom-${ENVIRONMENT}.properties
+
+# Property-based filename
+java -jar app.jar --config.filename=myconfig
+```
+
+## 3. **Profile-Based Conditional Loading**
+
+```java
+@Configuration
+@Profile("dev")
+@PropertySource("classpath:development.properties")
+public class DevConfig {}
+
+@Configuration  
+@Profile("!prod")  // NOT production
+@PropertySource("classpath:test-config.properties")
+public class NonProdConfig {}
+```
+
+## 4. **Available Placeholder Patterns**
+
+- **`${spring.profiles.active:default}`** - Active profile with fallback
+- **`${property.name:fallback}`** - Any property with default value
+- **`${ENVIRONMENT_VAR:default}`** - Environment variable
+- **`${user.home}`** - System properties
+- **`${spring.application.name}`** - Application name
+
+## 5. **Advanced Patterns**
+
+```java
+// Nested directory structure
+@PropertySource("classpath:${app.name:myapp}/${spring.profiles.active:default}/config.properties")
+
+// Multiple property resolution
+@PropertySource("classpath:${app.${app.type:web}.config.file:application}.properties")
+
+// File system with user home
+@PropertySource("file:${user.home}/.${spring.application.name}/config.properties")
+```
+
+## 6. **Programmatic Approach (No Custom Factory)**
+
+```java
+@PostConstruct
+public void addDynamicPropertySources() throws IOException {
+    String filename = environment.getProperty("app.name", "application").toLowerCase() + ".properties";
+    ResourcePropertySource propertySource = new ResourcePropertySource("classpath:" + filename);
+    environment.getPropertySources().addLast(propertySource);
+}
+```
+
+## 7. **SpEL in @Value (For Property Access)**
+
+```java
+@Value("#{environment.getProperty('app.name', 'myapp').toLowerCase()}")
+private String appNameLower;
+```
+
+## Key Benefits:
+
+1. **No Custom Code**: Uses Spring's built-in capabilities  
+2. **Standard Approach**: Follows Spring Boot conventions
+3. **Environment Aware**: Automatically resolves environment variables and properties
+4. **Profile Support**: Native integration with Spring profiles
+5. **Fallback Support**: Built-in default value handling
+
+## Common Use Cases:
+
+- **Environment-specific configs**: `application-${spring.profiles.active}.properties`
+- **User customization**: `${config.filename:application}.properties`  
+- **External configuration**: `file:${CONFIG_DIR}/app.properties`
+- **Multi-module apps**: `${module.name}/${spring.profiles.active}/config.properties`
+
+This approach is much simpler and leverages Spring's existing property resolution mechanisms, making it the recommended way for most use cases involving dynamic filename manipulation.
+
+
+
+//////
+
+
+// 1. What DOESN'T work (Spring property placeholders don't support method calls)
+/*
+@PropertySource("classpath:${config.filename:application.toLowerCase()}.properties")  // ❌ Won't work
+@PropertySource("classpath:${config.filename.toLowerCase():application}.properties") // ❌ Won't work  
+@PropertySource("classpath:${config.filename:application}.toLowerCase().properties") // ❌ Won't work
+*/
+
+// 2. Pre-process the property value (Recommended approach)
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class PreProcessedPropertyConfig {
+    
+    private final ConfigurableEnvironment environment;
+    
+    public PreProcessedPropertyConfig(ConfigurableEnvironment environment) {
+        this.environment = environment;
+    }
+    
+    @PostConstruct
+    public void preprocessProperties() {
+        // Get the original property value
+        String configFilename = environment.getProperty("config.filename", "application");
+        
+        // Create lowercase version
+        String lowercaseFilename = configFilename.toLowerCase();
+        
+        // Add the processed property to environment
+        Map<String, Object> processedProps = new HashMap<>();
+        processedProps.put("config.filename.lower", lowercaseFilename);
+        processedProps.put("config.filename.upper", configFilename.toUpperCase());
+        
+        MapPropertySource processedPropertySource = new MapPropertySource("processed", processedProps);
+        environment.getPropertySources().addFirst(processedPropertySource);
+    }
+}
+
+// Now you can use the processed property
+@Configuration
+@PropertySource("classpath:${config.filename.lower}.properties")
+public class LowercasePropertySourceConfig {
+}
+
+// 3. Using ApplicationContextInitializer (runs very early)
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+public class PropertyPreprocessorInitializer 
+    implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    
+    @Override
+    public void initialize(ConfigurableApplicationContext applicationContext) {
+        ConfigurableEnvironment environment = applicationContext.getEnvironment();
+        
+        // Process system properties and environment variables early
+        String configFilename = environment.getProperty("config.filename");
+        if (configFilename == null) {
+            configFilename = System.getProperty("config.filename", "application");
+        }
+        
+        // Create processed versions
+        Map<String, Object> processedProps = new HashMap<>();
+        processedProps.put("config.filename.lower", configFilename.toLowerCase());
+        processedProps.put("config.filename.upper", configFilename.toUpperCase());
+        processedProps.put("config.filename.original", configFilename);
+        
+        environment.getPropertySources().addFirst(new MapPropertySource("preprocessed", processedProps));
+    }
+}
+
+// Register the initializer in META-INF/spring.factories:
+/*
+org.springframework.context.ApplicationContextInitializer=\
+com.example.PropertyPreprocessorInitializer
+*/
+
+// 4. Using Spring Boot's EnvironmentPostProcessor
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+public class CaseConversionEnvironmentPostProcessor implements EnvironmentPostProcessor {
+    
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        Map<String, Object> caseConvertedProps = new HashMap<>();
+        
+        // Process specific properties that need case conversion
+        String[] propertiesToConvert = {"config.filename", "app.name", "module.name"};
+        
+        for (String propertyName : propertiesToConvert) {
+            String value = environment.getProperty(propertyName);
+            if (value != null) {
+                caseConvertedProps.put(propertyName + ".lower", value.toLowerCase());
+                caseConvertedProps.put(propertyName + ".upper", value.toUpperCase());
+            }
+        }
+        
+        if (!caseConvertedProps.isEmpty()) {
+            environment.getPropertySources().addFirst(
+                new MapPropertySource("caseConverted", caseConvertedProps)
+            );
+        }
+    }
+}
+
+// Register in META-INF/spring.factories:
+/*
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.example.CaseConversionEnvironmentPostProcessor
+*/
+
+// 5. Programmatic property source loading with case conversion
+import org.springframework.core.io.support.ResourcePropertySource;
+import java.io.IOException;
+
+@Configuration
+public class DynamicCaseInsensitiveConfig {
+    
+    private final ConfigurableEnvironment environment;
+    
+    public DynamicCaseInsensitiveConfig(ConfigurableEnvironment environment) {
+        this.environment = environment;
+    }
+    
+    @PostConstruct
+    public void loadCaseInsensitivePropertySources() {
+        String configFilename = environment.getProperty("config.filename", "application");
+        
+        // Try different case variations
+        String[] variations = {
+            configFilename.toLowerCase(),
+            configFilename.toUpperCase(),
+            configFilename // original case
+        };
+        
+        for (String variation : variations) {
+            try {
+                String location = "classpath:" + variation + ".properties";
+                ResourcePropertySource propertySource = new ResourcePropertySource(location);
+                environment.getPropertySources().addLast(propertySource);
+                System.out.println("Successfully loaded: " + location);
+                break; // Stop after first successful load
+            } catch (IOException e) {
+                // Try next variation
+            }
+        }
+    }
+}
+
+// 6. Using BeanFactoryPostProcessor for early property manipulation
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PropertyCaseConversionPostProcessor 
+    implements BeanFactoryPostProcessor, EnvironmentAware {
+    
+    private ConfigurableEnvironment environment;
+    
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = (ConfigurableEnvironment) environment;
+    }
+    
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        // This runs after property sources are loaded but before beans are created
+        Map<String, Object> convertedProps = new HashMap<>();
+        
+        // Convert specific properties
+        convertProperty("config.filename", convertedProps);
+        convertProperty("app.name", convertedProps);
+        convertProperty("module.name", convertedProps);
+        
+        if (!convertedProps.isEmpty()) {
+            environment.getPropertySources().addFirst(
+                new MapPropertySource("caseConverted", convertedProps)
+            );
+        }
+    }
+    
+    private void convertProperty(String propertyName, Map<String, Object> target) {
+        String value = environment.getProperty(propertyName);
+        if (value != null) {
+            target.put(propertyName + ".lower", value.toLowerCase());
+            target.put(propertyName + ".upper", value.toUpperCase());
+            target.put(propertyName + ".title", toTitleCase(value));
+        }
+    }
+    
+    private String toTitleCase(String input) {
+        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
+    }
+}
+
+// 7. Configuration using the converted properties
+@Configuration
+@PropertySource("classpath:${config.filename.lower:application}.properties")
+public class LowercaseConfig {
+}
+
+@Configuration
+@PropertySource("classpath:${app.name.lower:myapp}-${spring.profiles.active:default}.properties")
+public class AppNameBasedConfig {
+}
+
+// 8. Alternative: Set properties externally with correct case
+// application.properties
+/*
+# Instead of relying on case conversion, set the property with correct case
+config.filename=myconfig
+config.filename.lower=myconfig
+config.filename.upper=MYCONFIG
+
+# Or use profiles to set different cases
+spring.profiles.active=dev
+*/
+
+// 9. Command line and environment variable examples
+/*
+# Set property in lowercase directly
+java -jar app.jar --config.filename.lower=myconfig
+
+# Or use environment variables
+export CONFIG_FILENAME_LOWER=myconfig
+java -jar app.jar
+
+# System property
+-Dconfig.filename.lower=myconfig
+*/
+
+// 10. Demo component to show the results
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CaseConversionDemo {
+    
+    @Value("${config.filename:not-set}")
+    private String originalFilename;
+    
+    @Value("${config.filename.lower:not-set}")
+    private String lowercaseFilename;
+    
+    @Value("${config.filename.upper:not-set}")
+    private String uppercaseFilename;
+    
+    @Value("${config.filename.title:not-set}")
+    private String titleCaseFilename;
+    
+    public void printConversions() {
+        System.out.println("=== Property Case Conversion Demo ===");
+        System.out.println("Original: " + originalFilename);
+        System.out.println("Lowercase: " + lowercaseFilename);
+        System.out.println("Uppercase: " + uppercaseFilename);
+        System.out.println("Title Case: " + titleCaseFilename);
+        System.out.println();
+        System.out.println("Usage examples:");
+        System.out.println("@PropertySource(\"classpath:${config.filename.lower}.properties\")");
+        System.out.println("@PropertySource(\"classpath:${app.name.lower}-${spring.profiles.active}.properties\")");
+    }
+}
+
+// 11. Test runner
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CaseConversionTestRunner implements CommandLineRunner {
+    
+    private final CaseConversionDemo demo;
+    
+    public CaseConversionTestRunner(CaseConversionDemo demo) {
+        this.demo = demo;
+    }
+    
+    @Override
+    public void run(String... args) {
+        demo.printConversions();
+    }
+}
+
+
+Unfortunately, you **cannot** invoke `toLowerCase()` directly on property placeholders like `${config.filename:application}` in `@PropertySource` annotations. Spring's property placeholder resolution doesn't support method invocation - it only supports simple property resolution with default values.
+
+However, here are several alternatives to achieve lowercase conversion:**No, you cannot invoke `toLowerCase()` directly on property placeholders** like `${config.filename:application}` in Spring's `@PropertySource` annotations. Property placeholders only support simple property resolution with default values, not method invocation.
+
+## Why This Doesn't Work:
+```java
+// ❌ These won't work - Spring doesn't support method calls in property placeholders
+@PropertySource("classpath:${config.filename.toLowerCase():application}.properties")
+@PropertySource("classpath:${config.filename:application}.toLowerCase().properties") 
+```
+
+## Alternative Solutions:
+
+### 1. **Pre-process Properties (Recommended)**
+```java
+@PostConstruct
+public void preprocessProperties() {
+    String configFilename = environment.getProperty("config.filename", "application");
+    Map<String, Object> processedProps = new HashMap<>();
+    processedProps.put("config.filename.lower", configFilename.toLowerCase());
+    
+    environment.getPropertySources().addFirst(new MapPropertySource("processed", processedProps));
+}
+
+// Then use:
+@PropertySource("classpath:${config.filename.lower}.properties")
+```
+
+### 2. **EnvironmentPostProcessor (Very Early Processing)**
+```java
+public class CaseConversionEnvironmentPostProcessor implements EnvironmentPostProcessor {
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        String value = environment.getProperty("config.filename");
+        if (value != null) {
+            Map<String, Object> props = new HashMap<>();
+            props.put("config.filename.lower", value.toLowerCase());
+            environment.getPropertySources().addFirst(new MapPropertySource("caseConverted", props));
+        }
+    }
+}
+```
+
+### 3. **Set Lowercase Properties Directly**
+```properties
+# In application.properties
+config.filename=MyConfig
+config.filename.lower=myconfig
+```
+
+```java
+@PropertySource("classpath:${config.filename.lower}.properties")
+```
+
+### 4. **Command Line/Environment Variables**
+```bash
+# Set the lowercase version directly
+java -jar app.jar --config.filename.lower=myconfig
+
+# Or environment variable  
+export CONFIG_FILENAME_LOWER=myconfig
+```
+
+### 5. **Programmatic Loading**
+```java
+@PostConstruct
+public void loadCaseInsensitiveConfig() {
+    String filename = environment.getProperty("config.filename", "application").toLowerCase();
+    ResourcePropertySource propertySource = new ResourcePropertySource("classpath:" + filename + ".properties");
+    environment.getPropertySources().addLast(propertySource);
+}
+```
+
+## Best Practices:
+
+1. **Use EnvironmentPostProcessor** for system-wide property preprocessing
+2. **Set lowercase properties explicitly** in configuration files
+3. **Use programmatic loading** for complex case handling
+4. **Avoid relying on case conversion** - design your property files with consistent naming
+
+The key limitation is that Spring's property placeholder syntax `${}` is designed for simple property resolution, not for executing arbitrary code or method calls. For dynamic manipulation, you need to preprocess the properties before they're used in `@PropertySource` annotations.
+
+
