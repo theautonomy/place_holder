@@ -223,3 +223,357 @@ app.VERSION=1.0.0
 App.Database.Url=jdbc:postgresql://localhost:5432/appdb
 app.database.USERNAME=admin
 APP.DATABASE.password=secret123
+
+
+
+\\\\\\\\\
+
+// 1. Custom PropertySourceFactory for case-insensitive file loading
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.DefaultPropertySourceFactory;
+import org.springframework.core.io.support.EncodedResource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.PropertySourceFactory;
+import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
+
+public class CaseInsensitiveFilenamePropertySourceFactory implements PropertySourceFactory {
+    
+    private final ResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
+    private final DefaultPropertySourceFactory defaultFactory = new DefaultPropertySourceFactory();
+    
+    @Override
+    public PropertySource<?> createPropertySource(String name, EncodedResource encodedResource) throws IOException {
+        Resource resource = encodedResource.getResource();
+        String originalPath = resource.getURI().toString();
+        
+        // If the resource exists as-is, use it directly
+        if (resource.exists()) {
+            return defaultFactory.createPropertySource(name, encodedResource);
+        }
+        
+        // Try to find the file with case-insensitive matching
+        Resource foundResource = findCaseInsensitiveResource(originalPath);
+        if (foundResource != null && foundResource.exists()) {
+            EncodedResource newEncodedResource = new EncodedResource(foundResource, 
+                encodedResource.getEncoding(), encodedResource.getCharset());
+            return defaultFactory.createPropertySource(name, newEncodedResource);
+        }
+        
+        // If still not found, let the default factory handle it (will throw appropriate exception)
+        return defaultFactory.createPropertySource(name, encodedResource);
+    }
+    
+    private Resource findCaseInsensitiveResource(String originalPath) {
+        try {
+            // Extract directory and filename
+            int lastSlash = originalPath.lastIndexOf('/');
+            if (lastSlash == -1) {
+                return null; // Can't handle relative paths without directory
+            }
+            
+            String directory = originalPath.substring(0, lastSlash + 1);
+            String filename = originalPath.substring(lastSlash + 1);
+            
+            // Remove any classpath: prefix for pattern matching
+            String searchDirectory = directory;
+            if (searchDirectory.startsWith("file:") || searchDirectory.startsWith("classpath:")) {
+                // Handle different resource types
+                if (searchDirectory.startsWith("classpath:")) {
+                    searchDirectory = searchDirectory.substring("classpath:".length());
+                }
+            }
+            
+            // Create pattern to match all files in the directory
+            String searchPattern = "classpath:" + searchDirectory + "*";
+            
+            Resource[] resources = resourceResolver.getResources(searchPattern);
+            
+            // Find matching file with case-insensitive comparison
+            Optional<Resource> matchingResource = Arrays.stream(resources)
+                .filter(r -> {
+                    try {
+                        String resourceFilename = r.getFilename();
+                        return resourceFilename != null && 
+                               resourceFilename.equalsIgnoreCase(filename);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .findFirst();
+                
+            return matchingResource.orElse(null);
+            
+        } catch (Exception e) {
+            // Log the exception in a real application
+            System.err.println("Error during case-insensitive file search: " + e.getMessage());
+            return null;
+        }
+    }
+}
+
+// 2. Enhanced version with file system support
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+public class EnhancedCaseInsensitivePropertySourceFactory implements PropertySourceFactory {
+    
+    private final DefaultPropertySourceFactory defaultFactory = new DefaultPropertySourceFactory();
+    
+    @Override
+    public PropertySource<?> createPropertySource(String name, EncodedResource encodedResource) throws IOException {
+        Resource resource = encodedResource.getResource();
+        
+        // If the resource exists as-is, use it directly
+        if (resource.exists()) {
+            return defaultFactory.createPropertySource(name, encodedResource);
+        }
+        
+        // Try to find the file with case-insensitive matching
+        Resource foundResource = findCaseInsensitiveResource(resource);
+        if (foundResource != null && foundResource.exists()) {
+            EncodedResource newEncodedResource = new EncodedResource(foundResource, 
+                encodedResource.getEncoding(), encodedResource.getCharset());
+            return defaultFactory.createPropertySource(name, newEncodedResource);
+        }
+        
+        // If still not found, let the default factory handle it
+        return defaultFactory.createPropertySource(name, encodedResource);
+    }
+    
+    private Resource findCaseInsensitiveResource(Resource originalResource) {
+        try {
+            String description = originalResource.getDescription();
+            
+            if (description.contains("class path resource")) {
+                return findCaseInsensitiveClassPathResource(originalResource);
+            } else if (description.contains("file")) {
+                return findCaseInsensitiveFileSystemResource(originalResource);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error during case-insensitive file search: " + e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    private Resource findCaseInsensitiveClassPathResource(Resource originalResource) {
+        try {
+            String description = originalResource.getDescription();
+            // Extract path from description like "class path resource [config/APPLICATION.PROPERTIES]"
+            int startBracket = description.indexOf('[');
+            int endBracket = description.indexOf(']');
+            
+            if (startBracket != -1 && endBracket != -1) {
+                String resourcePath = description.substring(startBracket + 1, endBracket);
+                int lastSlash = resourcePath.lastIndexOf('/');
+                
+                String directory = lastSlash != -1 ? resourcePath.substring(0, lastSlash) : "";
+                String filename = lastSlash != -1 ? resourcePath.substring(lastSlash + 1) : resourcePath;
+                
+                // Use ResourcePatternResolver to find all files in directory
+                String pattern = StringUtils.hasText(directory) ? 
+                    "classpath:" + directory + "/*" : "classpath:*";
+                
+                Resource[] resources = new PathMatchingResourcePatternResolver().getResources(pattern);
+                
+                for (Resource resource : resources) {
+                    if (resource.getFilename() != null && 
+                        resource.getFilename().equalsIgnoreCase(filename)) {
+                        return resource;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Handle silently
+        }
+        
+        return null;
+    }
+    
+    private Resource findCaseInsensitiveFileSystemResource(Resource originalResource) {
+        try {
+            File originalFile = originalResource.getFile();
+            File parentDir = originalFile.getParentFile();
+            String targetFilename = originalFile.getName();
+            
+            if (parentDir != null && parentDir.exists() && parentDir.isDirectory()) {
+                File[] files = parentDir.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.getName().equalsIgnoreCase(targetFilename)) {
+                            return new FileSystemResource(file);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Handle silently
+        }
+        
+        return null;
+    }
+}
+
+// 3. Configuration classes demonstrating usage
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
+@Configuration
+@PropertySource(
+    value = "classpath:APPLICATION.PROPERTIES",  // Will find application.properties
+    factory = CaseInsensitiveFilenamePropertySourceFactory.class,
+    ignoreResourceNotFound = true
+)
+public class CaseInsensitiveFileConfig {
+}
+
+@Configuration  
+@PropertySource(
+    value = "classpath:config/DATABASE.PROPERTIES",  // Will find database.properties
+    factory = EnhancedCaseInsensitivePropertySourceFactory.class,
+    ignoreResourceNotFound = true
+)
+public class DatabaseConfig {
+}
+
+// 4. Multiple file configuration
+@Configuration
+@PropertySource(
+    value = {
+        "classpath:APP.PROPERTIES",           // Will find app.properties
+        "classpath:config/SERVER.PROPERTIES", // Will find server.properties
+        "file:${user.home}/MYAPP.PROPERTIES"  // Will find myapp.properties
+    },
+    factory = EnhancedCaseInsensitivePropertySourceFactory.class,
+    ignoreResourceNotFound = true
+)
+public class MultiFileConfig {
+}
+
+// 5. Programmatic registration example
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.EncodedResource;
+
+import javax.annotation.PostConstruct;
+
+@Configuration
+public class ProgrammaticPropertySourceConfig {
+    
+    private final ConfigurableEnvironment environment;
+    
+    public ProgrammaticPropertySourceConfig(ConfigurableEnvironment environment) {
+        this.environment = environment;
+    }
+    
+    @PostConstruct
+    public void addPropertySources() {
+        try {
+            EnhancedCaseInsensitivePropertySourceFactory factory = 
+                new EnhancedCaseInsensitivePropertySourceFactory();
+            
+            // Try to load SETTINGS.PROPERTIES (will find settings.properties)
+            ClassPathResource resource = new ClassPathResource("SETTINGS.PROPERTIES");
+            EncodedResource encodedResource = new EncodedResource(resource);
+            
+            PropertySource<?> propertySource = factory.createPropertySource("settings", encodedResource);
+            environment.getPropertySources().addLast(propertySource);
+            
+        } catch (Exception e) {
+            System.err.println("Could not load case-insensitive property source: " + e.getMessage());
+        }
+    }
+}
+
+// 6. Usage example component
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PropertyUsageExample {
+    
+    @Value("${app.name:Default App}")
+    private String appName;
+    
+    @Value("${database.url:jdbc:h2:mem:testdb}")
+    private String databaseUrl;
+    
+    @Value("${server.port:8080}")
+    private int serverPort;
+    
+    public void printProperties() {
+        System.out.println("=== Properties loaded from case-insensitive files ===");
+        System.out.println("App Name: " + appName);
+        System.out.println("Database URL: " + databaseUrl);
+        System.out.println("Server Port: " + serverPort);
+    }
+}
+
+// 7. Test runner
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CaseInsensitiveFileTestRunner implements CommandLineRunner {
+    
+    private final PropertyUsageExample propertyExample;
+    
+    public CaseInsensitiveFileTestRunner(PropertyUsageExample propertyExample) {
+        this.propertyExample = propertyExample;
+    }
+    
+    @Override
+    public void run(String... args) {
+        System.out.println("=== Case-Insensitive Filename Property Loading Demo ===");
+        propertyExample.printProperties();
+    }
+}
+
+\\
+
+# application.properties (lowercase - actual file)
+# This file will be found even when referenced as APPLICATION.PROPERTIES
+app.name=My Application
+app.version=1.0.0
+logging.level.root=INFO
+
+# database.properties (lowercase - actual file)  
+# This file will be found even when referenced as DATABASE.PROPERTIES
+database.url=jdbc:mysql://localhost:3306/mydb
+database.username=admin
+database.password=secret
+database.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# server.properties (lowercase - actual file)
+# This file will be found even when referenced as SERVER.PROPERTIES
+server.port=9090
+server.servlet.context-path=/api
+server.compression.enabled=true
+
+# settings.properties (lowercase - actual file)
+# This file will be found even when referenced as SETTINGS.PROPERTIES
+feature.toggle.new-ui=true
+feature.toggle.beta-features=false
+cache.ttl=3600
+cache.max-size=1000
+
+# config/app.properties (in subdirectory)
+# This file will be found even when referenced as config/APP.PROPERTIES
+app.environment=development
+app.debug=true
+app.max-connections=100
