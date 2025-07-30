@@ -577,3 +577,378 @@ cache.max-size=1000
 app.environment=development
 app.debug=true
 app.max-connections=100
+
+
+
+======
+
+// 1. Custom PropertySourceFactory with SpEL support
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.support.DefaultPropertySourceFactory;
+import org.springframework.core.io.support.EncodedResource;
+import org.springframework.core.io.support.PropertySourceFactory;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.DefaultResourceLoader;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class SpELPropertySourceFactory implements PropertySourceFactory {
+    
+    private final ExpressionParser parser = new SpelExpressionParser();
+    private final ResourceLoader resourceLoader = new DefaultResourceLoader();
+    private final DefaultPropertySourceFactory defaultFactory = new DefaultPropertySourceFactory();
+    
+    @Override
+    public PropertySource<?> createPropertySource(String name, EncodedResource encodedResource) throws IOException {
+        // Get the original URI
+        String originalUri = encodedResource.getResource().getURI().toString();
+        
+        // Check if the URI contains SpEL expressions
+        if (originalUri.contains("#{") && originalUri.contains("}")) {
+            String evaluatedUri = evaluateSpELExpression(originalUri);
+            
+            // Create new resource with evaluated URI
+            EncodedResource newEncodedResource = new EncodedResource(
+                resourceLoader.getResource(evaluatedUri),
+                encodedResource.getEncoding(),
+                encodedResource.getCharset()
+            );
+            
+            return defaultFactory.createPropertySource(name, newEncodedResource);
+        }
+        
+        // No SpEL expressions, use original resource
+        return defaultFactory.createPropertySource(name, encodedResource);
+    }
+    
+    private String evaluateSpELExpression(String uri) {
+        try {
+            // Create evaluation context with helper methods
+            StandardEvaluationContext context = new StandardEvaluationContext();
+            context.setVariable("stringUtils", new StringUtils());
+            context.setVariable("env", System.getenv());
+            context.setVariable("props", System.getProperties());
+            
+            // Parse and evaluate the expression
+            Expression expression = parser.parseExpression(uri, new SpELParserContext());
+            return expression.getValue(context, String.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to evaluate SpEL expression in URI: " + uri, e);
+        }
+    }
+    
+    // Helper class for string manipulation in SpEL
+    public static class StringUtils {
+        public String toLowerCase(String str) {
+            return str != null ? str.toLowerCase() : null;
+        }
+        
+        public String toUpperCase(String str) {
+            return str != null ? str.toUpperCase() : null;
+        }
+        
+        public String replace(String str, String target, String replacement) {
+            return str != null ? str.replace(target, replacement) : null;
+        }
+        
+        public String substring(String str, int start, int end) {
+            return str != null && str.length() >= end ? str.substring(start, end) : str;
+        }
+        
+        public String concat(String... strings) {
+            StringBuilder sb = new StringBuilder();
+            for (String s : strings) {
+                if (s != null) sb.append(s);
+            }
+            return sb.toString();
+        }
+    }
+}
+
+// 2. Custom SpEL Parser Context for template expressions
+import org.springframework.expression.ParserContext;
+
+public class SpELParserContext implements ParserContext {
+    @Override
+    public boolean isTemplate() {
+        return true;
+    }
+    
+    @Override
+    public String getExpressionPrefix() {
+        return "#{";
+    }
+    
+    @Override
+    public String getExpressionSuffix() {
+        return "}";
+    }
+}
+
+// 3. Configuration examples using SpEL for filename manipulation
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.beans.factory.annotation.Value;
+
+@Configuration
+// Convert filename to lowercase
+@PropertySource(
+    value = "classpath:#{#stringUtils.toLowerCase('APPLICATION')}.properties",
+    factory = SpELPropertySourceFactory.class
+)
+public class LowerCaseFileConfig {
+}
+
+@Configuration
+// Use environment variable for filename with case conversion
+@PropertySource(
+    value = "classpath:#{#stringUtils.toLowerCase(#env['CONFIG_FILE_NAME'] ?: 'DEFAULT')}.properties",
+    factory = SpELPropertySourceFactory.class
+)
+public class EnvironmentBasedConfig {
+}
+
+@Configuration
+// Complex filename manipulation
+@PropertySource(
+    value = "classpath:config/#{#stringUtils.toLowerCase(#stringUtils.replace('APP-CONFIG', '-', '_'))}.properties",
+    factory = SpELPropertySourceFactory.class
+)
+public class ComplexFilenameConfig {
+}
+
+// 4. Enhanced version with more SpEL capabilities
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
+
+public class EnhancedSpELPropertySourceFactory implements PropertySourceFactory, EnvironmentAware {
+    
+    private final ExpressionParser parser = new SpelExpressionParser();
+    private final ResourceLoader resourceLoader = new DefaultResourceLoader();
+    private final DefaultPropertySourceFactory defaultFactory = new DefaultPropertySourceFactory();
+    private Environment environment;
+    
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
+    
+    @Override
+    public PropertySource<?> createPropertySource(String name, EncodedResource encodedResource) throws IOException {
+        String originalUri = encodedResource.getResource().getURI().toString();
+        
+        if (originalUri.contains("#{") && originalUri.contains("}")) {
+            String evaluatedUri = evaluateSpELExpression(originalUri);
+            
+            EncodedResource newEncodedResource = new EncodedResource(
+                resourceLoader.getResource(evaluatedUri),
+                encodedResource.getEncoding(),
+                encodedResource.getCharset()
+            );
+            
+            return defaultFactory.createPropertySource(name, newEncodedResource);
+        }
+        
+        return defaultFactory.createPropertySource(name, encodedResource);
+    }
+    
+    private String evaluateSpELExpression(String uri) {
+        try {
+            StandardEvaluationContext context = new StandardEvaluationContext();
+            
+            // Add utility objects
+            context.setVariable("stringUtils", new StringUtils());
+            context.setVariable("fileUtils", new FileUtils());
+            context.setVariable("env", System.getenv());
+            context.setVariable("props", System.getProperties());  
+            context.setVariable("spring", new SpringUtils(environment));
+            
+            Expression expression = parser.parseExpression(uri, new SpELParserContext());
+            return expression.getValue(context, String.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to evaluate SpEL expression in URI: " + uri, e);
+        }
+    }
+    
+    // Enhanced utility classes
+    public static class FileUtils {
+        public String getBaseName(String filename) {
+            if (filename == null) return null;
+            int dotIndex = filename.lastIndexOf('.');
+            return dotIndex > 0 ? filename.substring(0, dotIndex) : filename;
+        }
+        
+        public String getExtension(String filename) {
+            if (filename == null) return null;
+            int dotIndex = filename.lastIndexOf('.');
+            return dotIndex > 0 ? filename.substring(dotIndex) : "";
+        }
+        
+        public String changeExtension(String filename, String newExtension) {
+            String baseName = getBaseName(filename);
+            return baseName + (newExtension.startsWith(".") ? newExtension : "." + newExtension);
+        }
+    }
+    
+    public static class SpringUtils {
+        private final Environment environment;
+        
+        public SpringUtils(Environment environment) {
+            this.environment = environment;
+        }
+        
+        public String getProperty(String key) {
+            return environment != null ? environment.getProperty(key) : null;
+        }
+        
+        public String getProperty(String key, String defaultValue) {
+            return environment != null ? environment.getProperty(key, defaultValue) : defaultValue;
+        }
+        
+        public String[] getActiveProfiles() {
+            return environment != null ? environment.getActiveProfiles() : new String[0];
+        }
+    }
+}
+
+// 5. Advanced configuration examples
+@Configuration
+@PropertySource(
+    value = {
+        // Basic case conversion
+        "classpath:#{#stringUtils.toLowerCase('APPLICATION')}.properties",
+        
+        // Environment-based with fallback
+        "classpath:#{#spring.getProperty('config.filename', 'application').toLowerCase()}.properties",
+        
+        // Profile-based filename
+        "classpath:application-#{#spring.activeProfiles.length > 0 ? #spring.activeProfiles[0].toLowerCase() : 'default'}.properties",
+        
+        // Complex manipulation
+        "classpath:#{#stringUtils.concat('config/', #stringUtils.toLowerCase(#env['APP_NAME'] ?: 'myapp'), '.properties')}"
+    },
+    factory = EnhancedSpELPropertySourceFactory.class,
+    ignoreResourceNotFound = true
+)
+public class AdvancedSpELConfig {
+}
+
+// 6. Conditional loading based on SpEL
+@Configuration
+public class ConditionalSpELConfig {
+    
+    // Load different files based on environment
+    @PropertySource(
+        value = "classpath:#{#stringUtils.toLowerCase(#env['SPRING_PROFILES_ACTIVE'] ?: 'dev')}-config.properties",
+        factory = EnhancedSpELPropertySourceFactory.class,
+        ignoreResourceNotFound = true
+    )
+    static class ProfileBasedConfig {}
+    
+    // Load file with timestamp
+    @PropertySource(
+        value = "classpath:backup/#{#stringUtils.toLowerCase('CONFIG')}-#{T(java.time.LocalDate).now().toString()}.properties",
+        factory = EnhancedSpELPropertySourceFactory.class,
+        ignoreResourceNotFound = true
+    )
+    static class TimestampedConfig {}
+}
+
+// 7. Usage example with demonstration
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class SpELFilenameDemo {
+    
+    @Value("${app.name:SpEL Demo App}")
+    private String appName;
+    
+    @Value("${config.source:unknown}")
+    private String configSource;
+    
+    @Value("${profile.name:default}")
+    private String profileName;
+    
+    public void demonstrateSpELFilenames() {
+        System.out.println("=== SpEL Filename Manipulation Demo ===");
+        System.out.println("App Name: " + appName);
+        System.out.println("Config Source: " + configSource);
+        System.out.println("Profile Name: " + profileName);
+        System.out.println();
+        System.out.println("Examples of SpEL filename expressions:");
+        System.out.println("1. #{#stringUtils.toLowerCase('APPLICATION')} → application");
+        System.out.println("2. #{#env['CONFIG_NAME'] ?: 'default'} → uses env var or default");
+        System.out.println("3. #{#spring.activeProfiles[0]} → uses active profile");
+        System.out.println("4. #{#fileUtils.changeExtension('config.yml', 'properties')} → config.properties");
+    }
+}
+
+// 8. Test runner
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class SpELTestRunner implements CommandLineRunner {
+    
+    private final SpELFilenameDemo demo;
+    
+    public SpELTestRunner(SpELFilenameDemo demo) {
+        this.demo = demo;
+    }
+    
+    @Override
+    public void run(String... args) {
+        demo.demonstrateSpELFilenames();
+    }
+}
+
+
+==
+# application.properties (loaded by #{#stringUtils.toLowerCase('APPLICATION')})
+app.name=SpEL Demo Application
+config.source=application.properties
+app.version=1.0.0
+
+# default.properties (loaded when no environment variable is set)
+app.name=Default Application
+config.source=default.properties
+profile.name=default
+
+# dev-config.properties (loaded by profile-based SpEL)
+app.name=Development Application  
+config.source=dev-config.properties
+profile.name=dev
+database.url=jdbc:h2:mem:devdb
+
+# prod-config.properties (loaded by profile-based SpEL)
+app.name=Production Application
+config.source=prod-config.properties  
+profile.name=prod
+database.url=jdbc:mysql://prod-server:3306/proddb
+
+# config/myapp.properties (loaded by complex concat SpEL)
+app.name=MyApp Configuration
+config.source=config/myapp.properties
+app.environment=development
+
+# application-dev.properties (loaded by profile-based SpEL)
+app.name=Dev Profile Application
+config.source=application-dev.properties
+debug.enabled=true
+
+# application-prod.properties (loaded by profile-based SpEL)  
+app.name=Prod Profile Application
+config.source=application-prod.properties
+debug.enabled=false
+
+# Environment variable examples (set these as system properties or env vars):
+# CONFIG_FILE_NAME=custom
+# APP_NAME=myapp
+# SPRING_PROFILES_ACTIVE=dev
