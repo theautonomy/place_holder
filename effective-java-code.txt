@@ -1,0 +1,1195 @@
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.time.LocalDateTime;
+
+/**
+ * Comprehensive examples demonstrating key principles from "Effective Java" by Joshua Bloch
+ */
+public class EffectiveJavaExamples {
+    
+    public static void main(String[] args) {
+        System.out.println("=== Effective Java Examples ===\n");
+        
+        // Item 1: Static factory methods
+        demonstrateStaticFactoryMethods();
+        
+        // Item 2: Builder pattern
+        demonstrateBuilderPattern();
+        
+        // Item 3: Singleton enforcement
+        demonstrateSingleton();
+        
+        // Item 8: Avoid finalizers and cleaners
+        demonstrateCleanupPatterns();
+        
+        // Item 10: Override equals
+        demonstrateEqualsContract();
+        
+        // Item 17: Minimize mutability
+        demonstrateImmutability();
+        
+        // Item 26: Don't use raw types
+        demonstrateGenerics();
+        
+        // Item 49: Check parameters for validity
+        demonstrateParameterValidation();
+        
+        // Item 57: Minimize the scope of local variables
+        demonstrateVariableScope();
+        
+        // Item 15: Minimize the accessibility of classes and members
+        demonstrateEncapsulation();
+        
+        // Item 18: Favor composition over inheritance
+        demonstrateComposition();
+        
+        // Item 20: Prefer interfaces to abstract classes
+        demonstrateInterfaces();
+        
+        // Item 50: Make defensive copies when needed
+        demonstrateDefensiveCopying();
+        
+        // Item 61: Prefer primitive types to boxed primitives
+        demonstratePrimitiveTypes();
+        
+        // Item 62: Avoid strings where other types are more appropriate
+        demonstrateStringUsage();
+        
+        // Item 64: Refer to objects by their interfaces
+        demonstrateInterfaceReferences();
+        
+        // Item 78: Synchronize access to shared mutable data
+        demonstrateSynchronization();
+        
+        // Item 81: Prefer concurrency utilities to wait and notify
+        demonstrateConcurrencyUtilities();
+        
+        // Item 90: Consider serialization proxies instead of serialized instances
+        demonstrateSerializationProxy();
+    }
+    
+    // ===== ITEM 1: Consider static factory methods instead of constructors =====
+    
+    static class Currency {
+        private final String code;
+        private final String name;
+        
+        // Private constructor - forces use of factory methods
+        private Currency(String code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+        
+        // Static factory methods with descriptive names
+        public static Currency ofCode(String code) {
+            return new Currency(code, getNameForCode(code));
+        }
+        
+        public static Currency usd() {
+            return new Currency("USD", "US Dollar");
+        }
+        
+        public static Currency eur() {
+            return new Currency("EUR", "Euro");
+        }
+        
+        private static String getNameForCode(String code) {
+            Map<String, String> codeToName = Map.of(
+                "USD", "US Dollar",
+                "EUR", "Euro",
+                "GBP", "British Pound"
+            );
+            return codeToName.getOrDefault(code, "Unknown");
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("%s (%s)", name, code);
+        }
+    }
+    
+    private static void demonstrateStaticFactoryMethods() {
+        System.out.println("1. Static Factory Methods:");
+        System.out.println("   " + Currency.usd());
+        System.out.println("   " + Currency.ofCode("GBP"));
+        System.out.println();
+    }
+    
+    // ===== ITEM 2: Consider a builder when faced with many constructor parameters =====
+    
+    static class DatabaseConnection {
+        private final String host;
+        private final int port;
+        private final String database;
+        private final String username;
+        private final String password;
+        private final boolean ssl;
+        private final int timeout;
+        private final int maxConnections;
+        
+        private DatabaseConnection(Builder builder) {
+            this.host = builder.host;
+            this.port = builder.port;
+            this.database = builder.database;
+            this.username = builder.username;
+            this.password = builder.password;
+            this.ssl = builder.ssl;
+            this.timeout = builder.timeout;
+            this.maxConnections = builder.maxConnections;
+        }
+        
+        public static class Builder {
+            // Required parameters
+            private final String host;
+            private final String database;
+            
+            // Optional parameters with defaults
+            private int port = 5432;
+            private String username = "user";
+            private String password = "";
+            private boolean ssl = false;
+            private int timeout = 30;
+            private int maxConnections = 10;
+            
+            public Builder(String host, String database) {
+                this.host = Objects.requireNonNull(host);
+                this.database = Objects.requireNonNull(database);
+            }
+            
+            public Builder port(int port) {
+                if (port <= 0 || port > 65535) {
+                    throw new IllegalArgumentException("Port must be between 1 and 65535");
+                }
+                this.port = port;
+                return this;
+            }
+            
+            public Builder credentials(String username, String password) {
+                this.username = Objects.requireNonNull(username);
+                this.password = Objects.requireNonNull(password);
+                return this;
+            }
+            
+            public Builder ssl(boolean ssl) {
+                this.ssl = ssl;
+                return this;
+            }
+            
+            public Builder timeout(int timeout) {
+                if (timeout <= 0) {
+                    throw new IllegalArgumentException("Timeout must be positive");
+                }
+                this.timeout = timeout;
+                return this;
+            }
+            
+            public Builder maxConnections(int maxConnections) {
+                if (maxConnections <= 0) {
+                    throw new IllegalArgumentException("Max connections must be positive");
+                }
+                this.maxConnections = maxConnections;
+                return this;
+            }
+            
+            public DatabaseConnection build() {
+                return new DatabaseConnection(this);
+            }
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("DatabaseConnection{host='%s', port=%d, database='%s', " +
+                    "username='%s', ssl=%s, timeout=%d, maxConnections=%d}",
+                    host, port, database, username, ssl, timeout, maxConnections);
+        }
+    }
+    
+    private static void demonstrateBuilderPattern() {
+        System.out.println("2. Builder Pattern:");
+        DatabaseConnection conn = new DatabaseConnection.Builder("localhost", "mydb")
+                .port(3306)
+                .credentials("admin", "secret")
+                .ssl(true)
+                .timeout(60)
+                .maxConnections(20)
+                .build();
+        System.out.println("   " + conn);
+        System.out.println();
+    }
+    
+    // ===== ITEM 3: Enforce the singleton property with a private constructor or an enum type =====
+    
+    enum ConfigManager {
+        INSTANCE;
+        
+        private final Map<String, String> properties = new ConcurrentHashMap<>();
+        
+        public void setProperty(String key, String value) {
+            properties.put(key, value);
+        }
+        
+        public String getProperty(String key) {
+            return properties.get(key);
+        }
+        
+        public void loadDefaults() {
+            properties.put("app.name", "Effective Java Demo");
+            properties.put("app.version", "1.0.0");
+            properties.put("debug", "false");
+        }
+    }
+    
+    private static void demonstrateSingleton() {
+        System.out.println("3. Singleton Pattern (Enum):");
+        ConfigManager config = ConfigManager.INSTANCE;
+        config.loadDefaults();
+        config.setProperty("user.session", "active");
+        
+        System.out.println("   App: " + config.getProperty("app.name"));
+        System.out.println("   Version: " + config.getProperty("app.version"));
+        System.out.println("   Session: " + config.getProperty("user.session"));
+        System.out.println();
+    }
+    
+    // ===== ITEM 8: Avoid finalizers and cleaners =====
+    
+    static class ManagedResource implements AutoCloseable {
+        private boolean closed = false;
+        private final String resourceName;
+        
+        public ManagedResource(String resourceName) {
+            this.resourceName = resourceName;
+            System.out.println("   Resource '" + resourceName + "' acquired");
+        }
+        
+        public void doWork() {
+            if (closed) {
+                throw new IllegalStateException("Resource is closed");
+            }
+            System.out.println("   Working with resource '" + resourceName + "'");
+        }
+        
+        @Override
+        public void close() {
+            if (!closed) {
+                System.out.println("   Resource '" + resourceName + "' released");
+                closed = true;
+            }
+        }
+    }
+    
+    private static void demonstrateCleanupPatterns() {
+        System.out.println("4. Proper Resource Management (try-with-resources):");
+        try (ManagedResource resource = new ManagedResource("database-connection")) {
+            resource.doWork();
+            // Resource automatically closed at end of try block
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 10: Obey the general contract when overriding equals =====
+    
+    static class Person {
+        private final String name;
+        private final int age;
+        private final String email;
+        
+        public Person(String name, int age, String email) {
+            this.name = Objects.requireNonNull(name);
+            this.age = age;
+            this.email = Objects.requireNonNull(email);
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;  // Reflexive
+            if (obj == null || getClass() != obj.getClass()) return false;  // Null check and type check
+            
+            Person person = (Person) obj;
+            return age == person.age &&
+                   Objects.equals(name, person.name) &&
+                   Objects.equals(email, person.email);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, age, email);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Person{name='%s', age=%d, email='%s'}", name, age, email);
+        }
+    }
+    
+    private static void demonstrateEqualsContract() {
+        System.out.println("5. Proper equals() and hashCode() Implementation:");
+        Person p1 = new Person("Alice", 30, "alice@example.com");
+        Person p2 = new Person("Alice", 30, "alice@example.com");
+        Person p3 = new Person("Bob", 25, "bob@example.com");
+        
+        System.out.println("   p1.equals(p2): " + p1.equals(p2));  // true
+        System.out.println("   p1.equals(p3): " + p1.equals(p3));  // false
+        System.out.println("   p1.hashCode() == p2.hashCode(): " + (p1.hashCode() == p2.hashCode()));  // true
+        
+        Set<Person> people = new HashSet<>();
+        people.add(p1);
+        people.add(p2);  // Won't be added (duplicate)
+        people.add(p3);
+        System.out.println("   Set size: " + people.size());  // 2
+        System.out.println();
+    }
+    
+    // ===== ITEM 17: Minimize mutability =====
+    
+    static final class ImmutablePoint {
+        private final double x;
+        private final double y;
+        
+        public ImmutablePoint(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+        
+        public double getX() { return x; }
+        public double getY() { return y; }
+        
+        // Returns new instance instead of modifying existing
+        public ImmutablePoint translate(double dx, double dy) {
+            return new ImmutablePoint(x + dx, y + dy);
+        }
+        
+        public double distanceFrom(ImmutablePoint other) {
+            double dx = this.x - other.x;
+            double dy = this.y - other.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            ImmutablePoint point = (ImmutablePoint) obj;
+            return Double.compare(point.x, x) == 0 && Double.compare(point.y, y) == 0;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Point(%.1f, %.1f)", x, y);
+        }
+    }
+    
+    private static void demonstrateImmutability() {
+        System.out.println("6. Immutable Classes:");
+        ImmutablePoint origin = new ImmutablePoint(0, 0);
+        ImmutablePoint moved = origin.translate(3, 4);
+        
+        System.out.println("   Original: " + origin);
+        System.out.println("   After translation: " + moved);
+        System.out.println("   Distance: " + String.format("%.1f", origin.distanceFrom(moved)));
+        System.out.println();
+    }
+    
+    // ===== ITEM 26: Don't use raw types =====
+    
+    private static void demonstrateGenerics() {
+        System.out.println("7. Proper Use of Generics:");
+        
+        // Good: Using parameterized types
+        List<String> strings = new ArrayList<>();
+        strings.add("Hello");
+        strings.add("World");
+        
+        Map<String, Integer> wordCounts = new HashMap<>();
+        for (String word : strings) {
+            wordCounts.put(word, word.length());
+        }
+        
+        System.out.println("   Word counts: " + wordCounts);
+        
+        // Demonstrate type safety
+        processStrings(strings);
+        System.out.println();
+    }
+    
+    private static void processStrings(List<String> strings) {
+        System.out.println("   Processing " + strings.size() + " strings safely");
+        strings.forEach(s -> System.out.println("     Length of '" + s + "': " + s.length()));
+    }
+    
+    // ===== ITEM 49: Check parameters for validity =====
+    
+    static class BankAccount {
+        private double balance;
+        private final String accountNumber;
+        
+        public BankAccount(String accountNumber, double initialBalance) {
+            this.accountNumber = Objects.requireNonNull(accountNumber, "Account number cannot be null");
+            if (accountNumber.trim().isEmpty()) {
+                throw new IllegalArgumentException("Account number cannot be empty");
+            }
+            if (initialBalance < 0) {
+                throw new IllegalArgumentException("Initial balance cannot be negative");
+            }
+            this.balance = initialBalance;
+        }
+        
+        public void withdraw(double amount) {
+            Objects.requireNonNull(amount, "Amount cannot be null");
+            if (amount <= 0) {
+                throw new IllegalArgumentException("Withdrawal amount must be positive");
+            }
+            if (amount > balance) {
+                throw new IllegalArgumentException("Insufficient funds");
+            }
+            balance -= amount;
+        }
+        
+        public void deposit(double amount) {
+            if (amount <= 0) {
+                throw new IllegalArgumentException("Deposit amount must be positive");
+            }
+            balance += amount;
+        }
+        
+        public double getBalance() {
+            return balance;
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Account %s: $%.2f", accountNumber, balance);
+        }
+    }
+    
+    private static void demonstrateParameterValidation() {
+        System.out.println("8. Parameter Validation:");
+        try {
+            BankAccount account = new BankAccount("ACC-001", 1000.0);
+            System.out.println("   " + account);
+            
+            account.deposit(250.0);
+            System.out.println("   After deposit: " + account);
+            
+            account.withdraw(100.0);
+            System.out.println("   After withdrawal: " + account);
+            
+            // This will throw an exception
+            account.withdraw(-50.0);
+        } catch (IllegalArgumentException e) {
+            System.out.println("   Caught expected exception: " + e.getMessage());
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 57: Minimize the scope of local variables =====
+    
+    private static void demonstrateVariableScope() {
+        System.out.println("9. Minimizing Variable Scope:");
+        
+        List<String> items = Arrays.asList("apple", "banana", "cherry", "date");
+        
+        // Good: declare loop variable in the for statement
+        System.out.println("   Items with their lengths:");
+        for (int i = 0; i < items.size(); i++) {
+            String item = items.get(i);  // Declare as close to use as possible
+            int length = item.length();   // Declare when needed
+            System.out.println("     " + item + ": " + length + " characters");
+        }
+        
+        // Even better: use enhanced for loop when possible
+        System.out.println("   Uppercase items:");
+        for (String item : items) {  // item scope limited to this loop
+            String uppercase = item.toUpperCase();  // Declare close to use
+            System.out.println("     " + uppercase);
+        }
+        
+        // Demonstrate early initialization
+        Map<String, Integer> itemLengths = processItems(items);
+        System.out.println("   Processed items: " + itemLengths.size());
+        System.out.println();
+    }
+    
+    private static Map<String, Integer> processItems(List<String> items) {
+        // Initialize collections when declared
+        Map<String, Integer> result = new HashMap<>();
+        
+        for (String item : items) {
+            // Minimize scope by declaring variables close to their use
+            int length = item.length();
+            result.put(item, length);
+        }
+        
+        return result;
+    }
+    
+    // ===== ITEM 15: Minimize the accessibility of classes and members =====
+    
+    static class UserAccount {
+        // Private fields - no direct access from outside
+        private final String username;
+        private String email;
+        private final List<String> permissions;
+        private boolean active;
+        
+        // Package-private constructor for controlled instantiation
+        UserAccount(String username, String email) {
+            this.username = Objects.requireNonNull(username);
+            this.email = Objects.requireNonNull(email);
+            this.permissions = new ArrayList<>();
+            this.active = true;
+        }
+        
+        // Public accessor methods with appropriate visibility
+        public String getUsername() {
+            return username;
+        }
+        
+        public String getEmail() {
+            return email;
+        }
+        
+        // Defensive copy for mutable field
+        public List<String> getPermissions() {
+            return new ArrayList<>(permissions);
+        }
+        
+        public boolean isActive() {
+            return active;
+        }
+        
+        // Package-private mutator for controlled modification
+        void setEmail(String email) {
+            this.email = Objects.requireNonNull(email);
+        }
+        
+        void addPermission(String permission) {
+            if (!permissions.contains(permission)) {
+                permissions.add(permission);
+            }
+        }
+        
+        void deactivate() {
+            this.active = false;
+        }
+        
+        // Private helper method
+        private boolean hasPermission(String permission) {
+            return permissions.contains(permission);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("UserAccount{username='%s', email='%s', permissions=%d, active=%s}",
+                    username, email, permissions.size(), active);
+        }
+    }
+    
+    private static void demonstrateEncapsulation() {
+        System.out.println("10. Proper Encapsulation:");
+        UserAccount user = new UserAccount("alice", "alice@example.com");
+        user.addPermission("READ");
+        user.addPermission("WRITE");
+        
+        System.out.println("   " + user);
+        System.out.println("   Permissions: " + user.getPermissions());
+        
+        // Cannot directly modify internal state
+        List<String> perms = user.getPermissions();
+        perms.add("DELETE"); // This won't affect the original
+        System.out.println("   After attempted external modification: " + user.getPermissions().size());
+        System.out.println();
+    }
+    
+    // ===== ITEM 18: Favor composition over inheritance =====
+    
+    // Bad example: using inheritance inappropriately
+    static class BadStack<E> extends ArrayList<E> {
+        public void push(E item) {
+            add(item);
+        }
+        
+        public E pop() {
+            return remove(size() - 1);
+        }
+        
+        // Problem: inherits all ArrayList methods, breaking stack abstraction
+    }
+    
+    // Good example: using composition
+    static class GoodStack<E> {
+        private final List<E> elements = new ArrayList<>();
+        
+        public void push(E item) {
+            elements.add(item);
+        }
+        
+        public E pop() {
+            if (elements.isEmpty()) {
+                throw new IllegalStateException("Stack is empty");
+            }
+            return elements.remove(elements.size() - 1);
+        }
+        
+        public E peek() {
+            if (elements.isEmpty()) {
+                throw new IllegalStateException("Stack is empty");
+            }
+            return elements.get(elements.size() - 1);
+        }
+        
+        public boolean isEmpty() {
+            return elements.isEmpty();
+        }
+        
+        public int size() {
+            return elements.size();
+        }
+        
+        @Override
+        public String toString() {
+            return "Stack" + elements.toString();
+        }
+    }
+    
+    private static void demonstrateComposition() {
+        System.out.println("11. Composition over Inheritance:");
+        GoodStack<String> stack = new GoodStack<>();
+        stack.push("first");
+        stack.push("second");
+        stack.push("third");
+        
+        System.out.println("   Stack: " + stack);
+        System.out.println("   Peek: " + stack.peek());
+        System.out.println("   Pop: " + stack.pop());
+        System.out.println("   After pop: " + stack);
+        System.out.println();
+    }
+    
+    // ===== ITEM 20: Prefer interfaces to abstract classes =====
+    
+    interface Shape {
+        double area();
+        double perimeter();
+        
+        // Default method (Java 8+)
+        default String describe() {
+            return String.format("Shape with area %.2f and perimeter %.2f", area(), perimeter());
+        }
+    }
+    
+    interface Drawable {
+        void draw();
+        
+        default void highlight() {
+            System.out.println("   Highlighting shape...");
+        }
+    }
+    
+    // Can implement multiple interfaces
+    static class Circle implements Shape, Drawable {
+        private final double radius;
+        
+        public Circle(double radius) {
+            if (radius <= 0) {
+                throw new IllegalArgumentException("Radius must be positive");
+            }
+            this.radius = radius;
+        }
+        
+        @Override
+        public double area() {
+            return Math.PI * radius * radius;
+        }
+        
+        @Override
+        public double perimeter() {
+            return 2 * Math.PI * radius;
+        }
+        
+        @Override
+        public void draw() {
+            System.out.println("   Drawing circle with radius " + radius);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Circle(radius=%.1f)", radius);
+        }
+    }
+    
+    static class Rectangle implements Shape, Drawable {
+        private final double width;
+        private final double height;
+        
+        public Rectangle(double width, double height) {
+            if (width <= 0 || height <= 0) {
+                throw new IllegalArgumentException("Dimensions must be positive");
+            }
+            this.width = width;
+            this.height = height;
+        }
+        
+        @Override
+        public double area() {
+            return width * height;
+        }
+        
+        @Override
+        public double perimeter() {
+            return 2 * (width + height);
+        }
+        
+        @Override
+        public void draw() {
+            System.out.println("   Drawing rectangle " + width + "x" + height);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Rectangle(%.1fx%.1f)", width, height);
+        }
+    }
+    
+    private static void demonstrateInterfaces() {
+        System.out.println("12. Interfaces over Abstract Classes:");
+        List<Shape> shapes = Arrays.asList(
+            new Circle(5.0),
+            new Rectangle(4.0, 6.0)
+        );
+        
+        for (Shape shape : shapes) {
+            if (shape instanceof Drawable) {
+                ((Drawable) shape).draw();
+            }
+            System.out.println("   " + shape.describe());
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 50: Make defensive copies when needed =====
+    
+    static class DateRange {
+        private final Date start;
+        private final Date end;
+        
+        public DateRange(Date start, Date end) {
+            // Defensive copying of mutable parameters
+            this.start = new Date(start.getTime());
+            this.end = new Date(end.getTime());
+            
+            if (this.start.after(this.end)) {
+                throw new IllegalArgumentException("Start date must be before end date");
+            }
+        }
+        
+        // Defensive copying in accessors
+        public Date getStart() {
+            return new Date(start.getTime());
+        }
+        
+        public Date getEnd() {
+            return new Date(end.getTime());
+        }
+        
+        public boolean contains(Date date) {
+            return !date.before(start) && !date.after(end);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("DateRange{%s to %s}", start, end);
+        }
+    }
+    
+    private static void demonstrateDefensiveCopying() {
+        System.out.println("13. Defensive Copying:");
+        Date start = new Date();
+        Date end = new Date(start.getTime() + 86400000); // +1 day
+        
+        DateRange range = new DateRange(start, end);
+        System.out.println("   Original range: " + range);
+        
+        // Attempt to modify original dates
+        start.setTime(0); // This won't affect the DateRange
+        
+        System.out.println("   After modifying original start: " + range);
+        
+        // Getting defensive copies
+        Date retrievedStart = range.getStart();
+        retrievedStart.setTime(0); // This won't affect the DateRange either
+        
+        System.out.println("   After modifying retrieved start: " + range);
+        System.out.println();
+    }
+    
+    // ===== ITEM 61: Prefer primitive types to boxed primitives =====
+    
+    private static void demonstratePrimitiveTypes() {
+        System.out.println("14. Primitive Types vs Boxed Primitives:");
+        
+        // Performance comparison
+        long startTime = System.nanoTime();
+        long sum = 0L; // primitive
+        for (int i = 0; i < 1000000; i++) {
+            sum += i;
+        }
+        long primitiveTime = System.nanoTime() - startTime;
+        
+        startTime = System.nanoTime();
+        Long boxedSum = 0L; // boxed primitive
+        for (int i = 0; i < 1000000; i++) {
+            boxedSum += i; // auto-boxing/unboxing overhead
+        }
+        long boxedTime = System.nanoTime() - startTime;
+        
+        System.out.println("   Primitive sum: " + sum + " (time: " + primitiveTime / 1000000.0 + "ms)");
+        System.out.println("   Boxed sum: " + boxedSum + " (time: " + boxedTime / 1000000.0 + "ms)");
+        
+        // Identity vs equality issues
+        Integer a = 127;
+        Integer b = 127;
+        Integer c = 128;
+        Integer d = 128;
+        
+        System.out.println("   Integer.valueOf(127) == Integer.valueOf(127): " + (a == b)); // true (cached)
+        System.out.println("   Integer.valueOf(128) == Integer.valueOf(128): " + (c == d)); // false (not cached)
+        System.out.println("   Always use .equals() for boxed primitives: " + c.equals(d)); // true
+        System.out.println();
+    }
+    
+    // ===== ITEM 62: Avoid strings where other types are more appropriate =====
+    
+    enum LogLevel {
+        DEBUG, INFO, WARN, ERROR;
+        
+        public boolean isAtLeast(LogLevel other) {
+            return this.ordinal() >= other.ordinal();
+        }
+    }
+    
+    static class ThreadSafeCounter {
+        private static final Object lock = new Object();
+        private static int count = 0;
+        
+        public static int increment() {
+            synchronized (lock) {
+                return ++count;
+            }
+        }
+    }
+    
+    static class Logger {
+        private final LogLevel threshold;
+        
+        public Logger(LogLevel threshold) {
+            this.threshold = threshold;
+        }
+        
+        public void log(LogLevel level, String message) {
+            if (level.isAtLeast(threshold)) {
+                System.out.println(String.format("[%s] %s", level, message));
+            }
+        }
+    }
+    
+    private static void demonstrateStringUsage() {
+        System.out.println("15. Avoiding Strings for Non-String Data:");
+        
+        // Good: Using enum instead of string constants
+        Logger logger = new Logger(LogLevel.INFO);
+        logger.log(LogLevel.DEBUG, "Debug message"); // Won't print
+        logger.log(LogLevel.INFO, "Info message");   // Will print
+        logger.log(LogLevel.ERROR, "Error message"); // Will print
+        
+        // Good: Using proper synchronization instead of string-based locks
+        System.out.println("   Counter value: " + ThreadSafeCounter.increment());
+        System.out.println("   Counter value: " + ThreadSafeCounter.increment());
+        
+        // Demonstrate compound key using proper class instead of string concatenation
+        Map<PersonKey, String> personData = new HashMap<>();
+        PersonKey key = new PersonKey("John", "Doe", 30);
+        personData.put(key, "Software Engineer");
+        
+        System.out.println("   Person data: " + personData.get(key));
+        System.out.println();
+    }
+    
+    static class PersonKey {
+        private final String firstName;
+        private final String lastName;
+        private final int age;
+        
+        public PersonKey(String firstName, String lastName, int age) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.age = age;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            PersonKey personKey = (PersonKey) obj;
+            return age == personKey.age &&
+                   Objects.equals(firstName, personKey.firstName) &&
+                   Objects.equals(lastName, personKey.lastName);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(firstName, lastName, age);
+        }
+    }
+    
+    // ===== ITEM 64: Refer to objects by their interfaces =====
+    
+    private static void demonstrateInterfaceReferences() {
+        System.out.println("16. Referring to Objects by Interfaces:");
+        
+        // Good: using interface types
+        List<String> arrayList = new ArrayList<>();
+        List<String> linkedList = new LinkedList<>();
+        Set<String> hashSet = new HashSet<>();
+        Set<String> treeSet = new TreeSet<>();
+        Map<String, Integer> hashMap = new HashMap<>();
+        Map<String, Integer> treeMap = new TreeMap<>();
+        
+        // Can easily switch implementations
+        processCollection(arrayList, "ArrayList");
+        processCollection(linkedList, "LinkedList");
+        processCollection(hashSet, "HashSet");
+        processCollection(treeSet, "TreeSet");
+        
+        processMap(hashMap, "HashMap");
+        processMap(treeMap, "TreeMap");
+        System.out.println();
+    }
+    
+    private static void processCollection(Collection<String> collection, String type) {
+        collection.add("item1");
+        collection.add("item2");
+        System.out.println("   " + type + " size: " + collection.size());
+    }
+    
+    private static void processMap(Map<String, Integer> map, String type) {
+        map.put("key1", 1);
+        map.put("key2", 2);
+        System.out.println("   " + type + " size: " + map.size());
+    }
+    
+    // ===== ITEM 78: Synchronize access to shared mutable data =====
+    
+    static class SafeCounter {
+        private int count = 0;
+        
+        public synchronized int increment() {
+            return ++count;
+        }
+        
+        public synchronized int get() {
+            return count;
+        }
+    }
+    
+    static class AtomicCounter {
+        private final java.util.concurrent.atomic.AtomicInteger count = 
+            new java.util.concurrent.atomic.AtomicInteger(0);
+        
+        public int increment() {
+            return count.incrementAndGet();
+        }
+        
+        public int get() {
+            return count.get();
+        }
+    }
+    
+    private static void demonstrateSynchronization() {
+        System.out.println("17. Thread-Safe Access to Shared Data:");
+        
+        SafeCounter safeCounter = new SafeCounter();
+        AtomicCounter atomicCounter = new AtomicCounter();
+        
+        // Simulate concurrent access
+        List<Thread> threads = new ArrayList<>();
+        
+        for (int i = 0; i < 5; i++) {
+            Thread t = new Thread(() -> {
+                for (int j = 0; j < 100; j++) {
+                    safeCounter.increment();
+                    atomicCounter.increment();
+                }
+            });
+            threads.add(t);
+            t.start();
+        }
+        
+        // Wait for all threads to complete
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        System.out.println("   Safe counter final value: " + safeCounter.get());
+        System.out.println("   Atomic counter final value: " + atomicCounter.get());
+        System.out.println();
+    }
+    
+    // ===== ITEM 81: Prefer concurrency utilities to wait and notify =====
+    
+    static class ProducerConsumerExample {
+        private final java.util.concurrent.BlockingQueue<String> queue = 
+            new java.util.concurrent.ArrayBlockingQueue<>(10);
+        private final java.util.concurrent.CountDownLatch latch = 
+            new java.util.concurrent.CountDownLatch(1);
+        
+        public void produce() {
+            try {
+                for (int i = 1; i <= 5; i++) {
+                    String item = "Item " + i;
+                    queue.put(item);
+                    System.out.println("   Produced: " + item);
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                latch.countDown();
+            }
+        }
+        
+        public void consume() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    String item = queue.poll(200, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    if (item != null) {
+                        System.out.println("   Consumed: " + item);
+                    } else if (latch.getCount() == 0 && queue.isEmpty()) {
+                        break; // Producer finished and queue is empty
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+    
+    private static void demonstrateConcurrencyUtilities() {
+        System.out.println("18. Using Concurrency Utilities:");
+        
+        ProducerConsumerExample example = new ProducerConsumerExample();
+        
+        Thread producer = new Thread(example::produce);
+        Thread consumer = new Thread(example::consume);
+        
+        producer.start();
+        consumer.start();
+        
+        try {
+            producer.join();
+            consumer.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        // Demonstrate thread-safe collections
+        Map<String, String> concurrentMap = new ConcurrentHashMap<>();
+        concurrentMap.put("key1", "value1");
+        concurrentMap.put("key2", "value2");
+        System.out.println("   Concurrent map: " + concurrentMap);
+        System.out.println();
+    }
+    
+    // ===== ITEM 90: Consider serialization proxies instead of serialized instances =====
+    
+    static class Period implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+        private final Date start;
+        private final Date end;
+        
+        public Period(Date start, Date end) {
+            this.start = new Date(start.getTime());
+            this.end = new Date(end.getTime());
+            
+            if (this.start.after(this.end)) {
+                throw new IllegalArgumentException("Start after end: " + this.start + " > " + this.end);
+            }
+        }
+        
+        public Date start() {
+            return new Date(start.getTime());
+        }
+        
+        public Date end() {
+            return new Date(end.getTime());
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Period{%s - %s}", start, end);
+        }
+        
+        // Serialization proxy pattern
+        private static class SerializationProxy implements java.io.Serializable {
+            private static final long serialVersionUID = 1L;
+            private final Date start;
+            private final Date end;
+            
+            SerializationProxy(Period period) {
+                this.start = period.start;
+                this.end = period.end;
+            }
+            
+            private Object readResolve() {
+                return new Period(start, end); // Uses public constructor with validation
+            }
+        }
+        
+        private Object writeReplace() {
+            return new SerializationProxy(this);
+        }
+        
+        private void readObject(java.io.ObjectInputStream stream) throws java.io.InvalidObjectException {
+            throw new java.io.InvalidObjectException("Proxy required");
+        }
+    }
+    
+    private static void demonstrateSerializationProxy() {
+        System.out.println("19. Serialization Proxy Pattern:");
+        
+        try {
+            Date start = new Date();
+            Date end = new Date(start.getTime() + 86400000); // +1 day
+            Period original = new Period(start, end);
+            
+            // Serialize
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(baos);
+            oos.writeObject(original);
+            oos.close();
+            
+            // Deserialize
+            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(baos.toByteArray());
+            java.io.ObjectInputStream ois = new java.io.ObjectInputStream(bais);
+            Period deserialized = (Period) ois.readObject();
+            ois.close();
+            
+            System.out.println("   Original: " + original);
+            System.out.println("   Deserialized: " + deserialized);
+            System.out.println("   Objects equal: " + original.toString().equals(deserialized.toString()));
+            
+        } catch (Exception e) {
+            System.out.println("   Serialization demo failed: " + e.getMessage());
+        }
+        System.out.println();
+    }
+}
