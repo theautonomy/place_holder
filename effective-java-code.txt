@@ -96,6 +96,36 @@ public class EffectiveJavaExamples {
         
         // Item 85: Prefer alternatives to Java serialization
         demonstrateSerializationAlternatives();
+        
+        // Item 4: Enforce noninstantiability with a private constructor
+        demonstrateNoninstantiability();
+        
+        // Item 6: Avoid creating unnecessary objects
+        demonstrateObjectReuse();
+        
+        // Item 9: Prefer try-with-resources to try-finally
+        demonstrateTryWithResources();
+        
+        // Item 16: In public classes, use accessor methods, not public fields
+        demonstrateAccessorMethods();
+        
+        // Item 19: Design and document for inheritance or else prohibit it
+        demonstrateInheritanceDesign();
+        
+        // Item 22: Use interfaces only to define types
+        demonstrateInterfaceUsage();
+        
+        // Item 43: Prefer method references to lambdas
+        demonstrateMethodReferences();
+        
+        // Item 45: Use streams judiciously
+        demonstrateStreamUsage();
+        
+        // Item 58: Prefer for-each loops to traditional for loops
+        demonstrateForEachLoops();
+        
+        // Item 69: Use exceptions only for exceptional conditions
+        demonstrateExceptionUsage();
     }
     
     // ===== ITEM 1: Consider static factory methods instead of constructors =====
@@ -1987,6 +2017,624 @@ public class EffectiveJavaExamples {
         System.out.println("   Objects equal: " + original.equals(deserialized));
         
         System.out.println("   Benefits: Human-readable, cross-platform, safer than Java serialization");
+        System.out.println();
+    }
+    
+    // ===== ITEM 4: Enforce noninstantiability with a private constructor =====
+    
+    static class MathUtilities {
+        // Private constructor prevents instantiation
+        private MathUtilities() {
+            throw new AssertionError("Utility class should not be instantiated");
+        }
+        
+        public static double circleArea(double radius) {
+            if (radius < 0) {
+                throw new IllegalArgumentException("Radius cannot be negative");
+            }
+            return Math.PI * radius * radius;
+        }
+        
+        public static double circleCircumference(double radius) {
+            if (radius < 0) {
+                throw new IllegalArgumentException("Radius cannot be negative");
+            }
+            return 2 * Math.PI * radius;
+        }
+        
+        public static boolean isPrime(int n) {
+            if (n < 2) return false;
+            if (n == 2) return true;
+            if (n % 2 == 0) return false;
+            
+            for (int i = 3; i * i <= n; i += 2) {
+                if (n % i == 0) return false;
+            }
+            return true;
+        }
+        
+        public static int gcd(int a, int b) {
+            return b == 0 ? a : gcd(b, a % b);
+        }
+    }
+    
+    private static void demonstrateNoninstantiability() {
+        System.out.println("30. Noninstantiable Utility Classes:");
+        
+        // Can use static methods
+        System.out.println("   Circle area (r=5): " + String.format("%.2f", MathUtilities.circleArea(5.0)));
+        System.out.println("   Is 17 prime: " + MathUtilities.isPrime(17));
+        System.out.println("   GCD(48, 18): " + MathUtilities.gcd(48, 18));
+        
+        // Cannot instantiate
+        try {
+            // This would cause compilation error: MathUtilities util = new MathUtilities();
+            System.out.println("   Private constructor prevents instantiation");
+        } catch (Exception e) {
+            System.out.println("   Exception: " + e.getMessage());
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 6: Avoid creating unnecessary objects =====
+    
+    static class ObjectCreationExample {
+        // Bad: creates new String object unnecessarily
+        private static final String BAD_CONSTANT = new String("constant");
+        
+        // Good: reuses string literal
+        private static final String GOOD_CONSTANT = "constant";
+        
+        // Bad: creates new Pattern every time
+        static boolean isEmailBad(String email) {
+            return email.matches("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+        }
+        
+        // Good: reuses compiled Pattern
+        private static final java.util.regex.Pattern EMAIL_PATTERN = 
+            java.util.regex.Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+        
+        static boolean isEmailGood(String email) {
+            return EMAIL_PATTERN.matcher(email).matches();
+        }
+        
+        // Demonstrate autoboxing overhead
+        public static Long sumBad() {
+            Long sum = 0L; // Boxed primitive
+            for (long i = 0; i < 1000000; i++) {
+                sum += i; // Autoboxing creates new Long objects
+            }
+            return sum;
+        }
+        
+        public static long sumGood() {
+            long sum = 0L; // Primitive
+            for (long i = 0; i < 1000000; i++) {
+                sum += i; // No object creation
+            }
+            return sum;
+        }
+        
+        // Prefer primitives to boxed primitives for better performance
+        public static void demonstratePerformance() {
+            long start = System.nanoTime();
+            Long result1 = sumBad();
+            long badTime = System.nanoTime() - start;
+            
+            start = System.nanoTime();
+            long result2 = sumGood();
+            long goodTime = System.nanoTime() - start;
+            
+            System.out.println("   Boxed primitive time: " + (badTime / 1_000_000.0) + "ms");
+            System.out.println("   Primitive time: " + (goodTime / 1_000_000.0) + "ms");
+            System.out.println("   Results equal: " + (result1.longValue() == result2));
+        }
+    }
+    
+    private static void demonstrateObjectReuse() {
+        System.out.println("31. Avoiding Unnecessary Object Creation:");
+        
+        // String creation
+        System.out.println("   Good constant: " + ObjectCreationExample.GOOD_CONSTANT);
+        
+        // Pattern reuse
+        String email = "test@example.com";
+        System.out.println("   Email valid (reused pattern): " + ObjectCreationExample.isEmailGood(email));
+        
+        // Performance comparison
+        ObjectCreationExample.demonstratePerformance();
+        System.out.println();
+    }
+    
+    // ===== ITEM 9: Prefer try-with-resources to try-finally =====
+    
+    static class ResourceExample {
+        // Simulate a resource that needs cleanup
+        static class MockResource implements AutoCloseable {
+            private final String name;
+            private boolean closed = false;
+            
+            public MockResource(String name) {
+                this.name = name;
+                System.out.println("   Opening resource: " + name);
+            }
+            
+            public void doWork() {
+                if (closed) {
+                    throw new IllegalStateException("Resource is closed: " + name);
+                }
+                System.out.println("   Working with resource: " + name);
+            }
+            
+            @Override
+            public void close() {
+                if (!closed) {
+                    System.out.println("   Closing resource: " + name);
+                    closed = true;
+                }
+            }
+        }
+        
+        // Bad: try-finally (error-prone)
+        public static void badResourceHandling() throws Exception {
+            MockResource resource = null;
+            try {
+                resource = new MockResource("bad-resource");
+                resource.doWork();
+                // If exception occurs here, close() might not be called
+            } finally {
+                if (resource != null) {
+                    resource.close(); // This could throw and suppress original exception
+                }
+            }
+        }
+        
+        // Good: try-with-resources (automatic cleanup)
+        public static void goodResourceHandling() throws Exception {
+            try (MockResource resource = new MockResource("good-resource")) {
+                resource.doWork();
+                // Resource automatically closed, even if exception occurs
+            }
+        }
+        
+        // Multiple resources
+        public static void multipleResources() throws Exception {
+            try (MockResource resource1 = new MockResource("resource-1");
+                 MockResource resource2 = new MockResource("resource-2")) {
+                resource1.doWork();
+                resource2.doWork();
+                // Both resources automatically closed in reverse order
+            }
+        }
+    }
+    
+    private static void demonstrateTryWithResources() {
+        System.out.println("32. Try-with-resources:");
+        
+        try {
+            System.out.println("   Single resource:");
+            ResourceExample.goodResourceHandling();
+            
+            System.out.println("   Multiple resources:");
+            ResourceExample.multipleResources();
+        } catch (Exception e) {
+            System.out.println("   Exception: " + e.getMessage());
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 16: In public classes, use accessor methods, not public fields =====
+    
+    // Bad: public fields
+    static class BadPoint {
+        public double x;
+        public double y;
+        
+        public BadPoint(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+    
+    // Good: private fields with accessors
+    static class GoodPoint {
+        private double x;
+        private double y;
+        
+        public GoodPoint(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+        
+        public double getX() { return x; }
+        public double getY() { return y; }
+        
+        public void setX(double x) {
+            if (!Double.isFinite(x)) {
+                throw new IllegalArgumentException("x must be finite");
+            }
+            this.x = x;
+        }
+        
+        public void setY(double y) {
+            if (!Double.isFinite(y)) {
+                throw new IllegalArgumentException("y must be finite");
+            }
+            this.y = y;
+        }
+        
+        public double distanceFromOrigin() {
+            return Math.sqrt(x * x + y * y);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Point(%.1f, %.1f)", x, y);
+        }
+    }
+    
+    private static void demonstrateAccessorMethods() {
+        System.out.println("33. Accessor Methods vs Public Fields:");
+        
+        // Bad approach allows invalid state
+        BadPoint badPoint = new BadPoint(3.0, 4.0);
+        badPoint.x = Double.NaN; // Can set invalid value!
+        System.out.println("   Bad point allows invalid state: (" + badPoint.x + ", " + badPoint.y + ")");
+        
+        // Good approach validates and provides behavior
+        GoodPoint goodPoint = new GoodPoint(3.0, 4.0);
+        System.out.println("   Good point: " + goodPoint);
+        System.out.println("   Distance from origin: " + String.format("%.1f", goodPoint.distanceFromOrigin()));
+        
+        try {
+            goodPoint.setX(Double.NaN); // Will throw exception
+        } catch (IllegalArgumentException e) {
+            System.out.println("   Validation works: " + e.getMessage());
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 19: Design and document for inheritance or else prohibit it =====
+    
+    // Good: Designed for inheritance with hooks
+    static abstract class AbstractProcessor {
+        // Template method
+        public final String process(String input) {
+            String validated = validate(input);
+            String transformed = transform(validated);
+            return finalize(transformed);
+        }
+        
+        // Hook for subclasses - documented behavior
+        protected String validate(String input) {
+            if (input == null || input.trim().isEmpty()) {
+                throw new IllegalArgumentException("Input cannot be null or empty");
+            }
+            return input.trim();
+        }
+        
+        // Abstract method that subclasses must implement
+        protected abstract String transform(String input);
+        
+        // Hook with default behavior
+        protected String finalize(String result) {
+            return result;
+        }
+    }
+    
+    static class UpperCaseProcessor extends AbstractProcessor {
+        @Override
+        protected String transform(String input) {
+            return input.toUpperCase();
+        }
+        
+        @Override
+        protected String finalize(String result) {
+            return "[PROCESSED] " + result;
+        }
+    }
+    
+    // Good: Class not designed for inheritance - final
+    static final class UtilityProcessor {
+        public static String processText(String input) {
+            if (input == null) return "";
+            return input.trim().toLowerCase();
+        }
+    }
+    
+    private static void demonstrateInheritanceDesign() {
+        System.out.println("34. Designing for Inheritance:");
+        
+        AbstractProcessor processor = new UpperCaseProcessor();
+        String result = processor.process("  hello world  ");
+        System.out.println("   Processed: " + result);
+        
+        String utilityResult = UtilityProcessor.processText("  HELLO WORLD  ");
+        System.out.println("   Utility result: " + utilityResult);
+        
+        System.out.println("   AbstractProcessor: designed for inheritance with hooks");
+        System.out.println("   UtilityProcessor: final class - inheritance prohibited");
+        System.out.println();
+    }
+    
+    // ===== ITEM 22: Use interfaces only to define types =====
+    
+    // Bad: constant interface antipattern
+    interface BadConstants {
+        double PI = 3.14159;
+        int MAX_SIZE = 100;
+        String DEFAULT_NAME = "Unknown";
+    }
+    
+    // Good: use class with private constructor for constants
+    static final class GoodConstants {
+        private GoodConstants() {} // Prevents instantiation
+        
+        public static final double PI = Math.PI;
+        public static final int MAX_SIZE = 100;
+        public static final String DEFAULT_NAME = "Unknown";
+    }
+    
+    // Good: interface defines a type
+    interface Drawable {
+        void draw();
+        default void highlight() {
+            System.out.println("   Highlighting drawable object");
+        }
+    }
+    
+    static class Circle implements Drawable {
+        private final double radius;
+        
+        public Circle(double radius) {
+            this.radius = radius;
+        }
+        
+        @Override
+        public void draw() {
+            System.out.println("   Drawing circle with radius " + radius);
+        }
+    }
+    
+    private static void demonstrateInterfaceUsage() {
+        System.out.println("35. Proper Interface Usage:");
+        
+        System.out.println("   Good constants: PI = " + GoodConstants.PI);
+        System.out.println("   Max size: " + GoodConstants.MAX_SIZE);
+        
+        Drawable drawable = new Circle(5.0);
+        drawable.draw();
+        drawable.highlight();
+        
+        System.out.println("   Interfaces should define types, not just hold constants");
+        System.out.println();
+    }
+    
+    // ===== ITEM 43: Prefer method references to lambdas =====
+    
+    private static void demonstrateMethodReferences() {
+        System.out.println("36. Method References vs Lambdas:");
+        
+        List<String> words = Arrays.asList("apple", "banana", "cherry", "date");
+        
+        // Lambda expressions
+        System.out.println("   Using lambdas:");
+        words.stream()
+             .map(s -> s.toUpperCase())
+             .forEach(s -> System.out.println("     " + s));
+        
+        // Method references (preferred when possible)
+        System.out.println("   Using method references:");
+        words.stream()
+             .map(String::toUpperCase)
+             .forEach(System.out::println);
+        
+        // Static method reference
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
+        System.out.println("   Square roots using method reference:");
+        numbers.stream()
+               .map(Math::sqrt)
+               .forEach(d -> System.out.println("     " + String.format("%.2f", d)));
+        
+        // Constructor reference
+        System.out.println("   Creating points using constructor reference:");
+        List<GoodPoint> points = Arrays.asList(1, 2, 3, 4)
+                                      .stream()
+                                      .map(i -> new GoodPoint(i, i * 2))
+                                      .collect(java.util.stream.Collectors.toList());
+        points.forEach(p -> System.out.println("     " + p));
+        System.out.println();
+    }
+    
+    // ===== ITEM 45: Use streams judiciously =====
+    
+    static class StreamExample {
+        // Good use of streams: clear and concise
+        public static Map<String, List<String>> groupWordsByLength(List<String> words) {
+            return words.stream()
+                       .collect(java.util.stream.Collectors.groupingBy(
+                           word -> word.length() <= 4 ? "short" : "long"));
+        }
+        
+        // Bad use of streams: overly complex
+        public static String badStreamExample(List<String> words) {
+            return words.stream()
+                       .filter(w -> w.length() > 3)
+                       .map(String::toUpperCase)
+                       .collect(java.util.stream.Collectors.groupingBy(w -> w.charAt(0)))
+                       .entrySet().stream()
+                       .sorted(Map.Entry.comparingByKey())
+                       .map(e -> e.getKey() + ":" + String.join(",", e.getValue()))
+                       .collect(java.util.stream.Collectors.joining("|"));
+        }
+        
+        // Better: break into smaller, readable methods
+        public static String goodStreamExample(List<String> words) {
+            Map<Character, List<String>> grouped = groupByFirstLetter(
+                filterAndTransform(words));
+            return formatGroups(grouped);
+        }
+        
+        private static List<String> filterAndTransform(List<String> words) {
+            return words.stream()
+                       .filter(w -> w.length() > 3)
+                       .map(String::toUpperCase)
+                       .collect(java.util.stream.Collectors.toList());
+        }
+        
+        private static Map<Character, List<String>> groupByFirstLetter(List<String> words) {
+            return words.stream()
+                       .collect(java.util.stream.Collectors.groupingBy(w -> w.charAt(0)));
+        }
+        
+        private static String formatGroups(Map<Character, List<String>> groups) {
+            return groups.entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .map(e -> e.getKey() + ":" + String.join(",", e.getValue()))
+                        .collect(java.util.stream.Collectors.joining("|"));
+        }
+    }
+    
+    private static void demonstrateStreamUsage() {
+        System.out.println("37. Judicious Stream Usage:");
+        
+        List<String> words = Arrays.asList("cat", "elephant", "dog", "butterfly", "ant", "hippopotamus");
+        
+        // Good: simple and clear
+        Map<String, List<String>> grouped = StreamExample.groupWordsByLength(words);
+        System.out.println("   Grouped by length: " + grouped);
+        
+        // Complex example
+        String result = StreamExample.goodStreamExample(words);
+        System.out.println("   Formatted groups: " + result);
+        
+        System.out.println("   Key: Use streams for simple transformations, not complex logic");
+        System.out.println();
+    }
+    
+    // ===== ITEM 58: Prefer for-each loops to traditional for loops =====
+    
+    private static void demonstrateForEachLoops() {
+        System.out.println("38. For-each Loops:");
+        
+        List<String> fruits = Arrays.asList("apple", "banana", "cherry");
+        int[] numbers = {1, 2, 3, 4, 5};
+        
+        // Good: for-each loop (enhanced for loop)
+        System.out.println("   Fruits using for-each:");
+        for (String fruit : fruits) {
+            System.out.println("     " + fruit);
+        }
+        
+        System.out.println("   Numbers using for-each:");
+        for (int number : numbers) {
+            System.out.println("     " + number * number);
+        }
+        
+        // When traditional for loop is needed
+        System.out.println("   When you need the index (traditional for):");
+        for (int i = 0; i < fruits.size(); i++) {
+            System.out.println("     " + i + ": " + fruits.get(i));
+        }
+        
+        // Nested loops benefit greatly from for-each
+        System.out.println("   Nested for-each loops:");
+        List<String> colors = Arrays.asList("red", "blue");
+        for (String fruit : fruits) {
+            for (String color : colors) {
+                if (Math.random() > 0.7) { // Just to limit output
+                    System.out.println("     " + color + " " + fruit);
+                }
+            }
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 69: Use exceptions only for exceptional conditions =====
+    
+    static class ExceptionExample {
+        // Bad: using exception for control flow
+        public static void badArrayIteration(int[] array) {
+            try {
+                int i = 0;
+                while (true) {
+                    System.out.println("     " + array[i++]);
+                }
+            } catch (ArrayIndexOutOfBoundsException e) {
+                // Using exception to terminate loop - BAD!
+            }
+        }
+        
+        // Good: normal control flow
+        public static void goodArrayIteration(int[] array) {
+            for (int i = 0; i < array.length; i++) {
+                System.out.println("     " + array[i]);
+            }
+        }
+        
+        // Even better: for-each loop
+        public static void bestArrayIteration(int[] array) {
+            for (int value : array) {
+                System.out.println("     " + value);
+            }
+        }
+        
+        // Good: exception for truly exceptional condition
+        public static double safeDivide(double a, double b) {
+            if (b == 0.0) {
+                throw new IllegalArgumentException("Division by zero");
+            }
+            return a / b;
+        }
+        
+        // Good: state-testing method to avoid exceptions
+        static class SafeIterator<T> {
+            private final List<T> items;
+            private int position = 0;
+            
+            public SafeIterator(List<T> items) {
+                this.items = new ArrayList<>(items);
+            }
+            
+            public boolean hasNext() {
+                return position < items.size();
+            }
+            
+            public T next() {
+                if (!hasNext()) {
+                    throw new IllegalStateException("No more elements");
+                }
+                return items.get(position++);
+            }
+        }
+    }
+    
+    private static void demonstrateExceptionUsage() {
+        System.out.println("39. Proper Exception Usage:");
+        
+        int[] array = {1, 2, 3, 4, 5};
+        
+        System.out.println("   Good array iteration:");
+        ExceptionExample.bestArrayIteration(array);
+        
+        // Exception for exceptional condition
+        try {
+            double result = ExceptionExample.safeDivide(10.0, 0.0);
+            System.out.println("   Result: " + result);
+        } catch (IllegalArgumentException e) {
+            System.out.println("   Caught expected exception: " + e.getMessage());
+        }
+        
+        // State-testing method
+        System.out.println("   Safe iterator:");
+        ExceptionExample.SafeIterator<String> iterator = 
+            new ExceptionExample.SafeIterator<>(Arrays.asList("a", "b", "c"));
+        
+        while (iterator.hasNext()) {
+            System.out.println("     " + iterator.next());
+        }
+        
+        System.out.println("   Key: Exceptions are for exceptional conditions, not normal control flow");
         System.out.println();
         
         // Final summary
