@@ -1988,5 +1988,81 @@ public class EffectiveJavaExamples {
         
         System.out.println("   Benefits: Human-readable, cross-platform, safer than Java serialization");
         System.out.println();
+        
+        // Final summary
+        printSummary();
+    }
+    
+    private static void printSummary() {
+        System.out.println("=== EFFECTIVE JAVA PRINCIPLES SUMMARY ===");
+        System.out.println();
+        System.out.println("Key Categories Demonstrated:");
+        System.out.println();
+        
+        System.out.println("OBJECT CREATION & DESTRUCTION:");
+        System.out.println("• Static factory methods provide clear names and flexibility");
+        System.out.println("• Builder pattern handles complex object construction");
+        System.out.println("• Enum singletons are the best singleton implementation");
+        System.out.println("• Use try-with-resources instead of finalizers");
+        System.out.println();
+        
+        System.out.println("METHODS COMMON TO ALL OBJECTS:");
+        System.out.println("• Override equals() and hashCode() together, following contracts");
+        System.out.println("• Prefer copy constructors over clone()");
+        System.out.println("• Make defensive copies of mutable components");
+        System.out.println();
+        
+        System.out.println("CLASSES AND INTERFACES:");
+        System.out.println("• Minimize accessibility - use private/package-private when possible");
+        System.out.println("• Favor composition over inheritance");
+        System.out.println("• Prefer interfaces to abstract classes");
+        System.out.println("• Design immutable classes when possible");
+        System.out.println();
+        
+        System.out.println("GENERICS:");
+        System.out.println("• Don't use raw types - always parameterize");
+        System.out.println("• Use generic methods for type safety");
+        System.out.println("• Consider typesafe heterogeneous containers");
+        System.out.println();
+        
+        System.out.println("METHODS:");
+        System.out.println("• Check parameters for validity early");
+        System.out.println("• Use overloading judiciously - prefer distinct names");
+        System.out.println("• Return Collections instead of Streams for flexibility");
+        System.out.println();
+        
+        System.out.println("GENERAL PROGRAMMING:");
+        System.out.println("• Minimize scope of local variables");
+        System.out.println("• Prefer primitive types to boxed primitives");
+        System.out.println("• Avoid strings where other types are more appropriate");
+        System.out.println("• Refer to objects by their interfaces");
+        System.out.println();
+        
+        System.out.println("CONCURRENCY:");
+        System.out.println("• Synchronize access to shared mutable data");
+        System.out.println("• Prefer concurrency utilities to wait/notify");
+        System.out.println("• Use thread-safe collections when appropriate");
+        System.out.println();
+        
+        System.out.println("PERFORMANCE & OPTIMIZATION:");
+        System.out.println("• Optimize judiciously - measure before optimizing");
+        System.out.println("• Prefer interfaces to reflection for flexibility");
+        System.out.println("• Simple, clear code often performs well enough");
+        System.out.println();
+        
+        System.out.println("SERIALIZATION:");
+        System.out.println("• Consider serialization proxies for safety");
+        System.out.println("• Prefer alternatives like JSON to Java serialization");
+        System.out.println("• Design serialization carefully to maintain invariants");
+        System.out.println();
+        
+        System.out.println("OVERALL PHILOSOPHY:");
+        System.out.println("• Favor clarity over cleverness");
+        System.out.println("• Design for safety and maintainability");
+        System.out.println("• Follow established conventions and contracts");
+        System.out.println("• Write code that's easy to understand and modify");
+        System.out.println();
+        
+        System.out.println("=== END OF EFFECTIVE JAVA EXAMPLES ===");
     }
 }
