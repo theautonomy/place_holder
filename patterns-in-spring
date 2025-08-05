@@ -1,0 +1,866 @@
+// ===== 1. MAIN APPLICATION CLASS =====
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.scheduling.annotation.EnableAsync;
+
+@SpringBootApplication
+@EnableAspectJAutoProxy // Enable AOP (Proxy Pattern)
+@EnableAsync
+public class SpringPatternsApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(SpringPatternsApplication.class, args);
+    }
+}
+
+// ===== 2. DOMAIN MODELS =====
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+public class User {
+    private Long id;
+    private String name;
+    private String email;
+    private LocalDateTime createdAt;
+    
+    public User() {}
+    
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+        this.createdAt = LocalDateTime.now();
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    @Override
+    public String toString() {
+        return "User{id=" + id + ", name='" + name + "', email='" + email + "'}";
+    }
+}
+
+public class Order {
+    private Long id;
+    private Long userId;
+    private String product;
+    private Double amount;
+    private String status;
+    private LocalDateTime createdAt;
+    
+    public Order() {}
+    
+    public Order(Long userId, String product, Double amount) {
+        this.userId = userId;
+        this.product = product;
+        this.amount = amount;
+        this.status = "PENDING";
+        this.createdAt = LocalDateTime.now();
+    }
+    
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    public String getProduct() { return product; }
+    public void setProduct(String product) { this.product = product; }
+    public Double getAmount() { return amount; }
+    public void setAmount(Double amount) { this.amount = amount; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    @Override
+    public String toString() {
+        return "Order{id=" + id + ", userId=" + userId + ", product='" + product + 
+               "', amount=" + amount + ", status='" + status + "'}";
+    }
+}
+
+// ===== 3. EVENTS (Observer Pattern) =====
+import org.springframework.context.ApplicationEvent;
+
+public class UserCreatedEvent extends ApplicationEvent {
+    private final User user;
+    
+    public UserCreatedEvent(Object source, User user) {
+        super(source);
+        this.user = user;
+    }
+    
+    public User getUser() {
+        return user;
+    }
+}
+
+public class OrderCreatedEvent extends ApplicationEvent {
+    private final Order order;
+    
+    public OrderCreatedEvent(Object source, Order order) {
+        super(source);
+        this.order = order;
+    }
+    
+    public Order getOrder() {
+        return order;
+    }
+}
+
+// ===== 4. STRATEGY PATTERN - Payment Processing =====
+public interface PaymentStrategy {
+    boolean processPayment(Double amount);
+    String getPaymentMethod();
+}
+
+import org.springframework.stereotype.Component;
+
+@Component("creditCardPayment")
+public class CreditCardPaymentStrategy implements PaymentStrategy {
+    @Override
+    public boolean processPayment(Double amount) {
+        System.out.println("Processing credit card payment of $" + amount);
+        // Simulate payment processing
+        return amount > 0 && amount <= 10000;
+    }
+    
+    @Override
+    public String getPaymentMethod() {
+        return "Credit Card";
+    }
+}
+
+@Component("paypalPayment")
+public class PayPalPaymentStrategy implements PaymentStrategy {
+    @Override
+    public boolean processPayment(Double amount) {
+        System.out.println("Processing PayPal payment of $" + amount);
+        // Simulate payment processing
+        return amount > 0 && amount <= 5000;
+    }
+    
+    @Override
+    public String getPaymentMethod() {
+        return "PayPal";
+    }
+}
+
+// ===== 5. TEMPLATE METHOD PATTERN - Data Access =====
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
+@Repository
+public class UserRepository {
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate; // Template Method Pattern
+    
+    private final RowMapper<User> userRowMapper = new RowMapper<User>() {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User();
+            user.setId(rs.getLong("id"));
+            user.setName(rs.getString("name"));
+            user.setEmail(rs.getString("email"));
+            user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            return user;
+        }
+    };
+    
+    public User save(User user) {
+        if (user.getId() == null) {
+            // Insert
+            String sql = "INSERT INTO users (name, email, created_at) VALUES (?, ?, ?)";
+            jdbcTemplate.update(sql, user.getName(), user.getEmail(), user.getCreatedAt());
+            return user;
+        } else {
+            // Update
+            String sql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
+            jdbcTemplate.update(sql, user.getName(), user.getEmail(), user.getId());
+            return user;
+        }
+    }
+    
+    public List<User> findAll() {
+        String sql = "SELECT * FROM users";
+        return jdbcTemplate.query(sql, userRowMapper);
+    }
+    
+    public User findById(Long id) {
+        String sql = "SELECT * FROM users WHERE id = ?";
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+    }
+}
+
+// ===== 6. SERVICES (Dependency Injection + Singleton Pattern) =====
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Map;
+
+@Service // Singleton by default
+public class UserService {
+    
+    private final UserRepository userRepository; // Dependency Injection
+    private final ApplicationEventPublisher eventPublisher; // Observer Pattern
+    
+    @Autowired // Constructor Injection (DI Pattern)
+    public UserService(UserRepository userRepository, ApplicationEventPublisher eventPublisher) {
+        this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
+    }
+    
+    @Transactional // Proxy Pattern (AOP)
+    public User createUser(String name, String email) {
+        System.out.println("Creating user: " + name);
+        
+        User user = new User(name, email);
+        User savedUser = userRepository.save(user);
+        
+        // Publish event (Observer Pattern)
+        eventPublisher.publishEvent(new UserCreatedEvent(this, savedUser));
+        
+        return savedUser;
+    }
+    
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+    
+    public User getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+}
+
+@Service
+public class PaymentService {
+    
+    private final Map<String, PaymentStrategy> paymentStrategies; // Strategy Pattern
+    
+    @Autowired
+    public PaymentService(Map<String, PaymentStrategy> paymentStrategies) {
+        this.paymentStrategies = paymentStrategies;
+    }
+    
+    public boolean processPayment(String method, Double amount) {
+        PaymentStrategy strategy = getPaymentStrategy(method);
+        if (strategy != null) {
+            return strategy.processPayment(amount);
+        }
+        throw new IllegalArgumentException("Unknown payment method: " + method);
+    }
+    
+    private PaymentStrategy getPaymentStrategy(String method) {
+        switch (method.toLowerCase()) {
+            case "credit_card":
+                return paymentStrategies.get("creditCardPayment");
+            case "paypal":
+                return paymentStrategies.get("paypalPayment");
+            default:
+                return null;
+        }
+    }
+    
+    public List<String> getAvailablePaymentMethods() {
+        return paymentStrategies.values().stream()
+                .map(PaymentStrategy::getPaymentMethod)
+                .collect(java.util.stream.Collectors.toList());
+    }
+}
+
+@Service
+public class OrderService {
+    
+    private final PaymentService paymentService;
+    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
+    
+    @Autowired
+    public OrderService(PaymentService paymentService, UserService userService, 
+                       ApplicationEventPublisher eventPublisher) {
+        this.paymentService = paymentService;
+        this.userService = userService;
+        this.eventPublisher = eventPublisher;
+    }
+    
+    @Transactional
+    public Order createOrder(Long userId, String product, Double amount, String paymentMethod) {
+        System.out.println("Creating order for user: " + userId);
+        
+        // Verify user exists
+        User user = userService.getUserById(userId);
+        if (user == null) {
+            throw new RuntimeException("User not found: " + userId);
+        }
+        
+        // Create order
+        Order order = new Order(userId, product, amount);
+        
+        // Process payment using Strategy Pattern
+        boolean paymentSuccess = paymentService.processPayment(paymentMethod, amount);
+        
+        if (paymentSuccess) {
+            order.setStatus("COMPLETED");
+        } else {
+            order.setStatus("FAILED");
+        }
+        
+        // Publish event
+        eventPublisher.publishEvent(new OrderCreatedEvent(this, order));
+        
+        return order;
+    }
+}
+
+// ===== 7. EVENT LISTENERS (Observer Pattern) =====
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+@Component
+public class NotificationService {
+    
+    @EventListener
+    @Async
+    public void handleUserCreated(UserCreatedEvent event) {
+        User user = event.getUser();
+        System.out.println("📧 Sending welcome email to: " + user.getEmail());
+        // Simulate email sending
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        System.out.println("✅ Welcome email sent to: " + user.getName());
+    }
+    
+    @EventListener
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        Order order = event.getOrder();
+        System.out.println("📦 Processing order notification: " + order.getId());
+        System.out.println("Order status: " + order.getStatus());
+    }
+}
+
+@Component
+public class AuditService {
+    
+    @EventListener
+    public void handleUserCreated(UserCreatedEvent event) {
+        User user = event.getUser();
+        System.out.println("📝 AUDIT: User created - ID: " + user.getId() + 
+                          ", Name: " + user.getName() + ", Time: " + user.getCreatedAt());
+    }
+    
+    @EventListener
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        Order order = event.getOrder();
+        System.out.println("📝 AUDIT: Order created - ID: " + order.getId() + 
+                          ", Amount: $" + order.getAmount() + ", Status: " + order.getStatus());
+    }
+}
+
+// ===== 8. AOP ASPECTS (Proxy Pattern) =====
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class LoggingAspect {
+    
+    @Around("execution(* com.example.*Service.*(..))")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long startTime = System.currentTimeMillis();
+        String methodName = joinPoint.getSignature().getDeclaringTypeName() + "." + 
+                           joinPoint.getSignature().getName();
+        
+        System.out.println("🔍 Starting method: " + methodName);
+        
+        try {
+            Object result = joinPoint.proceed();
+            long endTime = System.currentTimeMillis();
+            System.out.println("✅ Method " + methodName + " completed in " + 
+                             (endTime - startTime) + "ms");
+            return result;
+        } catch (Exception e) {
+            long endTime = System.currentTimeMillis();
+            System.out.println("❌ Method " + methodName + " failed after " + 
+                             (endTime - startTime) + "ms: " + e.getMessage());
+            throw e;
+        }
+    }
+}
+
+// ===== 9. FACTORY PATTERN - Bean Configuration =====
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import javax.sql.DataSource;
+
+@Configuration
+public class DatabaseConfig {
+    
+    @Bean // Factory Pattern - Spring creates and manages the DataSource
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+                .setType(EmbeddedDatabaseType.H2)
+                .addScript("schema.sql")
+                .build();
+    }
+    
+    @Bean // Factory Pattern - Spring creates JdbcTemplate using DataSource
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+
+// ===== 10. DECORATOR PATTERN - Bean Post Processor =====
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ServiceEnhancingPostProcessor implements BeanPostProcessor {
+    
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (bean.getClass().getName().contains("Service")) {
+            System.out.println("🔧 Decorating service bean: " + beanName + 
+                             " of type: " + bean.getClass().getSimpleName());
+            // This is where you could wrap the bean with additional functionality
+            // For demo purposes, we're just logging
+        }
+        return bean;
+    }
+}
+
+// ===== 11. CONTROLLER (Factory Pattern via Spring MVC) =====
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api")
+public class DemoController {
+    
+    private final UserService userService;
+    private final OrderService orderService;
+    private final PaymentService paymentService;
+    
+    @Autowired
+    public DemoController(UserService userService, OrderService orderService, 
+                         PaymentService paymentService) {
+        this.userService = userService;
+        this.orderService = orderService;
+        this.paymentService = paymentService;
+    }
+    
+    @PostMapping("/users")
+    public ResponseEntity<User> createUser(@RequestParam String name, @RequestParam String email) {
+        User user = userService.createUser(name, email);
+        return ResponseEntity.ok(user);
+    }
+    
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+    
+    @PostMapping("/orders")
+    public ResponseEntity<Order> createOrder(@RequestParam Long userId,
+                                           @RequestParam String product,
+                                           @RequestParam Double amount,
+                                           @RequestParam String paymentMethod) {
+        Order order = orderService.createOrder(userId, product, amount, paymentMethod);
+        return ResponseEntity.ok(order);
+    }
+    
+    @GetMapping("/payment-methods")
+    public ResponseEntity<List<String>> getPaymentMethods() {
+        List<String> methods = paymentService.getAvailablePaymentMethods();
+        return ResponseEntity.ok(methods);
+    }
+    
+    @GetMapping("/demo")
+    public ResponseEntity<String> runDemo() {
+        System.out.println("\n🚀 RUNNING SPRING PATTERNS DEMO");
+        System.out.println("=====================================");
+        
+        // Create users
+        User user1 = userService.createUser("John Doe", "john@example.com");
+        User user2 = userService.createUser("Jane Smith", "jane@example.com");
+        
+        // Create orders
+        Order order1 = orderService.createOrder(user1.getId(), "Laptop", 999.99, "credit_card");
+        Order order2 = orderService.createOrder(user2.getId(), "Phone", 599.99, "paypal");
+        
+        System.out.println("=====================================");
+        System.out.println("✅ Demo completed successfully!");
+        
+        return ResponseEntity.ok("Demo completed! Check the console for pattern demonstrations.");
+    }
+}
+
+// ===== 12. APPLICATION RUNNER (Demonstrates all patterns) =====
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PatternDemoRunner implements ApplicationRunner {
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private OrderService orderService;
+    
+    @Autowired
+    private PaymentService paymentService;
+    
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        System.out.println("\n🎯 SPRING DESIGN PATTERNS DEMONSTRATION");
+        System.out.println("=========================================");
+        System.out.println("This application demonstrates the following patterns:");
+        System.out.println("1. Factory Pattern - Spring creates beans via ApplicationContext");
+        System.out.println("2. Singleton Pattern - Services are singleton by default");
+        System.out.println("3. Dependency Injection - Constructor injection in services");
+        System.out.println("4. Template Method - JdbcTemplate for database operations");
+        System.out.println("5. Observer Pattern - Event publishing and listening");
+        System.out.println("6. Proxy Pattern - AOP for logging and transactions");
+        System.out.println("7. Strategy Pattern - Different payment methods");
+        System.out.println("8. Decorator Pattern - Bean post-processors");
+        System.out.println("=========================================");
+        
+        // Access the endpoints to see patterns in action:
+        System.out.println("\n📡 Available endpoints:");
+        System.out.println("POST /api/users?name=John&email=john@example.com");
+        System.out.println("GET  /api/users");
+        System.out.println("POST /api/orders?userId=1&product=Laptop&amount=999.99&paymentMethod=credit_card");
+        System.out.println("GET  /api/payment-methods");
+        System.out.println("GET  /api/demo");
+        System.out.println("\n🌐 Visit: http://localhost:8080/api/demo to run the demo");
+    }
+}
+
+// ===== 13. DATABASE SCHEMA (schema.sql) =====
+/*
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product VARCHAR(200) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+*/
+
+// ===== 14. APPLICATION PROPERTIES (application.yml) =====
+/*
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  h2:
+    console:
+      enabled: true
+  jpa:
+    show-sql: true
+  logging:
+    level:
+      org.springframework: INFO
+      com.example: DEBUG
+
+server:
+  port: 8080
+*/
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>spring-patterns-demo</artifactId>
+    <version>1.0.0</version>
+    <name>Spring Design Patterns Demo</name>
+    <description>Comprehensive demonstration of Spring Framework design patterns</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Boot Starters -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- Database -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+Spring Framework extensively uses several design patterns to provide its core functionality. Here are the key patterns and how Spring implements them:
+
+## Factory Pattern
+
+Spring uses the Factory pattern primarily through its **BeanFactory** and **ApplicationContext**:
+
+```java
+// BeanFactory creates and manages beans
+ApplicationContext context = new ClassPathXmlApplicationContext("beans.xml");
+MyService service = context.getBean("myService", MyService.class);
+```
+
+The container acts as a factory that creates, configures, and manages object instances based on configuration metadata. You don't directly instantiate objects - the factory does it for you.
+
+## Singleton Pattern
+
+By default, Spring beans are singletons within their container scope:
+
+```java
+@Component
+public class DatabaseService {
+    // Only one instance per application context
+}
+```
+
+Spring manages the singleton lifecycle, ensuring thread safety and proper initialization.
+
+## Dependency Injection (Inversion of Control)
+
+This is Spring's core pattern, implementing the Hollywood Principle ("Don't call us, we'll call you"):
+
+```java
+@Service
+public class OrderService {
+    private final PaymentService paymentService; // Dependency
+    
+    @Autowired
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService; // Injected by Spring
+    }
+}
+```
+
+## Template Method Pattern
+
+Spring uses this extensively in classes like `JdbcTemplate`, `RestTemplate`, and `TransactionTemplate`:
+
+```java
+jdbcTemplate.query("SELECT * FROM users", 
+    (rs, rowNum) -> new User(rs.getString("name"), rs.getString("email"))
+);
+```
+
+The template handles the boilerplate code (connection management, exception handling) while you provide the specific implementation.
+
+## Observer Pattern
+
+Spring's **Event Publishing** mechanism implements the Observer pattern:
+
+```java
+@EventListener
+public void handleOrderCreated(OrderCreatedEvent event) {
+    // React to the event
+}
+
+// Publishing an event
+applicationEventPublisher.publishEvent(new OrderCreatedEvent(order));
+```
+
+## Proxy Pattern
+
+Spring AOP (Aspect-Oriented Programming) heavily uses proxies to add cross-cutting concerns:
+
+```java
+@Transactional
+@Service
+public class UserService {
+    public void createUser(User user) {
+        // Spring creates a proxy that adds transaction management
+    }
+}
+```
+
+Spring can use JDK dynamic proxies or CGLIB proxies depending on whether the target class implements interfaces.
+
+## Strategy Pattern
+
+Spring Security uses this pattern for different authentication strategies:
+
+```java
+@Configuration
+public class SecurityConfig {
+    // Different authentication strategies can be plugged in
+    @Bean
+    public AuthenticationProvider authProvider() {
+        return new DaoAuthenticationProvider();
+    }
+}
+```
+
+## Decorator Pattern
+
+Spring's bean post-processors act as decorators, modifying beans after creation:
+
+```java
+@Component
+public class CustomBeanPostProcessor implements BeanPostProcessor {
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
+        // Decorate the bean with additional functionality
+        return bean;
+    }
+}
+```
+
+These patterns work together to make Spring a powerful, flexible framework that promotes loose coupling, testability, and maintainable code architecture. The framework abstracts away much of the complexity of implementing these patterns directly, allowing developers to focus on business logic rather than infrastructure concerns.
+
+
+I'll create a comprehensive Java Spring Boot application that demonstrates all the key patterns used in the Spring Framework. This will be a practical example showing how these patterns work together in a real application.Now let me create the Maven configuration file to complete the application setup:I've created a comprehensive Java Spring Boot application that demonstrates all the major design patterns used in the Spring Framework. Here's what each part demonstrates:
+
+## Pattern Demonstrations:
+
+### 1. **Factory Pattern**
+- `DatabaseConfig` class shows how Spring acts as a factory, creating and managing beans
+- `ApplicationContext` creates all service instances
+- Spring MVC automatically creates controller instances
+
+### 2. **Singleton Pattern**
+- All `@Service`, `@Repository`, and `@Component` classes are singletons by default
+- Spring manages their lifecycle and ensures thread safety
+
+### 3. **Dependency Injection (IoC)**
+- Constructor injection in `UserService`, `OrderService`, `PaymentService`
+- Services depend on repositories and other services
+- Spring automatically wires dependencies
+
+### 4. **Template Method Pattern**
+- `JdbcTemplate` in `UserRepository` handles boilerplate database code
+- You provide specific SQL and row mapping logic
+- Framework handles connection management, exception handling
+
+### 5. **Observer Pattern**
+- `UserCreatedEvent` and `OrderCreatedEvent` demonstrate event publishing
+- `NotificationService` and `AuditService` listen to events
+- Loose coupling between event publishers and subscribers
+
+### 6. **Proxy Pattern (AOP)**
+- `@Transactional` creates proxies for transaction management
+- `LoggingAspect` demonstrates cross-cutting concerns
+- Spring creates dynamic proxies to add functionality
+
+### 7. **Strategy Pattern**
+- `PaymentStrategy` interface with multiple implementations
+- `PaymentService` selects appropriate strategy at runtime
+- Easy to add new payment methods without changing existing code
+
+### 8. **Decorator Pattern**
+- `ServiceEnhancingPostProcessor` shows how to enhance beans after creation
+- Can wrap beans with additional functionality
+
+## How to Run:
+
+1. **Prerequisites**: Java 17+ and Maven
+2. **Build**: `mvn clean compile`
+3. **Run**: `mvn spring-boot:run`
+4. **Access**: Visit `http://localhost:8080/api/demo`
+
+## Key Features:
+
+- **Complete working application** with REST endpoints
+- **In-memory H2 database** for easy testing
+- **Console output** showing pattern interactions
+- **Async event processing** demonstrates real-world usage
+- **AOP logging** shows method execution times
+- **Multiple payment strategies** can be easily extended
+
+## Testing the Patterns:
+
+The application provides several endpoints to interact with:
+- Create users and see event publishing in action
+- Create orders to see strategy pattern and transaction management
+- All operations are logged via AOP
+- Database operations use template method pattern
+
+This demonstrates how Spring's design patterns work together to create a flexible, maintainable, and testable application architecture. Each pattern serves a specific purpose and they complement each other to provide the comprehensive functionality that makes Spring so powerful.
