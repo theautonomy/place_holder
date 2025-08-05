@@ -66,6 +66,36 @@ public class EffectiveJavaExamples {
         
         // Item 90: Consider serialization proxies instead of serialized instances
         demonstrateSerializationProxy();
+        
+        // Item 11: Always override hashCode when you override equals
+        demonstrateHashCodeContract();
+        
+        // Item 13: Override clone judiciously
+        demonstrateCloning();
+        
+        // Item 25: Limit source files to a single top-level class
+        demonstrateSingleTopLevelClass();
+        
+        // Item 30: Favor generic methods
+        demonstrateGenericMethods();
+        
+        // Item 33: Consider typesafe heterogeneous containers
+        demonstrateTypesafeContainers();
+        
+        // Item 47: Prefer Collection to Stream as a return type
+        demonstrateCollectionVsStream();
+        
+        // Item 52: Use overloading judiciously
+        demonstrateOverloading();
+        
+        // Item 65: Prefer interfaces to reflection
+        demonstrateReflectionAlternatives();
+        
+        // Item 67: Optimize judiciously
+        demonstrateOptimization();
+        
+        // Item 85: Prefer alternatives to Java serialization
+        demonstrateSerializationAlternatives();
     }
     
     // ===== ITEM 1: Consider static factory methods instead of constructors =====
@@ -1190,6 +1220,773 @@ public class EffectiveJavaExamples {
         } catch (Exception e) {
             System.out.println("   Serialization demo failed: " + e.getMessage());
         }
+        System.out.println();
+    }
+    
+    // ===== ITEM 11: Always override hashCode when you override equals =====
+    
+    static class BadPoint {
+        private final int x, y;
+        
+        public BadPoint(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            BadPoint badPoint = (BadPoint) obj;
+            return x == badPoint.x && y == badPoint.y;
+        }
+        
+        // Missing hashCode override - violates contract!
+    }
+    
+    static class GoodPoint {
+        private final int x, y;
+        
+        public GoodPoint(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            GoodPoint goodPoint = (GoodPoint) obj;
+            return x == goodPoint.x && y == goodPoint.y;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Point(%d, %d)", x, y);
+        }
+    }
+    
+    private static void demonstrateHashCodeContract() {
+        System.out.println("20. hashCode Contract:");
+        
+        // Demonstrate the problem with missing hashCode
+        BadPoint bp1 = new BadPoint(1, 2);
+        BadPoint bp2 = new BadPoint(1, 2);
+        
+        System.out.println("   BadPoint equals: " + bp1.equals(bp2)); // true
+        System.out.println("   BadPoint same hashCode: " + (bp1.hashCode() == bp2.hashCode())); // may be false!
+        
+        Set<BadPoint> badSet = new HashSet<>();
+        badSet.add(bp1);
+        System.out.println("   BadPoint found in set: " + badSet.contains(bp2)); // may be false!
+        
+        // Demonstrate correct behavior
+        GoodPoint gp1 = new GoodPoint(1, 2);
+        GoodPoint gp2 = new GoodPoint(1, 2);
+        
+        System.out.println("   GoodPoint equals: " + gp1.equals(gp2)); // true
+        System.out.println("   GoodPoint same hashCode: " + (gp1.hashCode() == gp2.hashCode())); // true
+        
+        Set<GoodPoint> goodSet = new HashSet<>();
+        goodSet.add(gp1);
+        System.out.println("   GoodPoint found in set: " + goodSet.contains(gp2)); // true
+        System.out.println();
+    }
+    
+    // ===== ITEM 13: Override clone judiciously =====
+    
+    static class CloneableStack implements Cloneable {
+        private Object[] elements;
+        private int size = 0;
+        private static final int DEFAULT_CAPACITY = 16;
+        
+        public CloneableStack() {
+            this.elements = new Object[DEFAULT_CAPACITY];
+        }
+        
+        public void push(Object e) {
+            ensureCapacity();
+            elements[size++] = e;
+        }
+        
+        public Object pop() {
+            if (size == 0) {
+                throw new IllegalStateException("Stack is empty");
+            }
+            Object result = elements[--size];
+            elements[size] = null; // Eliminate obsolete reference
+            return result;
+        }
+        
+        private void ensureCapacity() {
+            if (elements.length == size) {
+                elements = Arrays.copyOf(elements, 2 * size + 1);
+            }
+        }
+        
+        // Proper clone implementation for arrays
+        @Override
+        public CloneableStack clone() {
+            try {
+                CloneableStack result = (CloneableStack) super.clone();
+                result.elements = elements.clone(); // Deep copy the array
+                return result;
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError(); // Can't happen
+            }
+        }
+        
+        public int size() {
+            return size;
+        }
+        
+        @Override
+        public String toString() {
+            return "Stack with " + size + " elements";
+        }
+    }
+    
+    // Alternative: Copy constructor (often better than clone)
+    static class CopyConstructorStack {
+        private Object[] elements;
+        private int size = 0;
+        
+        public CopyConstructorStack() {
+            this.elements = new Object[16];
+        }
+        
+        // Copy constructor
+        public CopyConstructorStack(CopyConstructorStack original) {
+            this.elements = original.elements.clone();
+            this.size = original.size;
+        }
+        
+        public void push(Object e) {
+            if (elements.length == size) {
+                elements = Arrays.copyOf(elements, 2 * size + 1);
+            }
+            elements[size++] = e;
+        }
+        
+        public int size() {
+            return size;
+        }
+        
+        @Override
+        public String toString() {
+            return "CopyStack with " + size + " elements";
+        }
+    }
+    
+    private static void demonstrateCloning() {
+        System.out.println("21. Cloning vs Copy Constructor:");
+        
+        CloneableStack original = new CloneableStack();
+        original.push("first");
+        original.push("second");
+        
+        CloneableStack cloned = original.clone();
+        cloned.push("third");
+        
+        System.out.println("   Original: " + original);
+        System.out.println("   Cloned: " + cloned);
+        
+        // Copy constructor approach (preferred)
+        CopyConstructorStack originalCopy = new CopyConstructorStack();
+        originalCopy.push("first");
+        originalCopy.push("second");
+        
+        CopyConstructorStack copied = new CopyConstructorStack(originalCopy);
+        copied.push("third");
+        
+        System.out.println("   Original copy: " + originalCopy);
+        System.out.println("   Copied: " + copied);
+        System.out.println();
+    }
+    
+    // ===== ITEM 25: Limit source files to a single top-level class =====
+    
+    // Good: Single top-level class per file
+    static class UtilityContainer {
+        // Nested classes are fine
+        static class Parser {
+            public String parse(String input) {
+                return "Parsed: " + input;
+            }
+        }
+        
+        static class Validator {
+            public boolean validate(String input) {
+                return input != null && !input.trim().isEmpty();
+            }
+        }
+        
+        static class Formatter {
+            public String format(String input) {
+                return input.toUpperCase().trim();
+            }
+        }
+    }
+    
+    private static void demonstrateSingleTopLevelClass() {
+        System.out.println("22. Single Top-Level Class Design:");
+        
+        UtilityContainer.Parser parser = new UtilityContainer.Parser();
+        UtilityContainer.Validator validator = new UtilityContainer.Validator();
+        UtilityContainer.Formatter formatter = new UtilityContainer.Formatter();
+        
+        String input = " hello world ";
+        
+        if (validator.validate(input)) {
+            String parsed = parser.parse(input);
+            String formatted = formatter.format(parsed);
+            System.out.println("   Result: " + formatted);
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 30: Favor generic methods =====
+    
+    static class GenericUtilities {
+        // Generic method with type parameter
+        public static <T> Set<T> union(Set<T> s1, Set<T> s2) {
+            Set<T> result = new HashSet<>(s1);
+            result.addAll(s2);
+            return result;
+        }
+        
+        // Generic method with bounded type parameter
+        public static <T extends Comparable<T>> T max(Collection<T> collection) {
+            if (collection.isEmpty()) {
+                throw new IllegalArgumentException("Empty collection");
+            }
+            
+            T result = null;
+            for (T element : collection) {
+                if (result == null || element.compareTo(result) > 0) {
+                    result = element;
+                }
+            }
+            return result;
+        }
+        
+        // Generic method with wildcard
+        public static void printCollection(Collection<?> collection) {
+            for (Object element : collection) {
+                System.out.println("     " + element);
+            }
+        }
+        
+        // Recursive type bound
+        public static <T extends Comparable<T>> List<T> sort(List<T> list) {
+            List<T> result = new ArrayList<>(list);
+            Collections.sort(result);
+            return result;
+        }
+    }
+    
+    private static void demonstrateGenericMethods() {
+        System.out.println("23. Generic Methods:");
+        
+        Set<String> set1 = Set.of("apple", "banana");
+        Set<String> set2 = Set.of("cherry", "date");
+        Set<String> union = GenericUtilities.union(set1, set2);
+        
+        System.out.println("   Union of sets: " + union);
+        
+        List<Integer> numbers = Arrays.asList(3, 1, 4, 1, 5, 9);
+        Integer max = GenericUtilities.max(numbers);
+        System.out.println("   Max number: " + max);
+        
+        List<String> words = Arrays.asList("zebra", "apple", "mango");
+        List<String> sorted = GenericUtilities.sort(words);
+        System.out.println("   Sorted words: " + sorted);
+        
+        System.out.println("   Collection contents:");
+        GenericUtilities.printCollection(union);
+        System.out.println();
+    }
+    
+    // ===== ITEM 33: Consider typesafe heterogeneous containers =====
+    
+    static class Favorites {
+        private final Map<Class<?>, Object> favorites = new HashMap<>();
+        
+        public <T> void putFavorite(Class<T> type, T instance) {
+            favorites.put(Objects.requireNonNull(type), type.cast(instance));
+        }
+        
+        public <T> T getFavorite(Class<T> type) {
+            return type.cast(favorites.get(type));
+        }
+        
+        public Set<Class<?>> getTypes() {
+            return new HashSet<>(favorites.keySet());
+        }
+    }
+    
+    private static void demonstrateTypesafeContainers() {
+        System.out.println("24. Typesafe Heterogeneous Containers:");
+        
+        Favorites favorites = new Favorites();
+        
+        // Type-safe storage of different types
+        favorites.putFavorite(String.class, "Java");
+        favorites.putFavorite(Integer.class, 42);
+        favorites.putFavorite(Class.class, Favorites.class);
+        
+        // Type-safe retrieval
+        String favoriteString = favorites.getFavorite(String.class);
+        Integer favoriteInteger = favorites.getFavorite(Integer.class);
+        Class<?> favoriteClass = favorites.getFavorite(Class.class);
+        
+        System.out.println("   Favorite String: " + favoriteString);
+        System.out.println("   Favorite Integer: " + favoriteInteger);
+        System.out.println("   Favorite Class: " + favoriteClass.getSimpleName());
+        System.out.println("   Stored types: " + favorites.getTypes().stream()
+                .map(Class::getSimpleName)
+                .collect(java.util.stream.Collectors.joining(", ")));
+        System.out.println();
+    }
+    
+    // ===== ITEM 47: Prefer Collection to Stream as a return type =====
+    
+    static class PowerSetExample {
+        // Returns Collection for flexibility
+        public static <E> Collection<Set<E>> powerSet(Set<E> set) {
+            List<E> src = new ArrayList<>(set);
+            if (src.size() > 30) {
+                throw new IllegalArgumentException("Set too big: " + src.size());
+            }
+            
+            return new AbstractList<Set<E>>() {
+                @Override
+                public int size() {
+                    return 1 << src.size(); // 2^size
+                }
+                
+                @Override
+                public boolean contains(Object o) {
+                    return o instanceof Set && src.containsAll((Set<?>) o);
+                }
+                
+                @Override
+                public Set<E> get(int index) {
+                    Set<E> result = new HashSet<>();
+                    for (int i = 0; index != 0; i++, index >>= 1) {
+                        if ((index & 1) == 1) {
+                            result.add(src.get(i));
+                        }
+                    }
+                    return result;
+                }
+            };
+        }
+    }
+    
+    private static void demonstrateCollectionVsStream() {
+        System.out.println("25. Collection Return Types:");
+        
+        Set<String> input = Set.of("a", "b", "c");
+        Collection<Set<String>> powerSet = PowerSetExample.powerSet(input);
+        
+        System.out.println("   Power set size: " + powerSet.size());
+        System.out.println("   Power set contents:");
+        powerSet.stream().limit(8).forEach(subset -> 
+            System.out.println("     " + subset));
+        
+        // Can use as Collection
+        System.out.println("   Contains {a, b}: " + powerSet.contains(Set.of("a", "b")));
+        
+        // Can stream when needed
+        long singletonCount = powerSet.stream()
+                .filter(set -> set.size() == 1)
+                .count();
+        System.out.println("   Singleton sets: " + singletonCount);
+        System.out.println();
+    }
+    
+    // ===== ITEM 52: Use overloading judiciously =====
+    
+    static class CollectionClassifier {
+        // Problematic overloading - resolved at compile time
+        public static String classify(Set<?> set) {
+            return "Set";
+        }
+        
+        public static String classify(List<?> list) {
+            return "List";
+        }
+        
+        public static String classify(Collection<?> collection) {
+            return "Unknown Collection";
+        }
+        
+        // Better approach - single method with runtime type checking
+        public static String classifyCorrectly(Collection<?> collection) {
+            return collection instanceof Set ? "Set" :
+                   collection instanceof List ? "List" : "Unknown Collection";
+        }
+    }
+    
+    // Constructor overloading done right
+    static class Timer {
+        private final long duration;
+        private final java.util.concurrent.TimeUnit unit;
+        
+        public Timer(long duration) {
+            this(duration, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
+        
+        public Timer(long duration, java.util.concurrent.TimeUnit unit) {
+            this.duration = duration;
+            this.unit = Objects.requireNonNull(unit);
+        }
+        
+        public long getDurationInMillis() {
+            return unit.toMillis(duration);
+        }
+        
+        @Override
+        public String toString() {
+            return duration + " " + unit.toString().toLowerCase();
+        }
+    }
+    
+    private static void demonstrateOverloading() {
+        System.out.println("26. Judicious Overloading:");
+        
+        Collection<?>[] collections = {
+            new HashSet<String>(),
+            new ArrayList<String>(),
+            new LinkedList<String>()
+        };
+        
+        // Problematic overloading - all resolve to Collection version
+        System.out.println("   Problematic overloading:");
+        for (Collection<?> c : collections) {
+            System.out.println("     " + CollectionClassifier.classify(c)); // Always "Unknown Collection"
+        }
+        
+        // Correct approach
+        System.out.println("   Correct classification:");
+        for (Collection<?> c : collections) {
+            System.out.println("     " + CollectionClassifier.classifyCorrectly(c));
+        }
+        
+        // Good constructor overloading
+        Timer timer1 = new Timer(1000);
+        Timer timer2 = new Timer(5, java.util.concurrent.TimeUnit.SECONDS);
+        
+        System.out.println("   Timer1: " + timer1 + " (" + timer1.getDurationInMillis() + "ms)");
+        System.out.println("   Timer2: " + timer2 + " (" + timer2.getDurationInMillis() + "ms)");
+        System.out.println();
+    }
+    
+    // ===== ITEM 65: Prefer interfaces to reflection =====
+    
+    interface Animal {
+        void makeSound();
+        String getName();
+    }
+    
+    static class Dog implements Animal {
+        private final String name;
+        
+        public Dog(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public void makeSound() {
+            System.out.println("     " + name + " says: Woof!");
+        }
+        
+        @Override
+        public String getName() {
+            return name;
+        }
+    }
+    
+    static class Cat implements Animal {
+        private final String name;
+        
+        public Cat(String name) {
+            this.name = name;
+        }
+        
+        @Override
+        public void makeSound() {
+            System.out.println("     " + name + " says: Meow!");
+        }
+        
+        @Override
+        public String getName() {
+            return name;
+        }
+    }
+    
+    // Factory method instead of reflection
+    static class AnimalFactory {
+        public static Animal createAnimal(String type, String name) {
+            switch (type.toLowerCase()) {
+                case "dog": return new Dog(name);
+                case "cat": return new Cat(name);
+                default: throw new IllegalArgumentException("Unknown animal type: " + type);
+            }
+        }
+    }
+    
+    private static void demonstrateReflectionAlternatives() {
+        System.out.println("27. Alternatives to Reflection:");
+        
+        // Good: Using factory method and interfaces
+        String[] animalTypes = {"dog", "cat", "dog"};
+        String[] names = {"Buddy", "Whiskers", "Max"};
+        
+        List<Animal> animals = new ArrayList<>();
+        for (int i = 0; i < animalTypes.length; i++) {
+            try {
+                Animal animal = AnimalFactory.createAnimal(animalTypes[i], names[i]);
+                animals.add(animal);
+            } catch (IllegalArgumentException e) {
+                System.out.println("   Failed to create animal: " + e.getMessage());
+            }
+        }
+        
+        System.out.println("   Created animals:");
+        for (Animal animal : animals) {
+            animal.makeSound();
+        }
+        
+        // Demonstrate with Service Provider Interface pattern
+        Map<String, java.util.function.Function<String, Animal>> providers = new HashMap<>();
+        providers.put("dog", Dog::new);
+        providers.put("cat", Cat::new);
+        
+        System.out.println("   Using function providers:");
+        Animal dynamicDog = providers.get("dog").apply("Rex");
+        dynamicDog.makeSound();
+        System.out.println();
+    }
+    
+    // ===== ITEM 67: Optimize judiciously =====
+    
+    static class OptimizationExample {
+        // Premature optimization example - overly complex
+        static class OverOptimizedStringBuilder {
+            private char[] buffer;
+            private int count;
+            private static final int INITIAL_CAPACITY = 16;
+            
+            public OverOptimizedStringBuilder() {
+                buffer = new char[INITIAL_CAPACITY];
+            }
+            
+            // Complex optimization that's probably unnecessary
+            public OverOptimizedStringBuilder append(String str) {
+                if (str == null) str = "null";
+                int len = str.length();
+                ensureCapacity(count + len);
+                str.getChars(0, len, buffer, count);
+                count += len;
+                return this;
+            }
+            
+            private void ensureCapacity(int minimumCapacity) {
+                if (minimumCapacity > buffer.length) {
+                    int newCapacity = (buffer.length + 1) * 2;
+                    if (newCapacity < 0) {
+                        newCapacity = Integer.MAX_VALUE;
+                    } else if (minimumCapacity > newCapacity) {
+                        newCapacity = minimumCapacity;
+                    }
+                    buffer = Arrays.copyOf(buffer, newCapacity);
+                }
+            }
+            
+            @Override
+            public String toString() {
+                return new String(buffer, 0, count);
+            }
+        }
+        
+        // Simple, clear approach - usually fast enough
+        static class SimpleStringBuilder {
+            private final List<String> parts = new ArrayList<>();
+            
+            public SimpleStringBuilder append(String str) {
+                parts.add(str == null ? "null" : str);
+                return this;
+            }
+            
+            @Override
+            public String toString() {
+                return String.join("", parts);
+            }
+        }
+        
+        public static void measurePerformance() {
+            int iterations = 10000;
+            
+            // Measure over-optimized version
+            long start = System.nanoTime();
+            OverOptimizedStringBuilder osb = new OverOptimizedStringBuilder();
+            for (int i = 0; i < iterations; i++) {
+                osb.append("test").append(String.valueOf(i));
+            }
+            String result1 = osb.toString();
+            long overOptimizedTime = System.nanoTime() - start;
+            
+            // Measure simple version
+            start = System.nanoTime();
+            SimpleStringBuilder ssb = new SimpleStringBuilder();
+            for (int i = 0; i < iterations; i++) {
+                ssb.append("test").append(String.valueOf(i));
+            }
+            String result2 = ssb.toString();
+            long simpleTime = System.nanoTime() - start;
+            
+            // Measure built-in StringBuilder
+            start = System.nanoTime();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < iterations; i++) {
+                sb.append("test").append(i);
+            }
+            String result3 = sb.toString();
+            long builtInTime = System.nanoTime() - start;
+            
+            System.out.println("   Over-optimized: " + (overOptimizedTime / 1_000_000.0) + "ms");
+            System.out.println("   Simple: " + (simpleTime / 1_000_000.0) + "ms");
+            System.out.println("   Built-in StringBuilder: " + (builtInTime / 1_000_000.0) + "ms");
+            System.out.println("   Results equal: " + (result1.length() == result2.length() && 
+                                                      result2.length() == result3.length()));
+        }
+    }
+    
+    private static void demonstrateOptimization() {
+        System.out.println("28. Judicious Optimization:");
+        System.out.println("   Performance comparison (10,000 iterations):");
+        OptimizationExample.measurePerformance();
+        System.out.println("   Lesson: Don't optimize prematurely - measure first!");
+        System.out.println();
+    }
+    
+    // ===== ITEM 85: Prefer alternatives to Java serialization =====
+    
+    static class DataTransferObject {
+        private final String name;
+        private final int value;
+        private final List<String> tags;
+        
+        public DataTransferObject(String name, int value, List<String> tags) {
+            this.name = Objects.requireNonNull(name);
+            this.value = value;
+            this.tags = new ArrayList<>(Objects.requireNonNull(tags));
+        }
+        
+        // JSON-like serialization (simple example)
+        public String toJson() {
+            StringBuilder json = new StringBuilder();
+            json.append("{");
+            json.append("\"name\":\"").append(name).append("\",");
+            json.append("\"value\":").append(value).append(",");
+            json.append("\"tags\":[");
+            for (int i = 0; i < tags.size(); i++) {
+                if (i > 0) json.append(",");
+                json.append("\"").append(tags.get(i)).append("\"");
+            }
+            json.append("]}");
+            return json.toString();
+        }
+        
+        // Simple parsing (in real world, use a proper JSON library)
+        public static DataTransferObject fromJson(String json) {
+            // This is a simplified parser - use Jackson or Gson in real applications
+            json = json.trim();
+            if (!json.startsWith("{") || !json.endsWith("}")) {
+                throw new IllegalArgumentException("Invalid JSON format");
+            }
+            
+            // Extract name (simplified)
+            String name = extractValue(json, "name");
+            int value = Integer.parseInt(extractValue(json, "value"));
+            
+            // Extract tags (simplified)
+            List<String> tags = new ArrayList<>();
+            String tagsSection = json.substring(json.indexOf("\"tags\":[") + 8, json.lastIndexOf("]"));
+            if (!tagsSection.trim().isEmpty()) {
+                String[] tagArray = tagsSection.split(",");
+                for (String tag : tagArray) {
+                    tags.add(tag.trim().replaceAll("\"", ""));
+                }
+            }
+            
+            return new DataTransferObject(name, value, tags);
+        }
+        
+        private static String extractValue(String json, String key) {
+            String pattern = "\"" + key + "\":";
+            int start = json.indexOf(pattern) + pattern.length();
+            int end;
+            
+            if (json.charAt(start) == '"') {
+                start++; // Skip opening quote
+                end = json.indexOf('"', start);
+            } else {
+                end = json.indexOf(',', start);
+                if (end == -1) end = json.indexOf('}', start);
+            }
+            
+            return json.substring(start, end);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("DTO{name='%s', value=%d, tags=%s}", name, value, tags);
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            DataTransferObject that = (DataTransferObject) obj;
+            return value == that.value &&
+                   Objects.equals(name, that.name) &&
+                   Objects.equals(tags, that.tags);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, value, tags);
+        }
+    }
+    
+    private static void demonstrateSerializationAlternatives() {
+        System.out.println("29. Serialization Alternatives:");
+        
+        DataTransferObject original = new DataTransferObject(
+            "TestObject", 
+            42, 
+            Arrays.asList("tag1", "tag2", "tag3")
+        );
+        
+        System.out.println("   Original: " + original);
+        
+        // JSON serialization alternative
+        String json = original.toJson();
+        System.out.println("   JSON: " + json);
+        
+        DataTransferObject deserialized = DataTransferObject.fromJson(json);
+        System.out.println("   Deserialized: " + deserialized);
+        System.out.println("   Objects equal: " + original.equals(deserialized));
+        
+        System.out.println("   Benefits: Human-readable, cross-platform, safer than Java serialization");
         System.out.println();
     }
 }
