@@ -1,900 +1,4 @@
-System.out.println("   Key: Exceptions are for exceptional conditions, not normal control flow");
-        System.out.println();
-    }
-    
-    // ===== ITEM 5: Prefer dependency injection to hardwiring resources =====
-    
-    // Bad: hardwired dependency
-    static class BadSpellChecker {
-        private static final Lexicon dictionary = new EnglishLexicon(); // Hardwired!
-        
-        private BadSpellChecker() {} // Noninstantiable
-        
-        public static boolean isValid(String word) {
-            return dictionary.contains(word);
-        }
-        
-        public static List<String> suggestions(String typo) {
-            return dictionary.getSuggestions(typo);
-        }
-    }
-    
-    // Good: dependency injection
-    static class GoodSpellChecker {
-        private final Lexicon dictionary;
-        
-        public GoodSpellChecker(Lexicon dictionary) {
-            this.dictionary = Objects.requireNonNull(dictionary);
-        }
-        
-        public boolean isValid(String word) {
-            return dictionary.contains(word);
-        }
-        
-        public List<String> suggestions(String typo) {
-            return dictionary.getSuggestions(typo);
-        }
-    }
-    
-    interface Lexicon {
-        boolean contains(String word);
-        List<String> getSuggestions(String typo);
-    }
-    
-    static class EnglishLexicon implements Lexicon {
-        private final Set<String> words = Set.of("hello", "world", "java", "effective", "programming");
-        
-        @Override
-        public boolean contains(String word) {
-            return words.contains(word.toLowerCase());
-        }
-        
-        @Override
-        public List<String> getSuggestions(String typo) {
-            return words.stream()
-                       .filter(word -> word.startsWith(typo.substring(0, Math.min(2, typo.length()))))
-                       .collect(java.util.stream.Collectors.toList());
-        }
-    }
-    
-    static class SpanishLexicon implements Lexicon {
-        private final Set<String> words = Set.of("hola", "mundo", "java", "efectivo", "programacion");
-        
-        @Override
-        public boolean contains(String word) {
-            return words.contains(word.toLowerCase());
-        }
-        
-        @Override
-        public List<String> getSuggestions(String typo) {
-            return words.stream()
-                       .filter(word -> word.startsWith(typo.substring(0, Math.min(2, typo.length()))))
-                       .collect(java.util.stream.Collectors.toList());
-        }
-    }
-    
-    private static void demonstrateDependencyInjection() {
-        System.out.println("40. Dependency Injection:");
-        
-        // Can use different dictionaries
-        GoodSpellChecker englishChecker = new GoodSpellChecker(new EnglishLexicon());
-        GoodSpellChecker spanishChecker = new GoodSpellChecker(new SpanishLexicon());
-        
-        System.out.println("   English - 'hello' valid: " + englishChecker.isValid("hello"));
-        System.out.println("   Spanish - 'hola' valid: " + spanishChecker.isValid("hola"));
-        System.out.println("   English suggestions for 'he': " + englishChecker.suggestions("he"));
-        System.out.println("   Spanish suggestions for 'ho': " + spanishChecker.suggestions("ho"));
-        System.out.println("   Dependency injection allows flexibility and testability");
-        System.out.println();
-    }
-    
-    // ===== ITEM 7: Eliminate obsolete object references =====
-    
-    static class Stack {
-        private Object[] elements;
-        private int size = 0;
-        private static final int DEFAULT_INITIAL_CAPACITY = 16;
-        
-        public Stack() {
-            elements = new Object[DEFAULT_INITIAL_CAPACITY];
-        }
-        
-        public void push(Object e) {
-            ensureCapacity();
-            elements[size++] = e;
-        }
-        
-        // Memory leak version
-        public Object popBad() {
-            if (size == 0) {
-                throw new IllegalStateException("Stack is empty");
-            }
-            return elements[--size]; // Memory leak! Still holds reference
-        }
-        
-        // Fixed version
-        public Object pop() {
-            if (size == 0) {
-                throw new IllegalStateException("Stack is empty");
-            }
-            Object result = elements[--size];
-            elements[size] = null; // Eliminate obsolete reference
-            return result;
-        }
-        
-        private void ensureCapacity() {
-            if (elements.length == size) {
-                elements = Arrays.copyOf(elements, 2 * size + 1);
-            }
-        }
-        
-        public int size() {
-            return size;
-        }
-        
-        public boolean isEmpty() {
-            return size == 0;
-        }
-    }
-    
-    // Demonstrate listener memory leak
-    static class EventSource {
-        private final List<EventListener> listeners = new ArrayList<>();
-        
-        public void addListener(EventListener listener) {
-            listeners.add(listener);
-        }
-        
-        // Good: provide removal method
-        public void removeListener(EventListener listener) {
-            listeners.remove(listener);
-        }
-        
-        public void fireEvent(String event) {
-            for (EventListener listener : listeners) {
-                listener.onEvent(event);
-            }
-        }
-        
-        // Use WeakHashMap for automatic cleanup of unused listeners
-        private final Map<EventListener, String> weakListeners = new WeakHashMap<>();
-        
-        public void addWeakListener(EventListener listener, String tag) {
-            weakListeners.put(listener, tag);
-        }
-        
-        public void fireWeakEvent(String event) {
-            for (EventListener listener : weakListeners.keySet()) {
-                listener.onEvent(event + " (weak)");
-            }
-        }
-    }
-    
-    interface EventListener {
-        void onEvent(String event);
-    }
-    
-    private static void demonstrateMemoryLeaks() {
-        System.out.println("41. Eliminating Memory Leaks:");
-        
-        Stack stack = new Stack();
-        stack.push("item1");
-        stack.push("item2");
-        stack.push("item3");
-        
-        System.out.println("   Stack size after pushes: " + stack.size());
-        
-        // Pop items (using good version that nulls references)
-        while (!stack.isEmpty()) {
-            Object item = stack.pop();
-            System.out.println("   Popped: " + item);
-        }
-        
-        // Demonstrate listener pattern
-        EventSource source = new EventSource();
-        EventListener listener = event -> System.out.println("   Received: " + event);
-        
-        source.addListener(listener);
-        source.fireEvent("test event");
-        
-        // Important: remove listener to prevent memory leak
-        source.removeListener(listener);
-        
-        // Weak reference example
-        source.addWeakListener(listener, "weak-tag");
-        source.fireWeakEvent("weak event");
-        
-        System.out.println("   Key: Null out obsolete references, especially in collections");
-        System.out.println();
-    }
-    
-    // ===== ITEM 14: Consider implementing Comparable =====
-    
-    static class PhoneNumber implements Comparable<PhoneNumber> {
-        private final short areaCode, prefix, lineNum;
-        
-        public PhoneNumber(int areaCode, int prefix, int lineNum) {
-            this.areaCode = rangeCheck(areaCode, 999, "area code");
-            this.prefix = rangeCheck(prefix, 999, "prefix");
-            this.lineNum = rangeCheck(lineNum, 9999, "line num");
-        }
-        
-        private static short rangeCheck(int val, int max, String arg) {
-            if (val < 0 || val > max) {
-                throw new IllegalArgumentException(arg + ": " + val);
-            }
-            return (short) val;
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if (!(o instanceof PhoneNumber)) return false;
-            PhoneNumber pn = (PhoneNumber) o;
-            return pn.lineNum == lineNum && pn.prefix == prefix && pn.areaCode == areaCode;
-        }
-        
-        @Override
-        public int hashCode() {
-            return Objects.hash(areaCode, prefix, lineNum);
-        }
-        
-        // Comparable implementation using comparator construction methods
-        private static final Comparator<PhoneNumber> COMPARATOR =
-            Comparator.comparingInt((PhoneNumber pn) -> pn.areaCode)
-                     .thenComparingInt(pn -> pn.prefix)
-                     .thenComparingInt(pn -> pn.lineNum);
-        
-        @Override
-        public int compareTo(PhoneNumber pn) {
-            return COMPARATOR.compare(this, pn);
-        }
-        
-        @Override
-        public String toString() {
-            return String.format("(%03d) %03d-%04d", areaCode, prefix, lineNum);
-        }
-    }
-    
-    private static void demonstrateComparable() {
-        System.out.println("42. Implementing Comparable:");
-        
-        List<PhoneNumber> phoneNumbers = Arrays.asList(
-            new PhoneNumber(707, 867, 5309),
-            new PhoneNumber(555, 867, 5309),
-            new PhoneNumber(707, 867, 5308),
-            new PhoneNumber(555, 123, 4567)
-        );
-        
-        System.out.println("   Original order:");
-        phoneNumbers.forEach(pn -> System.out.println("     " + pn));
-        
-        Collections.sort(phoneNumbers);
-        System.out.println("   Sorted order:");
-        phoneNumbers.forEach(pn -> System.out.println("     " + pn));
-        
-        // Binary search works with Comparable
-        PhoneNumber key = new PhoneNumber(555, 867, 5309);
-        int index = Collections.binarySearch(phoneNumbers, key);
-        System.out.println("   Found " + key + " at index: " + index);
-        System.out.println();
-    }
-    
-    // ===== ITEM 23: Prefer class hierarchies to tagged classes =====
-    
-    // Bad: tagged class
-    static class BadFigure {
-        enum Shape { RECTANGLE, CIRCLE }
-        
-        // Tag field - the shape of this figure
-        final Shape shape;
-        
-        // These fields are used only if shape is RECTANGLE
-        double length;
-        double width;
-        
-        // This field is used only if shape is CIRCLE
-        double radius;
-        
-        // Constructor for circle
-        BadFigure(double radius) {
-            shape = Shape.CIRCLE;
-            this.radius = radius;
-        }
-        
-        // Constructor for rectangle
-        BadFigure(double length, double width) {
-            shape = Shape.RECTANGLE;
-            this.length = length;
-            this.width = width;
-        }
-        
-        double area() {
-            switch (shape) {
-                case RECTANGLE:
-                    return length * width;
-                case CIRCLE:
-                    return Math.PI * (radius * radius);
-                default:
-                    throw new AssertionError(shape);
-            }
-        }
-    }
-    
-    // Good: class hierarchy
-    static abstract class Figure {
-        abstract double area();
-    }
-    
-    static class Circle extends Figure {
-        final double radius;
-        
-        Circle(double radius) {
-            this.radius = radius;
-        }
-        
-        @Override
-        double area() {
-            return Math.PI * radius * radius;
-        }
-        
-        @Override
-        public String toString() {
-            return String.format("Circle(radius=%.1f)", radius);
-        }
-    }
-    
-    static class Rectangle extends Figure {
-        final double length;
-        final double width;
-        
-        Rectangle(double length, double width) {
-            this.length = length;
-            this.width = width;
-        }
-        
-        @Override
-        double area() {
-            return length * width;
-        }
-        
-        @Override
-        public String toString() {
-            return String.format("Rectangle(%.1fx%.1f)", length, width);
-        }
-    }
-    
-    // Easy to extend
-    static class Square extends Rectangle {
-        Square(double side) {
-            super(side, side);
-        }
-        
-        @Override
-        public String toString() {
-            return String.format("Square(%.1f)", length);
-        }
-    }
-    
-    private static void demonstrateClassHierarchies() {
-        System.out.println("43. Class Hierarchies vs Tagged Classes:");
-        
-        List<Figure> figures = Arrays.asList(
-            new Circle(5.0),
-            new Rectangle(3.0, 4.0),
-            new Square(2.0)
-        );
-        
-        for (Figure figure : figures) {
-            System.out.println("   " + figure + " area: " + String.format("%.2f", figure.area()));
-        }
-        
-        System.out.println("   Class hierarchies are more flexible and type-safe than tagged classes");
-        System.out.println();
-    }
-    
-    // ===== ITEM 24: Favor static member classes over nonstatic =====
-    
-    static class OuterClass {
-        private final String name;
-        
-        public OuterClass(String name) {
-            this.name = name;
-        }
-        
-        // Good: static member class (no implicit reference to outer instance)
-        static class StaticNested {
-            private final String data;
-            
-            public StaticNested(String data) {
-                this.data = data;
-            }
-            
-            public String getData() {
-                return data;
-                // Cannot access outer instance fields directly
-            }
-        }
-        
-        // Non-static member class (has implicit reference to outer instance)
-        class NonStaticNested {
-            private final String info;
-            
-            public NonStaticNested(String info) {
-                this.info = info;
-            }
-            
-            public String getInfo() {
-                return info + " from " + name; // Can access outer instance
-            }
-        }
-        
-        // Good use of non-static: when you need access to outer instance
-        public Iterator<String> iterator() {
-            return new IteratorImpl();
-        }
-        
-        private class IteratorImpl implements Iterator<String> {
-            private int position = 0;
-            private final String[] items = {name + "-item1", name + "-item2", name + "-item3"};
-            
-            @Override
-            public boolean hasNext() {
-                return position < items.length;
-            }
-            
-            @Override
-            public String next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return items[position++];
-            }
-        }
-        
-        public String getName() {
-            return name;
-        }
-    }
-    
-    private static void demonstrateNestedClasses() {
-        System.out.println("44. Static vs Non-static Nested Classes:");
-        
-        // Static nested class - no outer instance needed
-        OuterClass.StaticNested staticNested = new OuterClass.StaticNested("static-data");
-        System.out.println("   Static nested: " + staticNested.getData());
-        
-        // Non-static nested class - needs outer instance
-        OuterClass outer = new OuterClass("MyOuter");
-        OuterClass.NonStaticNested nonStatic = outer.new NonStaticNested("non-static-info");
-        System.out.println("   Non-static nested: " + nonStatic.getInfo());
-        
-        // Good use of non-static: iterator that accesses outer state
-        System.out.println("   Iterator from outer class:");
-        Iterator<String> iterator = outer.iterator();
-        while (iterator.hasNext()) {
-            System.out.println("     " + iterator.next());
-        }
-        
-        System.out.println("   Use static nested classes unless you need outer instance access");
-        System.out.println();
-    }
-    
-    // ===== ITEM 27: Eliminate unchecked warnings =====
-    
-    @SuppressWarnings("unchecked")
-    static class SafeArrayList<E> {
-        private Object[] elements;
-        private int size = 0;
-        
-        public SafeArrayList() {
-            elements = new Object[10];
-        }
-        
-        public void add(E element) {
-            if (size == elements.length) {
-                elements = Arrays.copyOf(elements, size * 2);
-            }
-            elements[size++] = element;
-        }
-        
-        @SuppressWarnings("unchecked")
-        public E get(int index) {
-            if (index >= size) {
-                throw new IndexOutOfBoundsException();
-            }
-            return (E) elements[index]; // Safe cast - we control what goes in
-        }
-        
-        public int size() {
-            return size;
-        }
-        
-        // Safe generic array creation
-        @SafeVarargs
-        public static <T> List<T> listOf(T... elements) {
-            List<T> list = new ArrayList<>();
-            Collections.addAll(list, elements);
-            return list;
-        }
-    }
-    
-    private static void demonstrateUncheckedWarnings() {
-        System.out.println("45. Eliminating Unchecked Warnings:");
-        
-        // Properly parameterized collections
-        List<String> strings = new ArrayList<>(); // Diamond operator
-        strings.add("hello");
-        strings.add("world");
-        
-        // Safe varargs method
-        List<Integer> numbers = SafeArrayList.listOf(1, 2, 3, 4, 5);
-        System.out.println("   Created list: " + numbers);
-        
-        // Custom safe array list
-        SafeArrayList<String> safeList = new SafeArrayList<>();
-        safeList.add("safe");
-        safeList.add("generic");
-        safeList.add("list");
-        
-        System.out.println("   Safe list contents:");
-        for (int i = 0; i < safeList.size(); i++) {
-            System.out.println("     " + safeList.get(i));
-        }
-        
-        System.out.println("   Use @SuppressWarnings(\"unchecked\") only when you're sure it's safe");
-        System.out.println();
-    }
-    
-    // ===== ITEM 34: Use enums instead of int constants =====
-    
-    // Bad: int enum pattern
-    static class BadConstants {
-        public static final int APPLE_FUJI = 0;
-        public static final int APPLE_PIPPIN = 1;
-        public static final int APPLE_GRANNY_SMITH = 2;
-        
-        public static final int ORANGE_NAVEL = 0;
-        public static final int ORANGE_TEMPLE = 1;
-        public static final int ORANGE_BLOOD = 2;
-    }
-    
-    // Good: enum types
-    enum Apple {
-        FUJI(5.0), PIPPIN(3.0), GRANNY_SMITH(4.0);
-        
-        private final double price;
-        
-        Apple(double price) {
-            this.price = price;
-        }
-        
-        public double getPrice() {
-            return price;
-        }
-        
-        @Override
-        public String toString() {
-            return name().toLowerCase().replace('_', ' ');
-        }
-    }
-    
-    enum Orange {
-        NAVEL(4.0), TEMPLE(3.5), BLOOD(6.0);
-        
-        private final double price;
-        
-        Orange(double price) {
-            this.price = price;
-        }
-        
-        public double getPrice() {
-            return price;
-        }
-        
-        @Override
-        public String toString() {
-            return name().toLowerCase().replace('_', ' ');
-        }
-    }
-    
-    // Rich enum with behavior
-    enum Planet {
-        MERCURY(3.303e+23, 2.4397e6),
-        VENUS(4.869e+24, 6.0518e6),
-        EARTH(5.976e+24, 6.37814e6),
-        MARS(6.421e+23, 3.3972e6);
-        
-        private final double mass;           // In kilograms
-        private final double radius;         // In meters
-        private final double surfaceGravity; // In m / s^2
-        
-        // Universal gravitational constant in m^3 / kg s^2
-        private static final double G = 6.67300E-11;
-        
-        Planet(double mass, double radius) {
-            this.mass = mass;
-            this.radius = radius;
-            surfaceGravity = G * mass / (radius * radius);
-        }
-        
-        public double mass() { return mass; }
-        public double radius() { return radius; }
-        public double surfaceGravity() { return surfaceGravity; }
-        
-        public double surfaceWeight(double mass) {
-            return mass * surfaceGravity; // F = ma
-        }
-    }
-    
-    private static void demonstrateEnumUsage() {
-        System.out.println("46. Enums vs Int Constants:");
-        
-        // Type safety with enums
-        Apple apple = Apple.FUJI;
-        Orange orange = Orange.NAVEL;
-        
-        System.out.println("   Apple: " + apple + " ($" + apple.getPrice() + ")");
-        System.out.println("   Orange: " + orange + " ($" + orange.getPrice() + ")");
-        
-        // Cannot compare different enum types (compile-time safety)
-        // if (apple == orange) // Compilation error!
-        
-        // Rich enum example
-        double earthWeight = 175.0; // pounds
-        System.out.println("   Weight on different planets for " + earthWeight + " lbs:");
-        for (Planet p : Planet.values()) {
-            double weight = p.surfaceWeight(earthWeight / Planet.EARTH.surfaceGravity());
-            System.out.println("     " + p + ": " + String.format("%.1f", weight) + " lbs");
-        }
-        System.out.println();
-    }
-    
-    // ===== ITEM 36: Use EnumSet instead of bit fields =====
-    
-    // Bad: bit field enumeration constants
-    static class BadText {
-        public static final int STYLE_BOLD = 1 << 0;         // 1
-        public static final int STYLE_ITALIC = 1 << 1;       // 2
-        public static final int STYLE_UNDERLINE = 1 << 2;    // 4
-        public static final int STYLE_STRIKETHROUGH = 1 << 3; // 8
-        
-        // Parameter is a bitwise OR of zero or more STYLE_ constants
-        public void applyStyles(int styles) {
-            System.out.println("   Applied styles (bit field): " + styles);
-            if ((styles & STYLE_BOLD) != 0) System.out.println("     Bold");
-            if ((styles & STYLE_ITALIC) != 0) System.out.println("     Italic");
-            if ((styles & STYLE_UNDERLINE) != 0) System.out.println("     Underline");
-            if ((styles & STYLE_STRIKETHROUGH) != 0) System.out.println("     Strikethrough");
-        }
-    }
-    
-    // Good: EnumSet instead of bit fields
-    static class GoodText {
-        enum Style { BOLD, ITALIC, UNDERLINE, STRIKETHROUGH }
-        
-        // Parameter is an EnumSet instead of bit field
-        public void applyStyles(Set<Style> styles) {
-            System.out.println("   Applied styles (EnumSet): " + styles);
-            for (Style style : styles) {
-                System.out.println("     " + style.name().toLowerCase());
-            }
-        }
-    }
-    
-    private static void demonstrateEnumSet() {
-        System.out.println("47. EnumSet vs Bit Fields:");
-        
-        // Bad approach with bit fields
-        BadText badText = new BadText();
-        badText.applyStyles(BadText.STYLE_BOLD | BadText.STYLE_ITALIC);
-        
-        // Good approach with EnumSet
-        GoodText goodText = new GoodText();
-        goodText.applyStyles(EnumSet.of(GoodText.Style.BOLD, GoodText.Style.ITALIC));
-        
-        // EnumSet operations
-        Set<GoodText.Style> allStyles = EnumSet.allOf(GoodText.Style.class);
-        Set<GoodText.Style> noStyles = EnumSet.noneOf(GoodText.Style.class);
-        Set<GoodText.Style> boldAndItalic = EnumSet.of(GoodText.Style.BOLD, GoodText.Style.ITALIC);
-        
-        System.out.println("   All styles: " + allStyles);
-        System.out.println("   No styles: " + noStyles);
-        System.out.println("   Bold and italic: " + boldAndItalic);
-        
-        // EnumSet is internally implemented as bit vector for performance
-        System.out.println("   EnumSet provides bit field performance with enum type safety");
-        System.out.println();
-    }
-    
-    // ===== ITEM 37: Use EnumMap instead of ordinal indexing =====
-    
-    enum Phase {
-        SOLID, LIQUID, GAS;
-        
-        enum Transition {
-            MELT(SOLID, LIQUID), FREEZE(LIQUID, SOLID),
-            BOIL(LIQUID, GAS), CONDENSE(GAS, LIQUID),
-            SUBLIME(SOLID, GAS), DEPOSIT(GAS, SOLID);
-            
-            private final Phase from;
-            private final Phase to;
-            
-            Transition(Phase from, Phase to) {
-                this.from = from;
-                this.to = to;
-            }
-            
-            // Initialize the phase transition map
-            private static final Map<Phase, Map<Phase, Transition>> m =
-                Stream.of(values()).collect(
-                    java.util.stream.Collectors.groupingBy(
-                        t -> t.from,
-                        () -> new EnumMap<>(Phase.class),
-                        java.util.stream.Collectors.toMap(
-                            t -> t.to,
-                            t -> t,
-                            (x, y) -> y,
-                            () -> new EnumMap<>(Phase.class))));
-            
-            public static Transition from(Phase from, Phase to) {
-                return m.get(from).get(to);
-            }
-        }
-    }
-    
-    static class Plant {
-        enum LifeCycle { ANNUAL, PERENNIAL, BIENNIAL }
-        
-        final String name;
-        final LifeCycle lifeCycle;
-        
-        Plant(String name, LifeCycle lifeCycle) {
-            this.name = name;
-            this.lifeCycle = lifeCycle;
-        }
-        
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-    
-    private static void demonstrateEnumMap() {
-        System.out.println("48. EnumMap vs Ordinal Indexing:");
-        
-        // Phase transitions
-        System.out.println("   Phase transitions:");
-        System.out.println("     SOLID to LIQUID: " + Phase.Transition.from(Phase.SOLID, Phase.LIQUID));
-        System.out.println("     LIQUID to GAS: " + Phase.Transition.from(Phase.LIQUID, Phase.GAS));
-        System.out.println("     GAS to SOLID: " + Phase.Transition.from(Phase.GAS, Phase.SOLID));
-        
-        // Plant lifecycle grouping using EnumMap
-        List<Plant> garden = Arrays.asList(
-            new Plant("Rose", Plant.LifeCycle.PERENNIAL),
-            new Plant("Sunflower", Plant.LifeCycle.ANNUAL),
-            new Plant("Carrot", Plant.LifeCycle.BIENNIAL),
-            new Plant("Oak", Plant.LifeCycle.PERENNIAL),
-            new Plant("Marigold", Plant.LifeCycle.ANNUAL)
-        );
-        
-        // Good: Using EnumMap
-        Map<Plant.LifeCycle, Set<Plant>> plantsByLifeCycle = new EnumMap<>(Plant.LifeCycle.class);
-        for (Plant.LifeCycle lc : Plant.LifeCycle.values()) {
-            plantsByLifeCycle.put(lc, new HashSet<>());
-        }
-        for (Plant p : garden) {
-            plantsByLifeCycle.get(p.lifeCycle).add(p);
-        }
-        
-        System.out.println("   Plants grouped by lifecycle:");
-        for (Map.Entry<Plant.LifeCycle, Set<Plant>> entry : plantsByLifeCycle.entrySet()) {
-            System.out.println("     " + entry.getKey() + ": " + entry.getValue());
-        }
-        
-        // Even better: Using streams with EnumMap
-        Map<Plant.LifeCycle, List<Plant>> plantsByLifeCycleStream = garden.stream()
-            .collect(java.util.stream.Collectors.groupingBy(
-                p -> p.lifeCycle,
-                () -> new EnumMap<>(Plant.LifeCycle.class),
-                java.util.stream.Collectors.toList()));
-        
-        System.out.println("   Using streams: " + plantsByLifeCycleStream);
-        System.out.println();
-    }
-    
-    // ===== ITEM 38: Emulate extensible enums with interfaces =====
-    
-    interface Operation {
-        double apply(double x, double y);
-    }
-    
-    enum BasicOperation implements Operation {
-        PLUS("+") {
-            public double apply(double x, double y) { return x + y; }
-        },
-        MINUS("-") {
-            public double apply(double x, double y) { return x - y; }
-        },
-        TIMES("*") {
-            public double apply(double x, double y) { return x * y; }
-        },
-        DIVIDE("/") {
-            public double apply(double x, double y) { return x / y; }
-        };
-        
-        private final String symbol;
-        
-        BasicOperation(String symbol) {
-            this.symbol = symbol;
-        }
-        
-        @Override
-        public String toString() {
-            return symbol;
-        }
-    }
-    
-    // Extended operations - new enum implementing same interface
-    enum ExtendedOperation implements Operation {
-        EXP("^") {
-            public double apply(double x, double y) { return Math.pow(x, y); }
-        },
-        REMAINDER("%") {
-            public double apply(double x, double y) { return x % y; }
-        };
-        
-        private final String symbol;
-        
-        ExtendedOperation(String symbol) {
-            this.symbol = symbol;
-        }
-        
-        @Override
-        public String toString() {
-            return symbol;
-        }
-    }
-    
-    // Test method that works with any Operation implementation
-    private static void test(Class<? extends Enum<? extends Operation>> opEnumType,
-                           double x, double y) {
-        for (Operation op : opEnumType.getEnumConstants()) {
-            System.out.printf("   %.1f %s %.1f = %.1f%n", x, op, y, op.apply(x, y));
-        }
-    }
-    
-    // Alternative test method using Collection
-    private static void test(Collection<? extends Operation> opSet, double x, double y) {
-        for (Operation op : opSet) {
-            System.out.printf("   %.1f %s %.1f = %.1f%n", x, op, y, op.apply(x, y));
-        }
-    }
-    
-    private static void demonstrateExtensibleEnums() {
-        System.out.println("49. Extensible Enums with Interfaces:");
-        
-        double x = 4.0;
-        double y = 2.0;
-        
-        System.out.println("   Basic operations:");
-        test(BasicOperation.class, x, y);
-        
-        System.out.println("   Extended operations:");
-        test(ExtendedOperation.class, x, y);
-        
-        System.out.println("   Mixed operations using Collection:");
-        Collection<Operation> operations = Arrays.asList(
-            BasicOperation.PLUS,
-            BasicOperation.TIMES,
-            ExtendedOperation.EXP,
-            ExtendedOperation.REMAINDER
-        );
-        test(operations, x, y);
-        
-        System.out.println("   Interfaces allow enum extension while maintaining type safety");
-        System.out.println();
-    }import java.util.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.time.LocalDateTime;
 
@@ -3566,7 +2670,901 @@ public class EffectiveJavaExamples {
         // Final summary
         printSummary();
     }
+
+     // ===== ITEM 5: Prefer dependency injection to hardwiring resources =====
     
+    // Bad: hardwired dependency
+    static class BadSpellChecker {
+        private static final Lexicon dictionary = new EnglishLexicon(); // Hardwired!
+        
+        private BadSpellChecker() {} // Noninstantiable
+        
+        public static boolean isValid(String word) {
+            return dictionary.contains(word);
+        }
+        
+        public static List<String> suggestions(String typo) {
+            return dictionary.getSuggestions(typo);
+        }
+    }
+    
+    // Good: dependency injection
+    static class GoodSpellChecker {
+        private final Lexicon dictionary;
+        
+        public GoodSpellChecker(Lexicon dictionary) {
+            this.dictionary = Objects.requireNonNull(dictionary);
+        }
+        
+        public boolean isValid(String word) {
+            return dictionary.contains(word);
+        }
+        
+        public List<String> suggestions(String typo) {
+            return dictionary.getSuggestions(typo);
+        }
+    }
+    
+    interface Lexicon {
+        boolean contains(String word);
+        List<String> getSuggestions(String typo);
+    }
+    
+    static class EnglishLexicon implements Lexicon {
+        private final Set<String> words = Set.of("hello", "world", "java", "effective", "programming");
+        
+        @Override
+        public boolean contains(String word) {
+            return words.contains(word.toLowerCase());
+        }
+        
+        @Override
+        public List<String> getSuggestions(String typo) {
+            return words.stream()
+                       .filter(word -> word.startsWith(typo.substring(0, Math.min(2, typo.length()))))
+                       .collect(java.util.stream.Collectors.toList());
+        }
+    }
+    
+    static class SpanishLexicon implements Lexicon {
+        private final Set<String> words = Set.of("hola", "mundo", "java", "efectivo", "programacion");
+        
+        @Override
+        public boolean contains(String word) {
+            return words.contains(word.toLowerCase());
+        }
+        
+        @Override
+        public List<String> getSuggestions(String typo) {
+            return words.stream()
+                       .filter(word -> word.startsWith(typo.substring(0, Math.min(2, typo.length()))))
+                       .collect(java.util.stream.Collectors.toList());
+        }
+    }
+    
+    private static void demonstrateDependencyInjection() {
+        System.out.println("40. Dependency Injection:");
+        
+        // Can use different dictionaries
+        GoodSpellChecker englishChecker = new GoodSpellChecker(new EnglishLexicon());
+        GoodSpellChecker spanishChecker = new GoodSpellChecker(new SpanishLexicon());
+        
+        System.out.println("   English - 'hello' valid: " + englishChecker.isValid("hello"));
+        System.out.println("   Spanish - 'hola' valid: " + spanishChecker.isValid("hola"));
+        System.out.println("   English suggestions for 'he': " + englishChecker.suggestions("he"));
+        System.out.println("   Spanish suggestions for 'ho': " + spanishChecker.suggestions("ho"));
+        System.out.println("   Dependency injection allows flexibility and testability");
+        System.out.println();
+    }
+    
+    // ===== ITEM 7: Eliminate obsolete object references =====
+    
+    static class Stack {
+        private Object[] elements;
+        private int size = 0;
+        private static final int DEFAULT_INITIAL_CAPACITY = 16;
+        
+        public Stack() {
+            elements = new Object[DEFAULT_INITIAL_CAPACITY];
+        }
+        
+        public void push(Object e) {
+            ensureCapacity();
+            elements[size++] = e;
+        }
+        
+        // Memory leak version
+        public Object popBad() {
+            if (size == 0) {
+                throw new IllegalStateException("Stack is empty");
+            }
+            return elements[--size]; // Memory leak! Still holds reference
+        }
+        
+        // Fixed version
+        public Object pop() {
+            if (size == 0) {
+                throw new IllegalStateException("Stack is empty");
+            }
+            Object result = elements[--size];
+            elements[size] = null; // Eliminate obsolete reference
+            return result;
+        }
+        
+        private void ensureCapacity() {
+            if (elements.length == size) {
+                elements = Arrays.copyOf(elements, 2 * size + 1);
+            }
+        }
+        
+        public int size() {
+            return size;
+        }
+        
+        public boolean isEmpty() {
+            return size == 0;
+        }
+    }
+    
+    // Demonstrate listener memory leak
+    static class EventSource {
+        private final List<EventListener> listeners = new ArrayList<>();
+        
+        public void addListener(EventListener listener) {
+            listeners.add(listener);
+        }
+        
+        // Good: provide removal method
+        public void removeListener(EventListener listener) {
+            listeners.remove(listener);
+        }
+        
+        public void fireEvent(String event) {
+            for (EventListener listener : listeners) {
+                listener.onEvent(event);
+            }
+        }
+        
+        // Use WeakHashMap for automatic cleanup of unused listeners
+        private final Map<EventListener, String> weakListeners = new WeakHashMap<>();
+        
+        public void addWeakListener(EventListener listener, String tag) {
+            weakListeners.put(listener, tag);
+        }
+        
+        public void fireWeakEvent(String event) {
+            for (EventListener listener : weakListeners.keySet()) {
+                listener.onEvent(event + " (weak)");
+            }
+        }
+    }
+    
+    interface EventListener {
+        void onEvent(String event);
+    }
+    
+    private static void demonstrateMemoryLeaks() {
+        System.out.println("41. Eliminating Memory Leaks:");
+        
+        Stack stack = new Stack();
+        stack.push("item1");
+        stack.push("item2");
+        stack.push("item3");
+        
+        System.out.println("   Stack size after pushes: " + stack.size());
+        
+        // Pop items (using good version that nulls references)
+        while (!stack.isEmpty()) {
+            Object item = stack.pop();
+            System.out.println("   Popped: " + item);
+        }
+        
+        // Demonstrate listener pattern
+        EventSource source = new EventSource();
+        EventListener listener = event -> System.out.println("   Received: " + event);
+        
+        source.addListener(listener);
+        source.fireEvent("test event");
+        
+        // Important: remove listener to prevent memory leak
+        source.removeListener(listener);
+        
+        // Weak reference example
+        source.addWeakListener(listener, "weak-tag");
+        source.fireWeakEvent("weak event");
+        
+        System.out.println("   Key: Null out obsolete references, especially in collections");
+        System.out.println();
+    }
+    
+    // ===== ITEM 14: Consider implementing Comparable =====
+    
+    static class PhoneNumber implements Comparable<PhoneNumber> {
+        private final short areaCode, prefix, lineNum;
+        
+        public PhoneNumber(int areaCode, int prefix, int lineNum) {
+            this.areaCode = rangeCheck(areaCode, 999, "area code");
+            this.prefix = rangeCheck(prefix, 999, "prefix");
+            this.lineNum = rangeCheck(lineNum, 9999, "line num");
+        }
+        
+        private static short rangeCheck(int val, int max, String arg) {
+            if (val < 0 || val > max) {
+                throw new IllegalArgumentException(arg + ": " + val);
+            }
+            return (short) val;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (!(o instanceof PhoneNumber)) return false;
+            PhoneNumber pn = (PhoneNumber) o;
+            return pn.lineNum == lineNum && pn.prefix == prefix && pn.areaCode == areaCode;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(areaCode, prefix, lineNum);
+        }
+        
+        // Comparable implementation using comparator construction methods
+        private static final Comparator<PhoneNumber> COMPARATOR =
+            Comparator.comparingInt((PhoneNumber pn) -> pn.areaCode)
+                     .thenComparingInt(pn -> pn.prefix)
+                     .thenComparingInt(pn -> pn.lineNum);
+        
+        @Override
+        public int compareTo(PhoneNumber pn) {
+            return COMPARATOR.compare(this, pn);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("(%03d) %03d-%04d", areaCode, prefix, lineNum);
+        }
+    }
+    
+    private static void demonstrateComparable() {
+        System.out.println("42. Implementing Comparable:");
+        
+        List<PhoneNumber> phoneNumbers = Arrays.asList(
+            new PhoneNumber(707, 867, 5309),
+            new PhoneNumber(555, 867, 5309),
+            new PhoneNumber(707, 867, 5308),
+            new PhoneNumber(555, 123, 4567)
+        );
+        
+        System.out.println("   Original order:");
+        phoneNumbers.forEach(pn -> System.out.println("     " + pn));
+        
+        Collections.sort(phoneNumbers);
+        System.out.println("   Sorted order:");
+        phoneNumbers.forEach(pn -> System.out.println("     " + pn));
+        
+        // Binary search works with Comparable
+        PhoneNumber key = new PhoneNumber(555, 867, 5309);
+        int index = Collections.binarySearch(phoneNumbers, key);
+        System.out.println("   Found " + key + " at index: " + index);
+        System.out.println();
+    }
+    
+    // ===== ITEM 23: Prefer class hierarchies to tagged classes =====
+    
+    // Bad: tagged class
+    static class BadFigure {
+        enum Shape { RECTANGLE, CIRCLE }
+        
+        // Tag field - the shape of this figure
+        final Shape shape;
+        
+        // These fields are used only if shape is RECTANGLE
+        double length;
+        double width;
+        
+        // This field is used only if shape is CIRCLE
+        double radius;
+        
+        // Constructor for circle
+        BadFigure(double radius) {
+            shape = Shape.CIRCLE;
+            this.radius = radius;
+        }
+        
+        // Constructor for rectangle
+        BadFigure(double length, double width) {
+            shape = Shape.RECTANGLE;
+            this.length = length;
+            this.width = width;
+        }
+        
+        double area() {
+            switch (shape) {
+                case RECTANGLE:
+                    return length * width;
+                case CIRCLE:
+                    return Math.PI * (radius * radius);
+                default:
+                    throw new AssertionError(shape);
+            }
+        }
+    }
+    
+    // Good: class hierarchy
+    static abstract class Figure {
+        abstract double area();
+    }
+    
+    static class Circle extends Figure {
+        final double radius;
+        
+        Circle(double radius) {
+            this.radius = radius;
+        }
+        
+        @Override
+        double area() {
+            return Math.PI * radius * radius;
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Circle(radius=%.1f)", radius);
+        }
+    }
+    
+    static class Rectangle extends Figure {
+        final double length;
+        final double width;
+        
+        Rectangle(double length, double width) {
+            this.length = length;
+            this.width = width;
+        }
+        
+        @Override
+        double area() {
+            return length * width;
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Rectangle(%.1fx%.1f)", length, width);
+        }
+    }
+    
+    // Easy to extend
+    static class Square extends Rectangle {
+        Square(double side) {
+            super(side, side);
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("Square(%.1f)", length);
+        }
+    }
+    
+    private static void demonstrateClassHierarchies() {
+        System.out.println("43. Class Hierarchies vs Tagged Classes:");
+        
+        List<Figure> figures = Arrays.asList(
+            new Circle(5.0),
+            new Rectangle(3.0, 4.0),
+            new Square(2.0)
+        );
+        
+        for (Figure figure : figures) {
+            System.out.println("   " + figure + " area: " + String.format("%.2f", figure.area()));
+        }
+        
+        System.out.println("   Class hierarchies are more flexible and type-safe than tagged classes");
+        System.out.println();
+    }
+    
+    // ===== ITEM 24: Favor static member classes over nonstatic =====
+    
+    static class OuterClass {
+        private final String name;
+        
+        public OuterClass(String name) {
+            this.name = name;
+        }
+        
+        // Good: static member class (no implicit reference to outer instance)
+        static class StaticNested {
+            private final String data;
+            
+            public StaticNested(String data) {
+                this.data = data;
+            }
+            
+            public String getData() {
+                return data;
+                // Cannot access outer instance fields directly
+            }
+        }
+        
+        // Non-static member class (has implicit reference to outer instance)
+        class NonStaticNested {
+            private final String info;
+            
+            public NonStaticNested(String info) {
+                this.info = info;
+            }
+            
+            public String getInfo() {
+                return info + " from " + name; // Can access outer instance
+            }
+        }
+        
+        // Good use of non-static: when you need access to outer instance
+        public Iterator<String> iterator() {
+            return new IteratorImpl();
+        }
+        
+        private class IteratorImpl implements Iterator<String> {
+            private int position = 0;
+            private final String[] items = {name + "-item1", name + "-item2", name + "-item3"};
+            
+            @Override
+            public boolean hasNext() {
+                return position < items.length;
+            }
+            
+            @Override
+            public String next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return items[position++];
+            }
+        }
+        
+        public String getName() {
+            return name;
+        }
+    }
+    
+    private static void demonstrateNestedClasses() {
+        System.out.println("44. Static vs Non-static Nested Classes:");
+        
+        // Static nested class - no outer instance needed
+        OuterClass.StaticNested staticNested = new OuterClass.StaticNested("static-data");
+        System.out.println("   Static nested: " + staticNested.getData());
+        
+        // Non-static nested class - needs outer instance
+        OuterClass outer = new OuterClass("MyOuter");
+        OuterClass.NonStaticNested nonStatic = outer.new NonStaticNested("non-static-info");
+        System.out.println("   Non-static nested: " + nonStatic.getInfo());
+        
+        // Good use of non-static: iterator that accesses outer state
+        System.out.println("   Iterator from outer class:");
+        Iterator<String> iterator = outer.iterator();
+        while (iterator.hasNext()) {
+            System.out.println("     " + iterator.next());
+        }
+        
+        System.out.println("   Use static nested classes unless you need outer instance access");
+        System.out.println();
+    }
+    
+    // ===== ITEM 27: Eliminate unchecked warnings =====
+    
+    @SuppressWarnings("unchecked")
+    static class SafeArrayList<E> {
+        private Object[] elements;
+        private int size = 0;
+        
+        public SafeArrayList() {
+            elements = new Object[10];
+        }
+        
+        public void add(E element) {
+            if (size == elements.length) {
+                elements = Arrays.copyOf(elements, size * 2);
+            }
+            elements[size++] = element;
+        }
+        
+        @SuppressWarnings("unchecked")
+        public E get(int index) {
+            if (index >= size) {
+                throw new IndexOutOfBoundsException();
+            }
+            return (E) elements[index]; // Safe cast - we control what goes in
+        }
+        
+        public int size() {
+            return size;
+        }
+        
+        // Safe generic array creation
+        @SafeVarargs
+        public static <T> List<T> listOf(T... elements) {
+            List<T> list = new ArrayList<>();
+            Collections.addAll(list, elements);
+            return list;
+        }
+    }
+    
+    private static void demonstrateUncheckedWarnings() {
+        System.out.println("45. Eliminating Unchecked Warnings:");
+        
+        // Properly parameterized collections
+        List<String> strings = new ArrayList<>(); // Diamond operator
+        strings.add("hello");
+        strings.add("world");
+        
+        // Safe varargs method
+        List<Integer> numbers = SafeArrayList.listOf(1, 2, 3, 4, 5);
+        System.out.println("   Created list: " + numbers);
+        
+        // Custom safe array list
+        SafeArrayList<String> safeList = new SafeArrayList<>();
+        safeList.add("safe");
+        safeList.add("generic");
+        safeList.add("list");
+        
+        System.out.println("   Safe list contents:");
+        for (int i = 0; i < safeList.size(); i++) {
+            System.out.println("     " + safeList.get(i));
+        }
+        
+        System.out.println("   Use @SuppressWarnings(\"unchecked\") only when you're sure it's safe");
+        System.out.println();
+    }
+    
+    // ===== ITEM 34: Use enums instead of int constants =====
+    
+    // Bad: int enum pattern
+    static class BadConstants {
+        public static final int APPLE_FUJI = 0;
+        public static final int APPLE_PIPPIN = 1;
+        public static final int APPLE_GRANNY_SMITH = 2;
+        
+        public static final int ORANGE_NAVEL = 0;
+        public static final int ORANGE_TEMPLE = 1;
+        public static final int ORANGE_BLOOD = 2;
+    }
+    
+    // Good: enum types
+    enum Apple {
+        FUJI(5.0), PIPPIN(3.0), GRANNY_SMITH(4.0);
+        
+        private final double price;
+        
+        Apple(double price) {
+            this.price = price;
+        }
+        
+        public double getPrice() {
+            return price;
+        }
+        
+        @Override
+        public String toString() {
+            return name().toLowerCase().replace('_', ' ');
+        }
+    }
+    
+    enum Orange {
+        NAVEL(4.0), TEMPLE(3.5), BLOOD(6.0);
+        
+        private final double price;
+        
+        Orange(double price) {
+            this.price = price;
+        }
+        
+        public double getPrice() {
+            return price;
+        }
+        
+        @Override
+        public String toString() {
+            return name().toLowerCase().replace('_', ' ');
+        }
+    }
+    
+    // Rich enum with behavior
+    enum Planet {
+        MERCURY(3.303e+23, 2.4397e6),
+        VENUS(4.869e+24, 6.0518e6),
+        EARTH(5.976e+24, 6.37814e6),
+        MARS(6.421e+23, 3.3972e6);
+        
+        private final double mass;           // In kilograms
+        private final double radius;         // In meters
+        private final double surfaceGravity; // In m / s^2
+        
+        // Universal gravitational constant in m^3 / kg s^2
+        private static final double G = 6.67300E-11;
+        
+        Planet(double mass, double radius) {
+            this.mass = mass;
+            this.radius = radius;
+            surfaceGravity = G * mass / (radius * radius);
+        }
+        
+        public double mass() { return mass; }
+        public double radius() { return radius; }
+        public double surfaceGravity() { return surfaceGravity; }
+        
+        public double surfaceWeight(double mass) {
+            return mass * surfaceGravity; // F = ma
+        }
+    }
+    
+    private static void demonstrateEnumUsage() {
+        System.out.println("46. Enums vs Int Constants:");
+        
+        // Type safety with enums
+        Apple apple = Apple.FUJI;
+        Orange orange = Orange.NAVEL;
+        
+        System.out.println("   Apple: " + apple + " ($" + apple.getPrice() + ")");
+        System.out.println("   Orange: " + orange + " ($" + orange.getPrice() + ")");
+        
+        // Cannot compare different enum types (compile-time safety)
+        // if (apple == orange) // Compilation error!
+        
+        // Rich enum example
+        double earthWeight = 175.0; // pounds
+        System.out.println("   Weight on different planets for " + earthWeight + " lbs:");
+        for (Planet p : Planet.values()) {
+            double weight = p.surfaceWeight(earthWeight / Planet.EARTH.surfaceGravity());
+            System.out.println("     " + p + ": " + String.format("%.1f", weight) + " lbs");
+        }
+        System.out.println();
+    }
+    
+    // ===== ITEM 36: Use EnumSet instead of bit fields =====
+    
+    // Bad: bit field enumeration constants
+    static class BadText {
+        public static final int STYLE_BOLD = 1 << 0;         // 1
+        public static final int STYLE_ITALIC = 1 << 1;       // 2
+        public static final int STYLE_UNDERLINE = 1 << 2;    // 4
+        public static final int STYLE_STRIKETHROUGH = 1 << 3; // 8
+        
+        // Parameter is a bitwise OR of zero or more STYLE_ constants
+        public void applyStyles(int styles) {
+            System.out.println("   Applied styles (bit field): " + styles);
+            if ((styles & STYLE_BOLD) != 0) System.out.println("     Bold");
+            if ((styles & STYLE_ITALIC) != 0) System.out.println("     Italic");
+            if ((styles & STYLE_UNDERLINE) != 0) System.out.println("     Underline");
+            if ((styles & STYLE_STRIKETHROUGH) != 0) System.out.println("     Strikethrough");
+        }
+    }
+    
+    // Good: EnumSet instead of bit fields
+    static class GoodText {
+        enum Style { BOLD, ITALIC, UNDERLINE, STRIKETHROUGH }
+        
+        // Parameter is an EnumSet instead of bit field
+        public void applyStyles(Set<Style> styles) {
+            System.out.println("   Applied styles (EnumSet): " + styles);
+            for (Style style : styles) {
+                System.out.println("     " + style.name().toLowerCase());
+            }
+        }
+    }
+    
+    private static void demonstrateEnumSet() {
+        System.out.println("47. EnumSet vs Bit Fields:");
+        
+        // Bad approach with bit fields
+        BadText badText = new BadText();
+        badText.applyStyles(BadText.STYLE_BOLD | BadText.STYLE_ITALIC);
+        
+        // Good approach with EnumSet
+        GoodText goodText = new GoodText();
+        goodText.applyStyles(EnumSet.of(GoodText.Style.BOLD, GoodText.Style.ITALIC));
+        
+        // EnumSet operations
+        Set<GoodText.Style> allStyles = EnumSet.allOf(GoodText.Style.class);
+        Set<GoodText.Style> noStyles = EnumSet.noneOf(GoodText.Style.class);
+        Set<GoodText.Style> boldAndItalic = EnumSet.of(GoodText.Style.BOLD, GoodText.Style.ITALIC);
+        
+        System.out.println("   All styles: " + allStyles);
+        System.out.println("   No styles: " + noStyles);
+        System.out.println("   Bold and italic: " + boldAndItalic);
+        
+        // EnumSet is internally implemented as bit vector for performance
+        System.out.println("   EnumSet provides bit field performance with enum type safety");
+        System.out.println();
+    }
+    
+    // ===== ITEM 37: Use EnumMap instead of ordinal indexing =====
+    
+    enum Phase {
+        SOLID, LIQUID, GAS;
+        
+        enum Transition {
+            MELT(SOLID, LIQUID), FREEZE(LIQUID, SOLID),
+            BOIL(LIQUID, GAS), CONDENSE(GAS, LIQUID),
+            SUBLIME(SOLID, GAS), DEPOSIT(GAS, SOLID);
+            
+            private final Phase from;
+            private final Phase to;
+            
+            Transition(Phase from, Phase to) {
+                this.from = from;
+                this.to = to;
+            }
+            
+            // Initialize the phase transition map
+            private static final Map<Phase, Map<Phase, Transition>> m =
+                Stream.of(values()).collect(
+                    java.util.stream.Collectors.groupingBy(
+                        t -> t.from,
+                        () -> new EnumMap<>(Phase.class),
+                        java.util.stream.Collectors.toMap(
+                            t -> t.to,
+                            t -> t,
+                            (x, y) -> y,
+                            () -> new EnumMap<>(Phase.class))));
+            
+            public static Transition from(Phase from, Phase to) {
+                return m.get(from).get(to);
+            }
+        }
+    }
+    
+    static class Plant {
+        enum LifeCycle { ANNUAL, PERENNIAL, BIENNIAL }
+        
+        final String name;
+        final LifeCycle lifeCycle;
+        
+        Plant(String name, LifeCycle lifeCycle) {
+            this.name = name;
+            this.lifeCycle = lifeCycle;
+        }
+        
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+    
+    private static void demonstrateEnumMap() {
+        System.out.println("48. EnumMap vs Ordinal Indexing:");
+        
+        // Phase transitions
+        System.out.println("   Phase transitions:");
+        System.out.println("     SOLID to LIQUID: " + Phase.Transition.from(Phase.SOLID, Phase.LIQUID));
+        System.out.println("     LIQUID to GAS: " + Phase.Transition.from(Phase.LIQUID, Phase.GAS));
+        System.out.println("     GAS to SOLID: " + Phase.Transition.from(Phase.GAS, Phase.SOLID));
+        
+        // Plant lifecycle grouping using EnumMap
+        List<Plant> garden = Arrays.asList(
+            new Plant("Rose", Plant.LifeCycle.PERENNIAL),
+            new Plant("Sunflower", Plant.LifeCycle.ANNUAL),
+            new Plant("Carrot", Plant.LifeCycle.BIENNIAL),
+            new Plant("Oak", Plant.LifeCycle.PERENNIAL),
+            new Plant("Marigold", Plant.LifeCycle.ANNUAL)
+        );
+        
+        // Good: Using EnumMap
+        Map<Plant.LifeCycle, Set<Plant>> plantsByLifeCycle = new EnumMap<>(Plant.LifeCycle.class);
+        for (Plant.LifeCycle lc : Plant.LifeCycle.values()) {
+            plantsByLifeCycle.put(lc, new HashSet<>());
+        }
+        for (Plant p : garden) {
+            plantsByLifeCycle.get(p.lifeCycle).add(p);
+        }
+        
+        System.out.println("   Plants grouped by lifecycle:");
+        for (Map.Entry<Plant.LifeCycle, Set<Plant>> entry : plantsByLifeCycle.entrySet()) {
+            System.out.println("     " + entry.getKey() + ": " + entry.getValue());
+        }
+        
+        // Even better: Using streams with EnumMap
+        Map<Plant.LifeCycle, List<Plant>> plantsByLifeCycleStream = garden.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                p -> p.lifeCycle,
+                () -> new EnumMap<>(Plant.LifeCycle.class),
+                java.util.stream.Collectors.toList()));
+        
+        System.out.println("   Using streams: " + plantsByLifeCycleStream);
+        System.out.println();
+    }
+    
+    // ===== ITEM 38: Emulate extensible enums with interfaces =====
+    
+    interface Operation {
+        double apply(double x, double y);
+    }
+    
+    enum BasicOperation implements Operation {
+        PLUS("+") {
+            public double apply(double x, double y) { return x + y; }
+        },
+        MINUS("-") {
+            public double apply(double x, double y) { return x - y; }
+        },
+        TIMES("*") {
+            public double apply(double x, double y) { return x * y; }
+        },
+        DIVIDE("/") {
+            public double apply(double x, double y) { return x / y; }
+        };
+        
+        private final String symbol;
+        
+        BasicOperation(String symbol) {
+            this.symbol = symbol;
+        }
+        
+        @Override
+        public String toString() {
+            return symbol;
+        }
+    }
+    
+    // Extended operations - new enum implementing same interface
+    enum ExtendedOperation implements Operation {
+        EXP("^") {
+            public double apply(double x, double y) { return Math.pow(x, y); }
+        },
+        REMAINDER("%") {
+            public double apply(double x, double y) { return x % y; }
+        };
+        
+        private final String symbol;
+        
+        ExtendedOperation(String symbol) {
+            this.symbol = symbol;
+        }
+        
+        @Override
+        public String toString() {
+            return symbol;
+        }
+    }
+    
+    // Test method that works with any Operation implementation
+    private static void test(Class<? extends Enum<? extends Operation>> opEnumType,
+                           double x, double y) {
+        for (Operation op : opEnumType.getEnumConstants()) {
+            System.out.printf("   %.1f %s %.1f = %.1f%n", x, op, y, op.apply(x, y));
+        }
+    }
+    
+    // Alternative test method using Collection
+    private static void test(Collection<? extends Operation> opSet, double x, double y) {
+        for (Operation op : opSet) {
+            System.out.printf("   %.1f %s %.1f = %.1f%n", x, op, y, op.apply(x, y));
+        }
+    }
+    
+    private static void demonstrateExtensibleEnums() {
+        System.out.println("49. Extensible Enums with Interfaces:");
+        
+        double x = 4.0;
+        double y = 2.0;
+        
+        System.out.println("   Basic operations:");
+        test(BasicOperation.class, x, y);
+        
+        System.out.println("   Extended operations:");
+        test(ExtendedOperation.class, x, y);
+        
+        System.out.println("   Mixed operations using Collection:");
+        Collection<Operation> operations = Arrays.asList(
+            BasicOperation.PLUS,
+            BasicOperation.TIMES,
+            ExtendedOperation.EXP,
+            ExtendedOperation.REMAINDER
+        );
+        test(operations, x, y);
+        
+        System.out.println("   Interfaces allow enum extension while maintaining type safety");
+        System.out.println();
+    }
+
     private static void printSummary() {
         System.out.println("=== EFFECTIVE JAVA PRINCIPLES SUMMARY ===");
         System.out.println();
