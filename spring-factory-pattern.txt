@@ -1,0 +1,535 @@
+// ============================================================================
+// COMPREHENSIVE SPRING FRAMEWORK FACTORY PATTERN EXAMPLES
+// ============================================================================
+
+// 1. BASIC FACTORY BEAN EXAMPLE
+// ============================================================================
+
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+// Database connection interface
+interface DatabaseConnection {
+    void connect();
+    String getConnectionInfo();
+}
+
+// MySQL implementation
+class MySQLConnection implements DatabaseConnection {
+    private String url;
+    private String username;
+    
+    public MySQLConnection(String url, String username) {
+        this.url = url;
+        this.username = username;
+    }
+    
+    @Override
+    public void connect() {
+        System.out.println("Connecting to MySQL: " + url);
+    }
+    
+    @Override
+    public String getConnectionInfo() {
+        return "MySQL Connection - URL: " + url + ", User: " + username;
+    }
+}
+
+// PostgreSQL implementation
+class PostgreSQLConnection implements DatabaseConnection {
+    private String url;
+    private String username;
+    
+    public PostgreSQLConnection(String url, String username) {
+        this.url = url;
+        this.username = username;
+    }
+    
+    @Override
+    public void connect() {
+        System.out.println("Connecting to PostgreSQL: " + url);
+    }
+    
+    @Override
+    public String getConnectionInfo() {
+        return "PostgreSQL Connection - URL: " + url + ", User: " + username;
+    }
+}
+
+// Factory Bean for creating database connections
+@Component
+class DatabaseConnectionFactoryBean implements FactoryBean<DatabaseConnection> {
+    
+    private String dbType = "mysql"; // Could be injected from properties
+    private String url = "localhost:3306/mydb";
+    private String username = "admin";
+    
+    @Override
+    public DatabaseConnection getObject() throws Exception {
+        switch (dbType.toLowerCase()) {
+            case "mysql":
+                return new MySQLConnection(url, username);
+            case "postgresql":
+                return new PostgreSQLConnection(url, username);
+            default:
+                throw new IllegalArgumentException("Unsupported database type: " + dbType);
+        }
+    }
+    
+    @Override
+    public Class<?> getObjectType() {
+        return DatabaseConnection.class;
+    }
+    
+    @Override
+    public boolean isSingleton() {
+        return true; // Return same instance every time
+    }
+    
+    // Setters for dependency injection
+    public void setDbType(String dbType) { this.dbType = dbType; }
+    public void setUrl(String url) { this.url = url; }
+    public void setUsername(String username) { this.username = username; }
+}
+
+// ============================================================================
+// 2. STATIC FACTORY METHOD EXAMPLE
+// ============================================================================
+
+// Message service interface
+interface MessageService {
+    void sendMessage(String message, String recipient);
+}
+
+// Email service implementation
+class EmailService implements MessageService {
+    @Override
+    public void sendMessage(String message, String recipient) {
+        System.out.println("Sending email to " + recipient + ": " + message);
+    }
+}
+
+// SMS service implementation
+class SMSService implements MessageService {
+    @Override
+    public void sendMessage(String message, String recipient) {
+        System.out.println("Sending SMS to " + recipient + ": " + message);
+    }
+}
+
+// Push notification service implementation
+class PushNotificationService implements MessageService {
+    @Override
+    public void sendMessage(String message, String recipient) {
+        System.out.println("Sending push notification to " + recipient + ": " + message);
+    }
+}
+
+// Static factory for message services
+class MessageServiceFactory {
+    
+    public static MessageService createEmailService() {
+        System.out.println("Creating Email Service with SMTP configuration");
+        return new EmailService();
+    }
+    
+    public static MessageService createSMSService() {
+        System.out.println("Creating SMS Service with Twilio configuration");
+        return new SMSService();
+    }
+    
+    public static MessageService createPushService() {
+        System.out.println("Creating Push Notification Service with FCM configuration");
+        return new PushNotificationService();
+    }
+}
+
+// ============================================================================
+// 3. INSTANCE FACTORY METHOD EXAMPLE
+// ============================================================================
+
+// Payment processor interface
+interface PaymentProcessor {
+    boolean processPayment(double amount, String currency);
+}
+
+// Credit card processor
+class CreditCardProcessor implements PaymentProcessor {
+    private String apiKey;
+    
+    public CreditCardProcessor(String apiKey) {
+        this.apiKey = apiKey;
+    }
+    
+    @Override
+    public boolean processPayment(double amount, String currency) {
+        System.out.println("Processing credit card payment: " + amount + " " + currency);
+        return true;
+    }
+}
+
+// PayPal processor
+class PayPalProcessor implements PaymentProcessor {
+    private String clientId;
+    private String clientSecret;
+    
+    public PayPalProcessor(String clientId, String clientSecret) {
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+    }
+    
+    @Override
+    public boolean processPayment(double amount, String currency) {
+        System.out.println("Processing PayPal payment: " + amount + " " + currency);
+        return true;
+    }
+}
+
+// Instance factory for payment processors
+@Component
+class PaymentProcessorFactory {
+    
+    private String creditCardApiKey = "cc-api-key-12345";
+    private String paypalClientId = "paypal-client-id";
+    private String paypalClientSecret = "paypal-secret";
+    
+    public PaymentProcessor createCreditCardProcessor() {
+        System.out.println("Creating Credit Card Processor");
+        return new CreditCardProcessor(creditCardApiKey);
+    }
+    
+    public PaymentProcessor createPayPalProcessor() {
+        System.out.println("Creating PayPal Processor");
+        return new PayPalProcessor(paypalClientId, paypalClientSecret);
+    }
+}
+
+// ============================================================================
+// 4. SPRING CONFIGURATION WITH FACTORY PATTERNS
+// ============================================================================
+
+@Configuration
+class FactoryConfiguration {
+    
+    // Using static factory method
+    @Bean(name = "emailService")
+    public MessageService emailService() {
+        return MessageServiceFactory.createEmailService();
+    }
+    
+    @Bean(name = "smsService")
+    public MessageService smsService() {
+        return MessageServiceFactory.createSMSService();
+    }
+    
+    @Bean(name = "pushService")
+    public MessageService pushService() {
+        return MessageServiceFactory.createPushService();
+    }
+    
+    // Using instance factory method
+    @Bean
+    public PaymentProcessorFactory paymentFactory() {
+        return new PaymentProcessorFactory();
+    }
+    
+    @Bean(name = "creditCardProcessor")
+    public PaymentProcessor creditCardProcessor(PaymentProcessorFactory factory) {
+        return factory.createCreditCardProcessor();
+    }
+    
+    @Bean(name = "paypalProcessor")
+    public PaymentProcessor paypalProcessor(PaymentProcessorFactory factory) {
+        return factory.createPayPalProcessor();
+    }
+}
+
+// ============================================================================
+// 5. ADVANCED FACTORY BEAN WITH CONDITIONAL LOGIC
+// ============================================================================
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+
+// Cache service interface
+interface CacheService {
+    void put(String key, Object value);
+    Object get(String key);
+    void evict(String key);
+}
+
+// Redis cache implementation
+class RedisCacheService implements CacheService {
+    @Override
+    public void put(String key, Object value) {
+        System.out.println("Storing in Redis: " + key + " = " + value);
+    }
+    
+    @Override
+    public Object get(String key) {
+        System.out.println("Retrieving from Redis: " + key);
+        return "cached_value_" + key;
+    }
+    
+    @Override
+    public void evict(String key) {
+        System.out.println("Evicting from Redis: " + key);
+    }
+}
+
+// In-memory cache implementation
+class InMemoryCacheService implements CacheService {
+    private java.util.Map<String, Object> cache = new java.util.HashMap<>();
+    
+    @Override
+    public void put(String key, Object value) {
+        cache.put(key, value);
+        System.out.println("Storing in memory: " + key + " = " + value);
+    }
+    
+    @Override
+    public Object get(String key) {
+        System.out.println("Retrieving from memory: " + key);
+        return cache.get(key);
+    }
+    
+    @Override
+    public void evict(String key) {
+        cache.remove(key);
+        System.out.println("Evicting from memory: " + key);
+    }
+}
+
+// Advanced factory bean with environment-based selection
+@Component
+class CacheServiceFactoryBean implements FactoryBean<CacheService> {
+    
+    @Autowired
+    private Environment environment;
+    
+    @Value("${cache.type:memory}")
+    private String cacheType;
+    
+    @Value("${cache.redis.enabled:false}")
+    private boolean redisEnabled;
+    
+    @Override
+    public CacheService getObject() throws Exception {
+        // Check if running in production profile
+        boolean isProduction = java.util.Arrays.asList(environment.getActiveProfiles())
+                                .contains("production");
+        
+        if (isProduction && redisEnabled && "redis".equalsIgnoreCase(cacheType)) {
+            System.out.println("Creating Redis cache service for production");
+            return new RedisCacheService();
+        } else {
+            System.out.println("Creating in-memory cache service for development");
+            return new InMemoryCacheService();
+        }
+    }
+    
+    @Override
+    public Class<?> getObjectType() {
+        return CacheService.class;
+    }
+    
+    @Override
+    public boolean isSingleton() {
+        return true;
+    }
+}
+
+// ============================================================================
+// 6. SERVICE LAYER DEMONSTRATING FACTORY USAGE
+// ============================================================================
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+@Service
+class NotificationService {
+    
+    private final MessageService emailService;
+    private final MessageService smsService;
+    private final MessageService pushService;
+    
+    public NotificationService(
+            @Qualifier("emailService") MessageService emailService,
+            @Qualifier("smsService") MessageService smsService,
+            @Qualifier("pushService") MessageService pushService) {
+        this.emailService = emailService;
+        this.smsService = smsService;
+        this.pushService = pushService;
+    }
+    
+    public void sendNotification(String type, String message, String recipient) {
+        switch (type.toLowerCase()) {
+            case "email":
+                emailService.sendMessage(message, recipient);
+                break;
+            case "sms":
+                smsService.sendMessage(message, recipient);
+                break;
+            case "push":
+                pushService.sendMessage(message, recipient);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported notification type: " + type);
+        }
+    }
+}
+
+@Service
+class PaymentService {
+    
+    private final PaymentProcessor creditCardProcessor;
+    private final PaymentProcessor paypalProcessor;
+    
+    public PaymentService(
+            @Qualifier("creditCardProcessor") PaymentProcessor creditCardProcessor,
+            @Qualifier("paypalProcessor") PaymentProcessor paypalProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+        this.paypalProcessor = paypalProcessor;
+    }
+    
+    public boolean processPayment(String method, double amount, String currency) {
+        switch (method.toLowerCase()) {
+            case "creditcard":
+                return creditCardProcessor.processPayment(amount, currency);
+            case "paypal":
+                return paypalProcessor.processPayment(amount, currency);
+            default:
+                throw new IllegalArgumentException("Unsupported payment method: " + method);
+        }
+    }
+}
+
+@Service
+class DataService {
+    
+    private final DatabaseConnection databaseConnection;
+    private final CacheService cacheService;
+    
+    public DataService(DatabaseConnection databaseConnection, CacheService cacheService) {
+        this.databaseConnection = databaseConnection;
+        this.cacheService = cacheService;
+    }
+    
+    public void initializeService() {
+        System.out.println("Initializing Data Service...");
+        System.out.println("Database: " + databaseConnection.getConnectionInfo());
+        databaseConnection.connect();
+        
+        // Test cache
+        cacheService.put("test_key", "test_value");
+        Object cachedValue = cacheService.get("test_key");
+        System.out.println("Cached value: " + cachedValue);
+    }
+}
+
+// ============================================================================
+// 7. MAIN APPLICATION CLASS
+// ============================================================================
+
+@SpringBootApplication
+public class SpringFactoryPatternDemo {
+    
+    @Autowired
+    private NotificationService notificationService;
+    
+    @Autowired
+    private PaymentService paymentService;
+    
+    @Autowired
+    private DataService dataService;
+    
+    public static void main(String[] args) {
+        SpringApplication.run(SpringFactoryPatternDemo.class, args);
+    }
+    
+    @Bean
+    public org.springframework.boot.CommandLineRunner demo() {
+        return args -> {
+            System.out.println("\n=== Spring Factory Pattern Demo ===\n");
+            
+            // Initialize data service (demonstrates FactoryBean usage)
+            dataService.initializeService();
+            
+            System.out.println("\n--- Notification Service Demo ---");
+            notificationService.sendNotification("email", "Welcome!", "user@example.com");
+            notificationService.sendNotification("sms", "Code: 123456", "+1234567890");
+            notificationService.sendNotification("push", "New message", "user123");
+            
+            System.out.println("\n--- Payment Service Demo ---");
+            paymentService.processPayment("creditcard", 99.99, "USD");
+            paymentService.processPayment("paypal", 149.50, "EUR");
+            
+            System.out.println("\n=== Demo Complete ===");
+        };
+    }
+}
+
+// ============================================================================
+// 8. APPLICATION PROPERTIES EXAMPLE
+// ============================================================================
+
+/*
+# application.properties
+cache.type=redis
+cache.redis.enabled=true
+spring.profiles.active=production
+
+# For development, use:
+# cache.type=memory
+# cache.redis.enabled=false
+# spring.profiles.active=development
+*/
+
+// ============================================================================
+// KEY SPRING FACTORY PATTERN CONCEPTS DEMONSTRATED:
+// ============================================================================
+
+/*
+1. FACTORY BEAN (FactoryBean<T>):
+   - DatabaseConnectionFactoryBean: Creates database connections conditionally
+   - CacheServiceFactoryBean: Environment-aware cache service creation
+   - Implements getObject(), getObjectType(), and isSingleton()
+
+2. STATIC FACTORY METHODS:
+   - MessageServiceFactory: Static methods for creating message services
+   - Used with @Bean annotations in configuration classes
+   - No instance required, methods are static
+
+3. INSTANCE FACTORY METHODS:
+   - PaymentProcessorFactory: Instance methods for creating payment processors
+   - Factory instance injected into configuration
+   - Allows for stateful factory logic
+
+4. CONFIGURATION-BASED FACTORIES:
+   - @Configuration class with @Bean methods
+   - Qualifier-based bean selection
+   - Conditional bean creation
+
+5. DEPENDENCY INJECTION WITH FACTORIES:
+   - Services receive factory-created beans
+   - @Qualifier for selecting specific implementations
+   - Loose coupling between services and implementations
+
+6. ENVIRONMENT-AWARE FACTORIES:
+   - Profile-based bean selection
+   - Property-driven configuration
+   - Runtime environment adaptation
+
+BENEFITS DEMONSTRATED:
+- Loose coupling between classes
+- Easy testing with mock implementations
+- Configuration-driven object creation
+- Environment-specific implementations
+- Single responsibility principle
+- Open/closed principle compliance
+*/
