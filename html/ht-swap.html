@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTMX hx-swap Examples</title>
+    <script src="https://unpkg.com/htmx.org@1.5.0"></script>
+</head>
+<body>
+    <h1>HTMX hx-swap Examples</h1>
+    
+    <div id="example-innerHTML">
+        <button hx-get="/endpoint-inner" hx-target="#example-innerHTML .target" hx-swap="innerHTML">Swap with innerHTML</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <div id="example-outerHTML">
+        <button hx-get="/endpoint-outer" hx-target="#example-outerHTML .target" hx-swap="outerHTML">Swap with outerHTML</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <div id="example-beforebegin">
+        <button hx-get="/endpoint-beforebegin" hx-target="#example-beforebegin .target" hx-swap="beforebegin">Swap with beforebegin</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <div id="example-afterbegin">
+        <button hx-get="/endpoint-afterbegin" hx-target="#example-afterbegin .target" hx-swap="afterbegin">Swap with afterbegin</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <div id="example-beforeend">
+        <button hx-get="/endpoint-beforeend" hx-target="#example-beforeend .target" hx-swap="beforeend">Swap with beforeend</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <div id="example-afterend">
+        <button hx-get="/endpoint-afterend" hx-target="#example-afterend .target" hx-swap="afterend">Swap with afterend</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <div id="example-none">
+        <button hx-get="/endpoint-none" hx-target="#example-none .target" hx-swap="none">Swap with none</button>
+        <div class="target">Initial Content</div>
+    </div>
+
+    <!-- Dummy endpoint for demonstration purposes using a data URI -->
+    <script>
+        document.addEventListener("htmx:configRequest", function(evt) {
+            switch(evt.detail.path) {
+                case "/endpoint-inner":
+                    evt.detail.path = "data:text/html,<span>Replaced with inner content!</span>";
+                    break;
+                case "/endpoint-outer":
+                    evt.detail.path = "data:text/html,<div class='new-target'>Replaced whole element!</div>";
+                    break;
+                case "/endpoint-beforebegin":
+                    evt.detail.path = "data:text/html,<span>Inserted before element!</span>";
+                    break;
+                case "/endpoint-afterbegin":
+                    evt.detail.path = "data:text/html,<span>Inserted at the beginning!</span>";
+                    break;
+                case "/endpoint-beforeend":
+                    evt.detail.path = "data:text/html,<span>Inserted at the end!</span>";
+                    break;
+                case "/endpoint-afterend":
+                    evt.detail.path = "data:text/html,<span>Inserted after element!</span>";
+                    break;
+                case "/endpoint-none":
+                    evt.detail.path = "data:text/html,<span>No swap made!</span>";
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

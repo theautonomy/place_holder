@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTMX hx-trigger Examples</title>
+    <script src="https://unpkg.com/htmx.org@1.5.0"></script>
+</head>
+<body>
+    <h1>HTMX hx-trigger Examples</h1>
+
+    <!-- Standard Events -->
+    <div id="example-click">
+        <button hx-get="/endpoint-click" hx-trigger="click" hx-target="#example-click .response">Click Me</button>
+        <div class="response">Click - Initial Content</div>
+    </div>
+
+    <div id="example-change">
+        <select hx-get="/endpoint-change" hx-trigger="change" hx-target="#example-change .response">
+            <option value="1">Option 1</option>
+            <option value="2">Option 2</option>
+            <option value="3">Option 3</option>
+        </select>
+        <div class="response">Change - Initial Content</div>
+    </div>
+
+    <!-- "revealed" Event -->
+    <div id="example-revealed" style="margin-top: 200vh">
+        <div hx-get="/endpoint-revealed" hx-trigger="revealed" hx-target="#example-revealed .response">Scroll to reveal</div>
+        <div class="response">Revealed - Initial Content</div>
+    </div>
+
+    <!-- "every [time]" -->
+    <div id="example-every">
+        <div hx-get="/endpoint-every" hx-trigger="every 3s" hx-target="#example-every .response">Updating every 3 seconds</div>
+        <div class="response">Every 3s - Initial Content</div>
+    </div>
+
+    <!-- "poll [time]" -->
+    <div id="example-poll">
+        <div hx-get="/endpoint-poll" hx-trigger="poll 5s" hx-target="#example-poll .response">Polling every 5 seconds</div>
+        <div class="response">Poll 5s - Initial Content</div>
+    </div>
+
+    <!-- "delay [time]" -->
+    <div id="example-delay">
+        <button hx-get="/endpoint-delay" hx-trigger="click delay:1s" hx-target="#example-delay .response">Click Me with Delay</button>
+        <div class="response">click delay:1s - Initial Content</div>
+    </div>
+
+    <!-- Custom Events -->
+    <div id="example-custom">
+        <button onclick="document.getElementById('custom-event-target').dispatchEvent(new Event('custom-event'));">Trigger Custom Event</button>
+        <div id="custom-event-target" hx-get="/endpoint-custom" hx-trigger="custom-event" hx-target="#example-custom .response">Custom Event Target</div>
+        <div class="response">custom event -Initial Content</div>
+    </div>
+    <!-- "load" Event -->
+    <div id="example-load">
+        <div hx-get="/endpoint-load" hx-trigger="load" hx-target="#example-load .response">Loading...</div>
+        <div class="response">Load - Initial Content</div>
+    </div>
+
+
+    <!-- Dummy endpoint for demonstration purposes using a data URI -->
+    <script>
+        document.addEventListener("htmx:configRequest", function(evt) {
+            switch(evt.detail.path) {
+                case "/endpoint-click":
+                    evt.detail.path = "data:text/html,<span>Clicked!</span>";
+                    break;
+                case "/endpoint-change":
+                    evt.detail.path = "data:text/html,<span>Changed to Option " + evt.detail.parameters["this.options[this.selectedIndex].text"] + "!</span>";
+                    break;
+                case "/endpoint-load":
+                    evt.detail.path = "data:text/html,<span>Loaded!</span>";
+                    break;
+                case "/endpoint-revealed":
+                    evt.detail.path = "data:text/html,<span>Revealed on Scroll!</span>";
+                    break;
+                case "/endpoint-every":
+                    evt.detail.path = "data:text/html,<span>Updated!</span>";
+                    break;
+                case "/endpoint-poll":
+                    evt.detail.path = "data:text/html,<span>Polled Data!</span>";
+                    break;
+                case "/endpoint-delay":
+                    evt.detail.path = "data:text/html,<span>Clicked with Delay!</span>";
+                    break;
+                case "/endpoint-custom":
+                    evt.detail.path = "data:text/html,<span>Custom Event Triggered!</span>";
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

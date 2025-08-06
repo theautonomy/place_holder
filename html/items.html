@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details Display</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7fafc;
+            display: flex;
+            justify-content: center;
+            padding-top: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 70%;
+            max-width: 900px;
+            background-color: #edf2f7;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #4299e1;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .main-content {
+            display: flex;
+        }
+        .left-section, .right-section {
+            padding: 20px;
+        }
+        .left-section {
+            width: 40%;
+            background-color: #ebf8ff;
+            display: flex;
+            flex-direction: column;
+        }
+        .search-input {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .search-input:focus {
+            border-color: #4299e1;
+        }
+        .items-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .items-list ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .items-list li {
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            transition: background-color 0.3s;
+        }
+        .items-list li:hover {
+            background-color: #e2e8f0;
+        }
+        .items-list li.active {
+            background-color: #cbd5e0;
+        }
+        .pagination-controls {
+            display: flex;
+            justify-content: flex-start; /* Align to the left */
+            gap: 10px;
+        }
+        .pagination-controls button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: none;
+            transition: background-color 0.3s;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination-controls button:not(:disabled):hover {
+            background-color: #2b6cb0;
+        }
+        .right-section {
+            width: 60%;
+            background-color: #fff;
+            padding: 20px;
+        }
+        .card {
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        .icon-spacing {
+            margin-right: 0.5rem;
+        }
+        .details-title {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+        .vendor-list {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+        .detail-text {
+            margin: 10px 0;
+            line-height: 1.5;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">Item Management System</div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Section -->
+            <div class="left-section">
+                <h2>Items List</h2>
+                <input type="text" class="search-input" id="searchInput" oninput="filterItems()" placeholder="Search items...">
+                <div class="items-list">
+                    <ul id="itemList"></ul>
+                </div>
+                <div class="pagination-controls">
+                    <button id="prevPage" onclick="prevPage()" disabled>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span id="pageInfo"></span>
+                    <button id="nextPage" onclick="nextPage()" disabled>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Right Section -->
+            <div class="right-section">
+                <h2>Item Details</h2> 
+                <div id="itemDetails" class="card">
+                    <h3>Select an item from the list</h3>
+                    <div id="detailsContent">
+                        <!-- Details will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample items with additional details
+        const items = [...Array(25).keys()].map(i => ({
+            id: `item${i + 1}`,
+            name: `Item ${i + 1}`,
+            description: `This is the detailed description for Item ${i + 1}.`,
+            category: `Category ${Math.ceil((i + 1) / 5)}`,
+            vendors: [`Vendor A${i + 1}`, `Vendor B${i + 1}`, `Vendor C${i + 1}`]
+        }));
+
+        const pageSize = 10;
+        let currentPage = 1;
+        let filteredItems = [...items];
+
+        function renderItems(itemsToRender = filteredItems) {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = '';
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageItems = itemsToRender.slice(start, end);
+
+            pageItems.forEach(item => {
+                const itemElement = document.createElement('li');
+                itemElement.id = item.id; // Set the ID for the list item
+                itemElement.innerHTML = `<i class="fas fa-info-circle icon-spacing"></i> <span>${item.name}</span>`;
+                itemElement.onclick = () => {
+                    showDetails(item.id);
+                    setActiveItem(item.id);
+                };
+                itemList.appendChild(itemElement);
+            });
+
+            for (let i = pageItems.length; i < pageSize; i++) {
+                const placeholder = document.createElement('li');
+                placeholder.className = 'invisible';
+                placeholder.style.height = '32px';  // Ensure placeholders keep the same height as list items
+                itemList.appendChild(placeholder);
+            }
+
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${Math.ceil(itemsToRender.length / pageSize)}`;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage * pageSize >= itemsToRender.length;
+        }
+
+        function filterItems() {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            filteredItems = items.filter(item => item.name.toLowerCase().includes(searchQuery));
+            currentPage = 1;
+            renderItems();
+        }
+
+        function showDetails(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+                document.getElementById('itemDetails').innerHTML = `
+                    <div class="card">
+                        <h3>${item.name}</h3>
+                        <p class="detail-text">${item.description}</p>
+                        <p class="details-title">Category:</p>
+                        <p class="detail-text">${item.category}</p>
+                        <p class="details-title">Vendors:</p>
+                        <ul class="vendor-list detail-text">
+                            ${item.vendors.map(vendor => `<li>${vendor}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        function setActiveItem(itemId) {
+            const items = document.querySelectorAll('.items-list li');
+            items.forEach(item => item.classList.remove('active'));
+            const activeItem = document.getElementById(itemId);
+            if(activeItem) {
+                activeItem.classList.add('active');
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderItems();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage * pageSize < filteredItems.length) {
+                currentPage++;
+                renderItems();
+            }
+        }
+
+        renderItems(); // Initial render
+    </script>
+</body>
+</html>
