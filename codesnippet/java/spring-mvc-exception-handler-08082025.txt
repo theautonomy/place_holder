@@ -1,0 +1,1296 @@
+// ============================================================================
+// TRADITIONAL MVC CONTROLLER WITH CONTROLLER-LEVEL EXCEPTION HANDLERS
+// ============================================================================
+
+@Controller
+@RequestMapping("/users")
+@Slf4j
+public class UserMvcController {
+    
+    @Autowired
+    private UserService userService;
+    
+    // ========================================================================
+    // CONTROLLER-LEVEL EXCEPTION HANDLERS FOR MVC
+    // These handlers only apply to this specific controller and return ModelAndView
+    // ========================================================================
+    
+    /**
+     * Controller-specific handler for UserOperationException in MVC context
+     * Returns a custom error page with operation details
+     */
+    @ExceptionHandler(UserOperationException.class)
+    public ModelAndView handleUserOperationExceptionMvc(UserOperationException ex, HttpServletRequest request) {
+        log.error("User operation failed in MVC - Operation: {}, UserID: {}, Error: {}", 
+            ex.getOperation(), ex.getUserId(), ex.getMessage(), ex);
+        
+        ModelAndView mav = new ModelAndView("error/operation-failed");
+        mav.addObject("error", "User Operation Failed");
+        mav.addObject("message", ex.getMessage());
+        mav.addObject("operation", ex.getOperation());
+        mav.addObject("userId", ex.getUserId());
+        mav.addObject("timestamp", java.time.Instant.now().toString());
+        mav.setStatus(HttpStatus.CONFLICT);
+        
+        return mav;
+    }
+    
+    /**
+     * Controller-specific handler for FileProcessingException in MVC context
+     */
+    @ExceptionHandler(FileProcessingException.class)
+    public ModelAndView handleFileProcessingExceptionMvc(FileProcessingException ex, HttpServletRequest request) {
+        log.error("File processing failed in MVC - File: {}, Type: {}, Error: {}", 
+            ex.getFileName(), ex.getFileType(), ex.getMessage(), ex);
+        
+        ModelAndView mav = new ModelAndView("error/file-processing-error");
+        mav.addObject("error", "File Processing Error");
+        mav.addObject("message", ex.getMessage());
+        mav.addObject("fileName", ex.getFileName());
+        mav.addObject("fileType", ex.getFileType());
+        mav.setStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        
+        return mav;
+    }
+    
+    /**
+     * Controller-specific handler for IllegalArgumentException in MVC
+     * This shows how to handle validation errors with custom error pages
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ModelAndView handleIllegalArgumentMvc(IllegalArgumentException ex, HttpServletRequest request) {
+        log.error("Invalid argument in UserMvcController: {}", ex.getMessage(), ex);
+        
+        ModelAndView mav = new ModelAndView("error/invalid-argument");
+        mav.addObject("error", "Invalid Request");
+        mav.addObject("message", "Invalid argument provided: " + ex.getMessage());
+        mav.addObject("backUrl", "/users");
+        mav.setStatus(HttpStatus.BAD_REQUEST);
+        
+        return mav;
+    }
+    
+    /**
+     * Controller-specific handler for BindException (form binding errors)
+     * This is specific to MVC form submissions
+     */
+    @ExceptionHandler(BindException.class)
+    public ModelAndView handleBindExceptionMvc(BindException ex, HttpServletRequest request) {
+        log.error("Form binding error in UserMvcController", ex);
+        
+        ModelAndView mav = new ModelAndView("error/form-binding-error");
+        mav.addObject("error", "Form Validation Error");
+        mav.addObject("message", "There were errors in the form submission");
+        
+        // Extract field errors for display
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> 
+            fieldErrors.put(error.getField(), error.getDefaultMessage())
+        );
+        mav.addObject("fieldErrors", fieldErrors);
+        mav.addObject("backUrl", request.getHeader("Referer"));
+        mav.setStatus(HttpStatus.BAD_REQUEST);
+        
+        return mav;
+    }
+    
+    // ========================================================================
+    // CONTROLLER METHODS THAT CAN THROW CONTROLLER-SPECIFIC EXCEPTIONS
+    // ========================================================================
+    
+    // GET /users - List all users
+    @GetMapping
+    public String listUsers(Model model) {
+        log.info("Listing all users in MVC");
+        List<User> users = userService.findAll();
+        model.addAttribute("users", users);
+        return "users/list";
+    }
+    
+    // GET /users/{id} - View user details
+    @GetMapping("/{id}")
+    public String viewUser(@PathVariable String id, Model model) {
+        log.info("Viewing user with ID: {} in MVC", id);
+        User user = userService.findById(id);
+        model.addAttribute("user", user);
+        return "users/view";
+    }
+    
+    // GET /users/new - Show create user form
+    @GetMapping("/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("user", new User());
+        return "users/create";
+    }
+    
+    // POST /users - Create new user with Bean Validation
+    @PostMapping
+    public String createUser(@Valid @ModelAttribute("user") User user, 
+                           BindingResult bindingResult, 
+                           Model model, 
+                           RedirectAttributes redirectAttributes) {
+        log.info("Creating user via MVC: {}", user.getName());
+        
+        // Check for validation errors
+        if (bindingResult.hasErrors()) {
+            log.warn("Validation errors during user creation: {}", bindingResult.getAllErrors());
+            model.addAttribute("user", user);
+            return "users/create";
+        }
+        
+        try {
+            User createdUser = userService.createUser(user);
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "User created successfully: " + createdUser.getName());
+            return "redirect:/users";
+        } catch (InvalidUserDataException ex) {
+            log.error("Business validation error in user creation: {}", ex.getMessage(), ex);
+            model.addAttribute("user", user);
+            
+            // Add custom validation errors to binding result
+            ex.getErrors().forEach((field, message) -> {
+                bindingResult.rejectValue(field, "error." + field, message);
+            });
+            
+            return "users/create";
+        }
+    }
+    
+    // GET /users/{id}/edit - Show edit user form
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable String id, Model model) {
+        log.info("Showing edit form for user ID: {}", id);
+        User user = userService.findById(id);
+        model.addAttribute("user", user);
+        return "users/edit";
+    }
+    
+    // POST /users/{id} - Update user with validation
+    @PostMapping("/{id}")
+    public String updateUser(@PathVariable String id,
+                           @Valid @ModelAttribute("user") User user,
+                           BindingResult bindingResult,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
+        log.info("Updating user ID: {} via MVC", id);
+        
+        if (bindingResult.hasErrors()) {
+            log.warn("Validation errors during user update: {}", bindingResult.getAllErrors());
+            user.setId(id); // Ensure ID is set for the form
+            model.addAttribute("user", user);
+            return "users/edit";
+        }
+        
+        try {
+            user.setId(id); // Ensure ID matches path variable
+            User updatedUser// ============================================================================
+// CUSTOM EXCEPTIONS
+// ============================================================================
+
+// Business logic exception
+public class UserNotFoundException extends RuntimeException {
+    private final String userId;
+    
+    public UserNotFoundException(String userId) {
+        super("User not found with ID: " + userId);
+        this.userId = userId;
+    }
+    
+    public String getUserId() {
+        return userId;
+    }
+}
+
+// Validation exception
+public class InvalidUserDataException extends RuntimeException {
+    private final Map<String, String> errors;
+    
+    public InvalidUserDataException(String message, Map<String, String> errors) {
+        super(message);
+        this.errors = errors;
+    }
+    
+    public Map<String, String> getErrors() {
+        return errors;
+    }
+}
+
+// Business operation exception
+public class UserOperationException extends RuntimeException {
+    private final String operation;
+    private final String userId;
+    
+    public UserOperationException(String operation, String userId, String message) {
+        super(message);
+        this.operation = operation;
+        this.userId = userId;
+    }
+    
+    public UserOperationException(String operation, String userId, String message, Throwable cause) {
+        super(message, cause);
+        this.operation = operation;
+        this.userId = userId;
+    }
+    
+    public String getOperation() { return operation; }
+    public String getUserId() { return userId; }
+}
+
+// File processing exception
+public class FileProcessingException extends RuntimeException {
+    private final String fileName;
+    private final String fileType;
+    
+    public FileProcessingException(String fileName, String fileType, String message) {
+        super(message);
+        this.fileName = fileName;
+        this.fileType = fileType;
+    }
+    
+    public FileProcessingException(String fileName, String fileType, String message, Throwable cause) {
+        super(message, cause);
+        this.fileName = fileName;
+        this.fileType = fileType;
+    }
+    
+    public String getFileName() { return fileName; }
+    public String getFileType() { return fileType; }
+}
+
+// ============================================================================
+// ERROR RESPONSE MODELS
+// ============================================================================
+
+// Standard error response for APIs
+public class ErrorResponse {
+    private String error;
+    private String message;
+    private int status;
+    private long timestamp;
+    private String path;
+    private Map<String, String> validationErrors;
+    
+    public ErrorResponse(String error, String message, int status, String path) {
+        this.error = error;
+        this.message = message;
+        this.status = status;
+        this.path = path;
+        this.timestamp = System.currentTimeMillis();
+    }
+    
+    // Getters and setters
+    public String getError() { return error; }
+    public void setError(String error) { this.error = error; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public int getStatus() { return status; }
+    public void setStatus(int status) { this.status = status; }
+    public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+    public String getPath() { return path; }
+    public void setPath(String path) { this.path = path; }
+    public Map<String, String> getValidationErrors() { return validationErrors; }
+    public void setValidationErrors(Map<String, String> validationErrors) { 
+        this.validationErrors = validationErrors; 
+    }
+}
+
+// User model with Bean Validation annotations
+public class User {
+    @NotNull(message = "ID cannot be null")
+    @NotBlank(message = "ID cannot be blank")
+    @Size(min = 1, max = 10, message = "ID must be between 1 and 10 characters")
+    private String id;
+    
+    @NotNull(message = "Name cannot be null")
+    @NotBlank(message = "Name cannot be blank")
+    @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
+    @Pattern(regexp = "^[a-zA-Z\\s]+$", message = "Name can only contain letters and spaces")
+    private String name;
+    
+    @NotNull(message = "Email cannot be null")
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Email must be valid")
+    @Size(max = 100, message = "Email cannot exceed 100 characters")
+    private String email;
+    
+    @Min(value = 18, message = "Age must be at least 18")
+    @Max(value = 120, message = "Age cannot exceed 120")
+    private Integer age;
+    
+    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Phone number must be valid")
+    private String phone;
+    
+    // Constructors
+    public User() {}
+    
+    public User(String id, String name, String email) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+    }
+    
+    public User(String id, String name, String email, Integer age, String phone) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.age = age;
+        this.phone = phone;
+    }
+    
+    // Getters and setters
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+}
+
+// ============================================================================
+// SERVICE LAYER
+// ============================================================================
+
+@Service
+public class UserService {
+    private Map<String, User> users = new HashMap<>();
+    
+    @Autowired
+    private Validator validator;
+    
+    public UserService() {
+        // Initialize with sample data
+        users.put("1", new User("1", "John Doe", "john@example.com", 30, "+1234567890"));
+        users.put("2", new User("2", "Jane Smith", "jane@example.com", 25, "+1987654321"));
+    }
+    
+    public User findById(String id) {
+        User user = users.get(id);
+        if (user == null) {
+            throw new UserNotFoundException(id);
+        }
+        return user;
+    }
+    
+    public User createUser(User user) {
+        // Check if user with same ID already exists (business rule validation)
+        if (users.containsKey(user.getId())) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("id", "User with this ID already exists");
+            throw new InvalidUserDataException("User already exists", errors);
+        }
+        
+        // Programmatic Bean Validation (alternative to @Valid in controller)
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        if (!violations.isEmpty()) {
+            Map<String, String> errors = new HashMap<>();
+            violations.forEach(violation -> 
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage())
+            );
+            throw new InvalidUserDataException("Validation failed", errors);
+        }
+        
+        users.put(user.getId(), user);
+        return user;
+    }
+    
+    public User updateUser(String id, User userUpdates) {
+        User existingUser = findById(id); // Will throw if not found
+        
+        // Update only non-null fields
+        if (userUpdates.getName() != null) {
+            existingUser.setName(userUpdates.getName());
+        }
+        if (userUpdates.getEmail() != null) {
+            existingUser.setEmail(userUpdates.getEmail());
+        }
+        if (userUpdates.getAge() != null) {
+            existingUser.setAge(userUpdates.getAge());
+        }
+        if (userUpdates.getPhone() != null) {
+            existingUser.setPhone(userUpdates.getPhone());
+        }
+        
+        // Validate the updated user
+        Set<ConstraintViolation<User>> violations = validator.validate(existingUser);
+        if (!violations.isEmpty()) {
+            Map<String, String> errors = new HashMap<>();
+            violations.forEach(violation -> 
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage())
+            );
+            throw new InvalidUserDataException("Validation failed for update", errors);
+        }
+        
+        users.put(id, existingUser);
+        return existingUser;
+    }
+    
+    public List<User> findAll() {
+        return new ArrayList<>(users.values());
+    }
+    
+    public void deleteUser(String id) {
+        User user = findById(id); // Will throw if not found
+        users.remove(id);
+    }
+}
+
+// ============================================================================
+// GLOBAL EXCEPTION HANDLER
+// ============================================================================
+
+@ControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+    
+    // Handle custom business exceptions for REST APIs
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ErrorResponse handleUserNotFound(UserNotFoundException ex, HttpServletRequest request) {
+        log.error("User not found: {}", ex.getUserId(), ex);
+        return new ErrorResponse(
+            "USER_NOT_FOUND",
+            ex.getMessage(),
+            HttpStatus.NOT_FOUND.value(),
+            request.getRequestURI()
+        );
+    }
+    
+    // Handle validation exceptions for REST APIs
+    @ExceptionHandler(InvalidUserDataException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorResponse handleInvalidUserData(InvalidUserDataException ex, HttpServletRequest request) {
+        log.error("Invalid user data: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(
+            "VALIDATION_ERROR",
+            ex.getMessage(),
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+        errorResponse.setValidationErrors(ex.getErrors());
+        return errorResponse;
+    }
+    
+    // Handle Spring Bean Validation errors (@Valid annotation)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorResponse handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.error("Bean validation error", ex);
+        Map<String, String> errors = new HashMap<>();
+        
+        // Handle field errors
+        ex.getBindingResult().getFieldErrors().forEach(error -> 
+            errors.put(error.getField(), error.getDefaultMessage())
+        );
+        
+        // Handle global errors (class-level validations)
+        ex.getBindingResult().getGlobalErrors().forEach(error -> 
+            errors.put(error.getObjectName(), error.getDefaultMessage())
+        );
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "VALIDATION_ERROR",
+            "Request validation failed",
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+        errorResponse.setValidationErrors(errors);
+        return errorResponse;
+    }
+    
+    // Handle constraint violation exceptions (for @Validated on service methods)
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorResponse handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
+        log.error("Constraint violation error", ex);
+        Map<String, String> errors = new HashMap<>();
+        
+        ex.getConstraintViolations().forEach(violation -> {
+            String propertyPath = violation.getPropertyPath().toString();
+            // Extract just the property name (remove method name prefix)
+            String fieldName = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
+            errors.put(fieldName, violation.getMessage());
+        });
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "CONSTRAINT_VIOLATION",
+            "Constraint validation failed",
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+        errorResponse.setValidationErrors(errors);
+        return errorResponse;
+    }
+    
+    // Handle HTTP message not readable (malformed JSON)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorResponse handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.error("Malformed JSON request", ex);
+        String message = "Malformed JSON request";
+        
+        // Try to provide more specific error message
+        if (ex.getCause() instanceof JsonParseException) {
+            message = "Invalid JSON syntax";
+        } else if (ex.getCause() instanceof JsonMappingException) {
+            message = "JSON mapping error: " + ex.getCause().getMessage();
+        }
+        
+        return new ErrorResponse(
+            "MALFORMED_REQUEST",
+            message,
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+    }
+    
+    // Handle missing request parameters
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorResponse handleMissingParams(MissingServletRequestParameterException ex, HttpServletRequest request) {
+        log.error("Missing request parameter", ex);
+        Map<String, String> errors = new HashMap<>();
+        errors.put(ex.getParameterName(), "Parameter '" + ex.getParameterName() + "' is required");
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "MISSING_PARAMETER",
+            "Required parameter is missing",
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+        errorResponse.setValidationErrors(errors);
+        return errorResponse;
+    }
+    
+    // Handle method argument type mismatch
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorResponse handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        log.error("Method argument type mismatch", ex);
+        Map<String, String> errors = new HashMap<>();
+        errors.put(ex.getName(), String.format("Invalid value '%s' for parameter '%s'. Expected type: %s", 
+            ex.getValue(), ex.getName(), ex.getRequiredType().getSimpleName()));
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "TYPE_MISMATCH",
+            "Invalid parameter type",
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+        errorResponse.setValidationErrors(errors);
+        return errorResponse;
+    }
+    
+    // Handle generic exceptions for REST APIs
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public ErrorResponse handleGenericException(Exception ex, HttpServletRequest request) {
+        log.error("Unexpected error occurred", ex);
+        return new ErrorResponse(
+            "INTERNAL_ERROR",
+            "An unexpected error occurred",
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            request.getRequestURI()
+        );
+    }
+    
+    // ========================================================================
+    // EXCEPTION HANDLERS FOR @CONTROLLER (Traditional MVC)
+    // ========================================================================
+    
+    // Handle UserNotFoundException for traditional MVC (returns view)
+    @ExceptionHandler(UserNotFoundException.class)
+    public ModelAndView handleUserNotFoundMvc(UserNotFoundException ex, HttpServletRequest request) {
+        // Only handle if request is for HTML content (not API)
+        String acceptHeader = request.getHeader("Accept");
+        if (acceptHeader != null && acceptHeader.contains("text/html")) {
+            log.error("User not found in MVC context: {}", ex.getUserId(), ex);
+            ModelAndView mav = new ModelAndView("error/404");
+            mav.addObject("error", "User Not Found");
+            mav.addObject("message", ex.getMessage());
+            mav.addObject("userId", ex.getUserId());
+            mav.setStatus(HttpStatus.NOT_FOUND);
+            return mav;
+        }
+        // Let the REST handler take care of JSON responses
+        throw ex;
+    }
+    
+    // Handle validation errors for traditional MVC
+    @ExceptionHandler(InvalidUserDataException.class)
+    public ModelAndView handleInvalidUserDataMvc(InvalidUserDataException ex, HttpServletRequest request) {
+        String acceptHeader = request.getHeader("Accept");
+        if (acceptHeader != null && acceptHeader.contains("text/html")) {
+            log.error("Invalid user data in MVC context: {}", ex.getMessage(), ex);
+            ModelAndView mav = new ModelAndView("error/validation");
+            mav.addObject("error", "Validation Error");
+            mav.addObject("message", ex.getMessage());
+            mav.addObject("validationErrors", ex.getErrors());
+            mav.setStatus(HttpStatus.BAD_REQUEST);
+            return mav;
+        }
+        throw ex;
+    }
+    
+    // Handle generic errors for traditional MVC
+    @ExceptionHandler(Exception.class)
+    public ModelAndView handleGenericMvcException(Exception ex, HttpServletRequest request) {
+        String acceptHeader = request.getHeader("Accept");
+        if (acceptHeader != null && acceptHeader.contains("text/html")) {
+            log.error("Unexpected error in MVC context", ex);
+            ModelAndView mav = new ModelAndView("error/500");
+            mav.addObject("error", "Internal Server Error");
+            mav.addObject("message", "An unexpected error occurred");
+            mav.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            return mav;
+        }
+        throw ex;
+    }
+}
+
+// ============================================================================
+// REST CONTROLLER (@RestController)
+// ============================================================================
+
+// ============================================================================
+// REST CONTROLLER WITH CONTROLLER-LEVEL EXCEPTION HANDLERS
+// ============================================================================
+
+@RestController
+@RequestMapping("/api/users")
+@Slf4j
+@Validated  // Enable method-level validation
+public class UserRestController {
+    
+    @Autowired
+    private UserService userService;
+    
+    // ========================================================================
+    // CONTROLLER-LEVEL EXCEPTION HANDLERS (@ExceptionHandler at controller level)
+    // These handlers only apply to this specific controller
+    // ========================================================================
+    
+    /**
+     * Controller-specific handler for UserOperationException
+     * This handler takes precedence over global handlers for this controller
+     */
+    @ExceptionHandler(UserOperationException.class)
+    public ResponseEntity<ErrorResponse> handleUserOperationException(
+            UserOperationException ex, HttpServletRequest request) {
+        log.error("User operation failed - Operation: {}, UserID: {}, Error: {}", 
+            ex.getOperation(), ex.getUserId(), ex.getMessage(), ex);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "USER_OPERATION_FAILED",
+            String.format("Operation '%s' failed for user '%s': %s", 
+                ex.getOperation(), ex.getUserId(), ex.getMessage()),
+            HttpStatus.CONFLICT.value(),
+            request.getRequestURI()
+        );
+        
+        // Add operation-specific metadata
+        Map<String, String> operationDetails = new HashMap<>();
+        operationDetails.put("operation", ex.getOperation());
+        operationDetails.put("userId", ex.getUserId());
+        operationDetails.put("timestamp", java.time.Instant.now().toString());
+        errorResponse.setValidationErrors(operationDetails);
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    
+    /**
+     * Controller-specific handler for FileProcessingException
+     * Only applies to file operations in this controller
+     */
+    @ExceptionHandler(FileProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleFileProcessingException(
+            FileProcessingException ex, HttpServletRequest request) {
+        log.error("File processing failed - File: {}, Type: {}, Error: {}", 
+            ex.getFileName(), ex.getFileType(), ex.getMessage(), ex);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "FILE_PROCESSING_ERROR",
+            String.format("Failed to process %s file '%s': %s", 
+                ex.getFileType(), ex.getFileName(), ex.getMessage()),
+            HttpStatus.UNPROCESSABLE_ENTITY.value(),
+            request.getRequestURI()
+        );
+        
+        Map<String, String> fileDetails = new HashMap<>();
+        fileDetails.put("fileName", ex.getFileName());
+        fileDetails.put("fileType", ex.getFileType());
+        errorResponse.setValidationErrors(fileDetails);
+        
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
+    }
+    
+    /**
+     * Controller-specific handler for IllegalArgumentException
+     * This overrides the global handler for this controller only
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex, HttpServletRequest request) {
+        log.error("Invalid argument in UserRestController: {}", ex.getMessage(), ex);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            "INVALID_USER_ARGUMENT",
+            "Invalid argument provided to user operation: " + ex.getMessage(),
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+        );
+        
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+    
+    /**
+     * Controller-specific handler for multiple exception types
+     */
+    @ExceptionHandler({NullPointerException.class, IllegalStateException.class})
+    public ResponseEntity<ErrorResponse> handleStateExceptions(
+            RuntimeException ex, HttpServletRequest request) {
+        log.error("State exception in UserRestController: {}", ex.getClass().getSimpleName(), ex);
+        
+        String errorCode = ex instanceof NullPointerException ? "NULL_REFERENCE" : "ILLEGAL_STATE";
+        String message = ex instanceof NullPointerException ? 
+            "Unexpected null reference in user operation" : 
+            "Invalid state for user operation: " + ex.getMessage();
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            errorCode,
+            message,
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            request.getRequestURI()
+        );
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+    
+    // ========================================================================
+    // CONTROLLER METHODS THAT CAN THROW CONTROLLER-SPECIFIC EXCEPTIONS
+    // ========================================================================
+    
+    // GET /api/users
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        log.info("Fetching all users");
+        List<User> users = userService.findAll();
+        return ResponseEntity.ok(users);
+    }
+    
+    // GET /api/users/{id} with path variable validation
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(
+            @PathVariable 
+            @NotBlank(message = "User ID cannot be blank")
+            @Size(min = 1, max = 10, message = "User ID must be between 1 and 10 characters")
+            String id) {
+        log.info("Fetching user with ID: {}", id);
+        User user = userService.findById(id);
+        return ResponseEntity.ok(user);
+    }
+    
+    // POST /api/users - Create new user with full Bean Validation
+    @PostMapping
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+        log.info("Creating new user: {}", user.getName());
+        User createdUser = userService.createUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+    
+    // PUT /api/users/{id} - Update user with validation
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable 
+            @NotBlank(message = "User ID cannot be blank")
+            String id, 
+            @Valid @RequestBody User user) {
+        log.info("Updating user with ID: {}", id);
+        User updatedUser = userService.updateUser(id, user);
+        return ResponseEntity.ok(updatedUser);
+    }
+    
+    // POST /api/users/{id}/activate - Method that throws controller-specific exception
+    @PostMapping("/{id}/activate")
+    public ResponseEntity<Map<String, String>> activateUser(@PathVariable String id) {
+        log.info("Activating user with ID: {}", id);
+        
+        try {
+            User user = userService.findById(id);
+            
+            // Simulate business logic that can fail with controller-specific exception
+            if (user.getAge() != null && user.getAge() < 18) {
+                throw new UserOperationException("ACTIVATE", id, "Cannot activate users under 18 years old");
+            }
+            
+            // Simulate activation logic
+            Map<String, String> result = new HashMap<>();
+            result.put("status", "activated");
+            result.put("userId", id);
+            result.put("activatedAt", java.time.Instant.now().toString());
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (UserNotFoundException ex) {
+            // Let global handler deal with this
+            throw ex;
+        }
+    }
+    
+    // POST /api/users/{id}/suspend - Another operation-specific method
+    @PostMapping("/{id}/suspend")
+    public ResponseEntity<Map<String, String>> suspendUser(
+            @PathVariable String id,
+            @RequestParam(required = false) String reason) {
+        log.info("Suspending user with ID: {} for reason: {}", id, reason);
+        
+        User user = userService.findById(id);
+        
+        // Validate suspension reason
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Suspension reason is required");
+        }
+        
+        if (reason.length() < 10) {
+            throw new UserOperationException("SUSPEND", id, 
+                "Suspension reason must be at least 10 characters long");
+        }
+        
+        Map<String, String> result = new HashMap<>();
+        result.put("status", "suspended");
+        result.put("userId", id);
+        result.put("reason", reason);
+        result.put("suspendedAt", java.time.Instant.now().toString());
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    // POST /api/users/import - File processing endpoint
+    @PostMapping("/import")
+    public ResponseEntity<Map<String, Object>> importUsers(
+            @RequestParam("file") String fileName,
+            @RequestParam("format") String format,
+            @RequestBody String fileContent) {
+        log.info("Importing users from file: {} with format: {}", fileName, format);
+        
+        try {
+            // Simulate file validation
+            if (!format.equalsIgnoreCase("json") && !format.equalsIgnoreCase("csv")) {
+                throw new FileProcessingException(fileName, format, 
+                    "Unsupported file format. Only JSON and CSV are supported");
+            }
+            
+            if (fileContent == null || fileContent.trim().isEmpty()) {
+                throw new FileProcessingException(fileName, format, "File content is empty");
+            }
+            
+            // Simulate file processing logic
+            int importedCount = fileContent.split("\n").length;
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("importedCount", importedCount);
+            result.put("fileName", fileName);
+            result.put("format", format);
+            result.put("processedAt", java.time.Instant.now().toString());
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception ex) {
+            // Wrap unexpected exceptions in FileProcessingException
+            if (!(ex instanceof FileProcessingException)) {
+                throw new FileProcessingException(fileName, format, 
+                    "Unexpected error during file processing", ex);
+            }
+            throw ex;
+        }
+    }
+    
+    // DELETE /api/users/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable 
+            @NotBlank(message = "User ID cannot be blank")
+            String id) {
+        log.info("Deleting user with ID: {}", id);
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+    
+    // GET /api/users/search - Request parameter validation
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsers(
+            @RequestParam 
+            @NotBlank(message = "Search term cannot be blank")
+            @Size(min = 2, message = "Search term must be at least 2 characters")
+            String term,
+            @RequestParam(defaultValue = "0") 
+            @Min(value = 0, message = "Page must be non-negative")
+            int page,
+            @RequestParam(defaultValue = "10") 
+            @Min(value = 1, message = "Size must be positive")
+            @Max(value = 100, message = "Size cannot exceed 100")
+            int size) {
+        log.info("Searching users with term: {}, page: {}, size: {}", term, page, size);
+        
+        // Simulate potential state exception
+        if (page > 1000) {
+            throw new IllegalStateException("Page number too high for efficient processing");
+        }
+        
+        List<User> users = userService.findAll(); // Simplified for demo
+        return ResponseEntity.ok(users);
+    }
+    
+    // POST /api/users/batch
+    @PostMapping("/batch")
+    public ResponseEntity<List<User>> createUsers(@Valid @RequestBody List<User> users) {
+        log.info("Creating {} users in batch", users.size());
+        
+        if (users.size() > 50) {
+            throw new InvalidUserDataException("Batch size cannot exceed 50 users", 
+                Map.of("batchSize", "Maximum 50 users allowed per batch"));
+        }
+        
+        List<User> createdUsers = new ArrayList<>();
+        for (User user : users) {
+            createdUsers.add(userService.createUser(user));
+        }
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);
+    }
+    
+    // GET /api/users/{id}/details - This method demonstrates that global handlers 
+    // still work for exceptions not handled at controller level
+    @GetMapping("/{id}/details")
+    public ResponseEntity<?> getUserDetails(@PathVariable String id) {
+        try {
+            User user = userService.findById(id);
+            Map<String, Object> details = new HashMap<>();
+            details.put("user", user);
+            details.put("lastLogin", "2024-01-15T10:30:00Z");
+            details.put("accountStatus", "ACTIVE");
+            return ResponseEntity.ok(details);
+        } catch (UserNotFoundException ex) {
+            // This will be handled by the GLOBAL exception handler
+            // since we don't have a controller-level handler for UserNotFoundException
+            log.error("User details not found: {}", id, ex);
+            throw ex; // Re-throw to let global handler deal with it
+        }
+    }
+}
+
+// ============================================================================
+// TRADITIONAL MVC CONTROLLER (@Controller)
+// ============================================================================
+
+@Controller
+@RequestMapping("/users")
+@Slf4j
+public class UserMvcController {
+    
+    @Autowired
+    private UserService userService;
+    
+    // GET /users - List all users
+    @GetMapping
+    public String listUsers(Model model) {
+        log.info("Listing all users in MVC");
+        List<User> users = userService.findAll();
+        model.addAttribute("users", users);
+        return "users/list";
+    }
+    
+    // GET /users/{id} - View user details
+    @GetMapping("/{id}")
+    public String viewUser(@PathVariable String id, Model model) {
+        log.info("Viewing user with ID: {} in MVC", id);
+        User user = userService.findById(id);
+        model.addAttribute("user", user);
+        return "users/view";
+    }
+    
+    // GET /users/new - Show create user form
+    @GetMapping("/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("user", new User());
+        return "users/create";
+    }
+    
+    // POST /users - Create new user with Bean Validation
+    @PostMapping
+    public String createUser(@Valid @ModelAttribute("user") User user, 
+                           BindingResult bindingResult, 
+                           Model model, 
+                           RedirectAttributes redirectAttributes) {
+        log.info("Creating user via MVC: {}", user.getName());
+        
+        // Check for validation errors
+        if (bindingResult.hasErrors()) {
+            log.warn("Validation errors during user creation: {}", bindingResult.getAllErrors());
+            model.addAttribute("user", user);
+            return "users/create";
+        }
+        
+        try {
+            User createdUser = userService.createUser(user);
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "User created successfully: " + createdUser.getName());
+            return "redirect:/users";
+        } catch (InvalidUserDataException ex) {
+            log.error("Business validation error in user creation: {}", ex.getMessage(), ex);
+            model.addAttribute("user", user);
+            
+            // Add custom validation errors to binding result
+            ex.getErrors().forEach((field, message) -> {
+                bindingResult.rejectValue(field, "error." + field, message);
+            });
+            
+            return "users/create";
+        }
+    }
+    
+    // GET /users/{id}/edit - Show edit user form
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable String id, Model model) {
+        log.info("Showing edit form for user ID: {}", id);
+        User user = userService.findById(id);
+        model.addAttribute("user", user);
+        return "users/edit";
+    }
+    
+    // POST /users/{id} - Update user with validation
+    @PostMapping("/{id}")
+    public String updateUser(@PathVariable String id,
+                           @Valid @ModelAttribute("user") User user,
+                           BindingResult bindingResult,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
+        log.info("Updating user ID: {} via MVC", id);
+        
+        if (bindingResult.hasErrors()) {
+            log.warn("Validation errors during user update: {}", bindingResult.getAllErrors());
+            user.setId(id); // Ensure ID is set for the form
+            model.addAttribute("user", user);
+            return "users/edit";
+        }
+        
+        try {
+            user.setId(id); // Ensure ID matches path variable
+            User updatedUser = userService.updateUser(id, user);
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "User updated successfully: " + updatedUser.getName());
+            return "redirect:/users/" + id;
+        } catch (InvalidUserDataException ex) {
+            log.error("Business validation error in user update: {}", ex.getMessage(), ex);
+            model.addAttribute("user", user);
+            
+            ex.getErrors().forEach((field, message) -> {
+                bindingResult.rejectValue(field, "error." + field, message);
+            });
+            
+            return "users/edit";
+        }
+    }
+    
+    // POST /users/{id}/delete - Delete user
+    @PostMapping("/{id}/delete")
+    public String deleteUser(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        log.info("Deleting user ID: {} via MVC", id);
+        try {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully");
+        } catch (UserNotFoundException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", "User not found: " + id);
+        }
+        return "redirect:/users";
+    }
+    
+    // Example of method-level exception handling for MVC with custom validation
+    @GetMapping("/{id}/profile")
+    public String viewUserProfile(@PathVariable String id, Model model) {
+        try {
+            User user = userService.findById(id);
+            
+            // Custom validation for profile access
+            if (user.getAge() != null && user.getAge() < 18) {
+                model.addAttribute("warningMessage", "Limited profile view for users under 18");
+            }
+            
+            model.addAttribute("user", user);
+            model.addAttribute("profileData", generateProfileData(user));
+            return "users/profile";
+        } catch (UserNotFoundException ex) {
+            log.error("User profile not found: {}", id, ex);
+            model.addAttribute("errorMessage", "User profile not found: " + id);
+            return "error/user-not-found";
+        } catch (Exception ex) {
+            log.error("Error generating user profile", ex);
+            model.addAttribute("errorMessage", "Unable to load user profile");
+            return "error/profile-error";
+        }
+    }
+    
+    private Map<String, Object> generateProfileData(User user) {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("memberSince", "2023-01-01");
+        profile.put("totalPosts", 42);
+        profile.put("verified", user.getEmail() != null && !user.getEmail().isEmpty());
+        return profile;
+    }
+}
+
+// ============================================================================
+// APPLICATION CONFIGURATION
+// ============================================================================
+
+@SpringBootApplication
+public class ExceptionHandlingDemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ExceptionHandlingDemoApplication.class, args);
+    }
+}
+
+// ============================================================================
+// EXAMPLE THYMELEAF TEMPLATES (for reference)
+// ============================================================================
+
+/*
+File: src/main/resources/templates/error/404.html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>User Not Found</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <h1 th:text="${error}">Error</h1>
+            <p th:text="${message}">Error message</p>
+            <p>User ID: <span th:text="${userId}"></span></p>
+            <a href="/users" class="btn btn-primary">Back to Users</a>
+        </div>
+    </div>
+</body>
+</html>
+
+File: src/main/resources/templates/error/validation.html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Validation Error</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="alert alert-warning">
+            <h1 th:text="${error}">Validation Error</h1>
+            <p th:text="${message}">Error message</p>
+            <ul>
+                <li th:each="error : ${validationErrors}" th:text="${error.key + ': ' + error.value}"></li>
+            </ul>
+            <a href="/users" class="btn btn-primary">Back to Users</a>
+        </div>
+    </div>
+</body>
+</html>
+
+File: src/main/resources/templates/users/list.html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Users</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Users</h1>
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Name</th><th>Email</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}"></td>
+                    <td th:text="${user.name}"></td>
+                    <td th:text="${user.email}"></td>
+                    <td>
+                        <a th:href="@{/users/{id}(id=${user.id})}" class="btn btn-sm btn-info">View</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <a href="/users/new" class="btn btn-success">Add New User</a>
+    </div>
+</body>
+</html>
+*/
+
+// ============================================================================
+// KEY BEST PRACTICES DEMONSTRATED:
+// ============================================================================
+
+/*
+1. GLOBAL EXCEPTION HANDLING (@ControllerAdvice):
+   - Centralized exception handling across the application
+   - Different responses for REST APIs (JSON) vs MVC (HTML pages)
+   - Proper logging of exceptions
+   - Structured error responses
+
+2. CUSTOM EXCEPTIONS:
+   - Business-specific exceptions with relevant context
+   - Validation exceptions with detailed error information
+   - Proper inheritance from RuntimeException
+
+3. CONTENT NEGOTIATION:
+   - Different exception handling based on Accept headers
+   - REST APIs return JSON error responses
+   - MVC controllers return error pages
+
+4. ERROR RESPONSE STRUCTURE:
+   - Consistent error response format
+   - Includes timestamp, path, status code
+   - Validation errors as separate field
+
+5. LOGGING:
+   - Appropriate logging levels (error, info)
+   - Context information in log messages
+   - Stack traces for debugging
+
+6. HTTP STATUS CODES:
+   - Proper use of HTTP status codes
+   - 404 for not found, 400 for validation errors, 500 for server errors
+
+7. FLEXIBLE EXCEPTION HANDLING:
+   - Global handlers as default
+   - Method-level handlers for specific cases
+   - Fallback to generic exception handlers
+
+8. USER EXPERIENCE:
+   - Friendly error pages for web UI
+   - Structured error responses for API consumers
+   - Flash messages for success cases
+
+9. VALIDATION INTEGRATION:
+   - Handle Spring validation exceptions
+   - Custom validation with detailed error messages
+   - Both Bean Validation and custom validation support
+
+10. SEPARATION OF CONCERNS:
+    - Service layer throws business exceptions
+    - Controllers handle presentation logic
+    - Global handlers manage cross-cutting error handling
+*/
