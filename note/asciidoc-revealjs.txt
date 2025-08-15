@@ -1,4 +1,4 @@
-[cols="^a, ^4a", grid=all, frame=all]
+[cols="^a, ^4a", grid=all, frame=all, role="small-table"]
 |===
 | image::one-ring.jpg[width=200px,step=1]
 | image::one-ring.jpg[width=200px,step=2]
@@ -32,6 +32,18 @@ table [style*="color"] {
 
 ---
 
+* Make table smaller to fit slide */
+.small-table {
+  width: 60% !important;
+  margin: 0 auto !important;
+}
+
+.small-table td,
+.small-table th {
+  padding: 8px !important;
+}
+
+----
 
 #title-footer a {
   color: white !important;
