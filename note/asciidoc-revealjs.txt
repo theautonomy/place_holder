@@ -3,12 +3,32 @@
 | image::one-ring.jpg[width=200px,step=1]
 | image::one-ring.jpg[width=200px,step=2]
 
-| [.step]#Test 1# 
+| [.step.white-text]#Test 1# 
 | [.step]#Test 2# 
 
 | Test 3[step=] 
 | Test 4[step=] 
 |===
+
+---
+
+.white-text {
+  color: white !important;
+}
+
+/* Force white color in table cells */
+table .step {
+  color: inherit;
+}
+
+table [style*="color"] {
+  color: white !important;
+}
+
+/* Target specific white text elements */
+.reveal table td .paragraph p span[class*="white"] {
+  color: white !important;
+}
 
 ---
 
