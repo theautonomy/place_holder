@@ -1,0 +1,21 @@
+[cols="^a, ^4a", grid=all, frame=all]
+|===
+| image::one-ring.jpg[width=200px,step=1]
+| image::one-ring.jpg[width=200px,step=2]
+
+| [.step]#Test 1# 
+| [.step]#Test 2# 
+
+| Test 3[step=] 
+| Test 4[step=] 
+|===
+
+
+#title-footer a {
+  color: white !important;
+}
+
+#title-footer p {
+  color: white !important;
+}
+  
