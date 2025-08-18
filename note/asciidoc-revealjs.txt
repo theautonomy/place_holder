@@ -1,3 +1,24 @@
+<execution>
+                                <id>serve</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>http</goal>
+                                </goals>
+                                <configuration>
+                                    <port>8888</port>
+                                    <backend>revealjs</backend>
+                                    <requires>
+                                        <require>asciidoctor-revealjs</require>
+                                    </requires>
+                                    <attributes>
+                                        <!-- <revealjsdir>reveal</revealjsdir> -->
+                                    </attributes>
+                                </configuration>
+                            </execution>
+
+
+----
+
 [cols="^a, ^4a", grid=all, frame=all, role="small-table"]
 |===
 | image::one-ring.jpg[width=200px,step=1]
