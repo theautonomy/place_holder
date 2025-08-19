@@ -1,0 +1,29 @@
+.reveal .slides {
+  background: #1e1e1e;
+}
+
+.reveal .slides section {
+  /* transition: all 0.3s ease; */
+  position: absolute !important;
+  top: 250px !important;
+  left: 0;
+  right: 0;
+}
+
+.reveal h2 {
+  background: rgba(5, 150, 105, 0.1);
+  padding: 20px;
+  margin: 0 0 20px 0;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.reveal .slide-content {
+  background: rgba(64, 224, 208, 0.15);
+  padding: 20px;
+  margin-top: 0;
+  border-radius: 4px;
+  height: 500px;
+  overflow-y: auto;
+}
