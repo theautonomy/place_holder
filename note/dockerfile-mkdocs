@@ -1,0 +1,24 @@
+FROM python:3 as siteBuild
+RUN pip install mkdocs>=1.1
+RUN pip install mkdocs-material
+RUN pip install Pygments>=2.4
+RUN pip install markdown>=3.2
+RUN pip install pymdown-extensions>=7.0
+RUN pip install mkdocs-material-extensions>=1.0
+#COPY ./requirements.txt /requirements.txt 
+#RUN pip install -r /requirements.txt
+
+WORKDIR /usr/src/app
+COPY mkdocs.yml ./
+COPY ./docs ./docs
+RUN mkdocs build 
+
+FROM nginx:1.28.0
+COPY --from=siteBuild /usr/src/app/site /usr/share/nginx/html 
+
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+# Configure nginx to listen on port 9000
+RUN sed -i 's/listen       80;/listen       9000;/' /etc/nginx/conf.d/default.conf
+
+EXPOSE 9000
