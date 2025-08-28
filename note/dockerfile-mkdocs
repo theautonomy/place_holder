@@ -1,12 +1,12 @@
 FROM python:3 as siteBuild
-RUN pip install mkdocs>=1.1
-RUN pip install mkdocs-material
-RUN pip install Pygments>=2.4
-RUN pip install markdown>=3.2
-RUN pip install pymdown-extensions>=7.0
-RUN pip install mkdocs-material-extensions>=1.0
-#COPY ./requirements.txt /requirements.txt 
-#RUN pip install -r /requirements.txt
+# RUN pip install mkdocs>=1.1
+# RUN pip install mkdocs-material
+# RUN pip install Pygments>=2.4
+# RUN pip install markdown>=3.2
+# RUN pip install pymdown-extensions>=7.0
+# RUN pip install mkdocs-material-extensions>=1.0
+COPY ./requirements.txt /requirements.txt 
+RUN pip install -r /requirements.txt
 
 WORKDIR /usr/src/app
 COPY mkdocs.yml ./
