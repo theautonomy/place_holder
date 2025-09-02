@@ -1,0 +1,1930 @@
+= Links Index
+:revealjsdir: https://cdn.jsdelivr.net/npm/reveal.js@4.3.1
+:revealjs_theme: none
+:revealjs_customtheme: styles/custom-theme.css
+:customcss: styles/custom-theme-custom.css
+ifndef::imagesdir[:imagesdir: images]
+:revealjs_transition: slide
+:revealjs_width: 1600
+:revealjs_height: 1200
+:revealjs_margin: 0
+:revealjs_history: true
+:revealjs_hash: true
+
+[%notitle]
+== Table of Contents
+
+toc::[]
+
+== First Diagram
+
+[ditaa,asciidoctor-diagram-process]
+....
+                   +-------------+
+                   | Asciidoctor |-------+
+                   |   diagram   |       |
+                   +-------------+       | PNG out
+                       ^                 |
+                       | ditaa in        |
+                       |                 v
+ +--------+   +--------+----+    /---------------\
+ |        |---+ Asciidoctor +--->|               |
+ |  Text  |   +-------------+    |   Beautiful   |
+ |Document|   |   !magic!   |    |    Output     |
+ |     {d}|   |             |    |               |
+ +---+----+   +-------------+    \---------------/
+     :                                   ^
+     |          Lots of work             |
+     +-----------------------------------+
+....
+
+== Second Diagram
+
+Here's a PlantUML diagram:
+
+[plantuml, this-test-diagram, svg]
+....
+@startuml
+Alice -> Bob: Authentication Request
+Bob --> Alice: Authentication Response
+@enduml
+....
+
+== Third Diagram
+
+[plantuml, this-sequence-diagram, svg]
+....
+@startuml
+participant User
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+@enduml
+....
+
+[plantuml, this-sequence-diagram, svg]
+----
+@startuml
+participant User
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+@enduml
+----
+
+== Diagram Example
+
+[blockdiag]
+....
+blockdiag {
+  Kroki -> generates -> "Block diagrams";
+
+  Kroki [color = "greenyellow"];
+  "Block diagrams" [color = "pink"];
+}
+....
+
+
+== Diagram
+
+[mermaid,abcd-flowchart,svg]
+....
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+....
+
+
+== Diagram
+
+[graphviz]
+....
+digraph foo {
+  node [style=rounded]
+  node1 [shape=box]
+  node2 [fillcolor=yellow, style="rounded,filled", shape=diamond]
+  node3 [shape=record, label="{ a | b | c }"]
+
+  node1 -> node2 -> node3
+}
+....
+
+== Diagram
+
+[plantuml, this-test-diagram, svg]
+....
+@startuml
+Alice -> Bob: Authentication Request
+Bob --> Alice: Authentication Response
+@enduml
+....
+
+== diagram
+
+[plantuml, this-sequence-diagram, svg]
+....
+@startuml
+participant User
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+@enduml
+....
+
+== Diagram
+
+[plantuml, this-sequence-diagram, svg]
+----
+@startuml
+participant User
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+@enduml
+----
+
+== Diagram
+
+[ditaa,asciidoctor-diagram-process]
+....
+                   +-------------+
+                   | Asciidoctor |-------+
+                   |   diagram   |       |
+                   +-------------+       | PNG out
+                       ^                 |
+                       | ditaa in        |
+                       |                 v
+ +--------+   +--------+----+    /---------------\
+ |        |---+ Asciidoctor +--->|               |
+ |  Text  |   +-------------+    |   Beautiful   |
+ |Document|   |   !magic!   |    |    Output     |
+ |     {d}|   |             |    |               |
+ +---+----+   +-------------+    \---------------/
+     :                                   ^
+     |          Lots of work             |
+     +-----------------------------------+
+....
+
+== Diagram-as-code
+
+All these architecture diagrams use PlantUML, with a custom skin to fit the theme.
+
+[.maxed-image]
+=== Sequence diagram
+
+[plantuml, rma-sequence-diagram]
+....
+participant User
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, rma-sequence-diagram, png]
+....
+participant User
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+....
+----
+
+[.maxed-image]
+=== Use case diagram
+
+[plantuml, rma-use-case-diagram, png]
+....
+left to right direction
+
+actor developer
+database repo as "central\nrepo"
+agent jenkins as "Jenkins"
+
+rectangle admin as "Gerrit / GitLab" {
+    agent ui as "front"
+    database repo_local as "local\nrepo"
+}
+
+developer --> ui : push
+ui --> repo_local : push
+ui -left-> jenkins: "\npush "
+ui ..> repo : replication
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, rma-use-case-diagram, png]
+....
+left to right direction
+
+actor developer
+database repo as "central\nrepo"
+agent jenkins as "Jenkins"
+
+rectangle admin as "Gerrit / GitLab" {
+    agent ui as "front"
+    database repo_local as "local\nrepo"
+}
+
+developer --> ui : push
+ui --> repo_local : push
+ui -left-> jenkins: "\npush "
+ui ..> repo : replication
+....
+----
+
+[.maxed-image]
+=== Class diagram
+
+[plantuml, rma-class-diagram, png]     
+....
+abstract class ArrayList {
+  Object[] elementData
+  size()
+}
+enum TimeUnit {
+  DAYS
+  HOURS
+  MINUTES
+}
+Interface BaseClass
+
+namespace net.dummy {
+    .BaseClass <|-- Person
+    Meeting o-- Person
+
+    .BaseClass <|- Meeting
+}
+namespace net.foo {
+  net.dummy.Person  <|- Person
+  .BaseClass <|-- Person
+
+  net.dummy.Meeting o-- Person
+}
+BaseClass <|-- net.unused.Person
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, rma-class-diagram, png]     
+....
+abstract class ArrayList {
+  Object[] elementData
+  size()
+}
+enum TimeUnit {
+  DAYS
+  HOURS
+  MINUTES
+}
+Interface BaseClass
+
+namespace net.dummy {
+    .BaseClass <|-- Person
+    Meeting o-- Person
+
+    .BaseClass <|- Meeting
+}
+namespace net.foo {
+  net.dummy.Person  <|- Person
+  .BaseClass <|-- Person
+
+  net.dummy.Meeting o-- Person
+}
+BaseClass <|-- net.unused.Person
+....
+----
+
+[.maxed-image]
+=== Activity diagram
+
+[plantuml, activity-diagram, png]
+....
+(*) --> "Initialization"
+
+if "Some Test" then
+  -->[true] "Some Activity"
+  --> "Another activity"
+  -right-> (*)
+else
+  ->[false] "Something else"
+  -->[Ending process] (*)
+endif
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, activity-diagram, png]
+....
+(*) --> "Initialization"
+
+if "Some Test" then
+  -->[true] "Some Activity"
+  --> "Another activity"
+  -right-> (*)
+else
+  ->[false] "Something else"
+  -->[Ending process] (*)
+endif
+....
+----
+
+[.maxed-image]
+=== Component diagram
+
+[plantuml, rma-component-diagram, png]     
+....
+package "Some Group" {
+  HTTP - [First Component]
+  [Another Component]
+}
+rectangle "Other Groups" {
+  FTP - [Second Component]
+  [First Component] --> FTP
+} 
+cloud {
+  [Example 1]
+}
+database "MySql" {
+  folder "This is my folder" {
+    [Folder 3]
+  }
+  frame "Foo" {
+    [Frame 4]
+  }
+}
+[Another Component] --> [Example 1]
+[Example 1] -right-> [Folder 3]
+[Folder 3] --> [Frame 4]
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, rma-component-diagram, png]     
+....
+package "Some Group" {
+  HTTP - [First Component]
+  [Another Component]
+}
+rectangle "Other Groups" {
+  FTP - [Second Component]
+  [First Component] --> FTP
+} 
+cloud {
+  [Example 1]
+}
+database "MySql" {
+  folder "This is my folder" {
+    [Folder 3]
+  }
+  frame "Foo" {
+    [Frame 4]
+  }
+}
+[Another Component] --> [Example 1]
+[Example 1] -right-> [Folder 3]
+[Folder 3] --> [Frame 4]
+....
+----
+
+[.maxed-image]
+=== State diagram
+
+[plantuml, rma-state-diagram]     
+....
+[*] -left-> State1
+State1 -left-> State2 : Succeeded
+State1 --> [*] : Aborted
+State2 --> State3 : Succeeded
+State2 --> [*] : Aborted
+state State3 {
+  state "Accumulate Enough Data\nLong State Name" as long1
+  long1 : Just a test
+  [*] --> long1
+  long1 --> long1 : New Data
+  long1 --> ProcessData : Enough Data
+}
+State3 --> State3 : Failed
+State3 --> [*] : Succeeded
+State3 --> [*] : Aborted
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, rma-state-diagram]     
+....
+[*] -left-> State1
+State1 -left-> State2 : Succeeded
+State1 --> [*] : Aborted
+State2 --> State3 : Succeeded
+State2 --> [*] : Aborted
+state State3 {
+  state "Accumulate Enough Data\nLong State Name" as long1
+  long1 : Just a test
+  [*] --> long1
+  long1 --> long1 : New Data
+  long1 --> ProcessData : Enough Data
+}
+State3 --> State3 : Failed
+State3 --> [*] : Succeeded
+State3 --> [*] : Aborted
+....
+----
+
+[.maxed-image]
+=== Work Breakdown Structure
+
+[plantuml, wbs]     
+....
+@startwbs
+* Business Process Modelling WBS
+** Launch the project
+*** Stakeholder Research
+*** Implementation Plan
+** Design phase
+*** AsIs Processes Completed
+****< AsIs Processes Completed1
+****> AsIs Processes Completed2
+***< AsIs performance metrics
+***< Identify Quick Wins
+@endwbs
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, wbs]     
+....
+@startwbs
+* Business Process Modelling WBS
+** Launch the project
+*** Stakeholder Research
+*** Implementation Plan
+** Design phase
+*** AsIs Processes Completed
+****< AsIs Processes Completed1
+****> AsIs Processes Completed2
+***< AsIs performance metrics
+***< Identify Quick Wins
+@endwbs
+....
+----
+
+[.maxed-image]
+=== Timing diagram
+
+[plantuml, timing, png]     
+....
+'skinparam backgroundColor white # does not work
+robust "Web Browser" as WB
+concise "Web User" as WU
+WB is Initializing
+WU is Absent
+@WB
+0 is idle
++200 is Processing
++100 is Waiting
+WB@0 <-> @50 : {50 ms lag}
+@WU
+WU -> WB : URL
+0 is Waiting #white
++500 is ok #white
+@200 <-> @+150 : {150 ms}
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, timing, png]     
+....
+'skinparam backgroundColor white # does not work
+robust "Web Browser" as WB
+concise "Web User" as WU
+WB is Initializing
+WU is Absent
+@WB
+0 is idle
++200 is Processing
++100 is Waiting
+WB@0 <-> @50 : {50 ms lag}
+@WU
+WU -> WB : URL
+0 is Waiting #white
++500 is ok #white
+@200 <-> @+150 : {150 ms}
+....
+----
+
+[.maxed-image]
+=== Mind Map
+
+[plantuml, mindmap, png]     
+....
+@startmindmap
+* Debian
+** Ubuntu
+*** Linux Mint
+*** Kubuntu
+*** Lubuntu
+*** KDE Neon
+** LMDE
+** SolydXK
+** SteamOS
+** Raspbian with a very long name
+*** <s>Raspmbc</s> => OSMC
+*** <s>Raspyfi</s> => Volumio
+@endmindmap
+....
+
+=== Source
+
+[source,asciidoc]
+----
+[plantuml, mindmap, png]     
+....
+@startmindmap
+* Debian
+** Ubuntu
+*** Linux Mint
+*** Kubuntu
+*** Lubuntu
+*** KDE Neon
+** LMDE
+** SolydXK
+** SteamOS
+** Raspbian with a very long name
+*** <s>Raspmbc</s> => OSMC
+*** <s>Raspyfi</s> => Volumio
+@endmindmap
+....
+----
+
+
+=== asciitosvg
+
+[a2s, format="svg"]
+....
+.-------------------------.
+|                         |
+| .---.-. .-----. .-----. |
+| | .-. | +-->  | |  <--| |
+| | '-' | |  <--| +-->  | |
+| '---'-' '-----' '-----' |
+|  ascii     2      svg   |
+|                         |
+'-------------------------'
+....
+
+== PlantUML Sequence Diagrams
+
+[.maxed-image]
+=== Sequence with participants
+
+[plantuml, sequence-with-participants, png]     
+....
+@startuml
+participant Participant as Foo
+actor       Actor       as Foo1
+boundary    Boundary    as Foo2
+control     Control     as Foo3
+entity      Entity      as Foo4
+database    Database    as Foo5
+collections Collections as Foo6
+queue       Queue       as Foo7
+Foo -> Foo1 : To actor 
+Foo -> Foo2 : To boundary
+Foo -> Foo3 : To control
+Foo -> Foo4 : To entity
+Foo -> Foo5 : To database
+Foo -> Foo6 : To collections
+Foo -> Foo7: To queue
+@enduml
+....
+
+[.maxed-image]
+=== Basic messaging
+
+[plantuml, basic-messaging, png]
+....
+@startuml
+Alice -> Bob: Authentication Request
+Bob --> Alice: Authentication Response
+Alice -> Bob: Another authentication Request
+Alice <-- Bob: Another authentication Response
+@enduml
+....
+
+[.maxed-image]
+=== Lifeline activation
+
+[plantuml, lifeline-activation, png]
+....
+@startuml
+participant User
+
+User -> A: DoWork
+activate A
+A -> B: << createRequest >>
+activate B
+B -> C: DoWork
+activate C
+C --> B: WorkDone
+destroy C
+B --> A: RequestCreated
+deactivate B
+A -> User: Done
+deactivate A
+@enduml
+....
+
+[.maxed-image]
+=== Grouping messages
+
+[plantuml, grouping-messages, png]
+....
+@startuml
+Alice -> Bob: Authentication Request
+
+alt successful case
+    Bob -> Alice: Authentication Accepted
+else some kind of failure
+    Bob -> Alice: Authentication Failure
+    group My own label
+        Alice -> Log : Log attack start
+        loop 1000 times
+            Alice -> Bob: DNS Attack
+        end
+        Alice -> Log : Log attack end
+    end
+else Another type of failure
+    Bob -> Alice: Please repeat
+end
+@enduml
+....
+
+[.maxed-image]
+=== Participant with colors and long names
+
+[plantuml, participant-colors, png]
+....
+ 	
+
+@startuml
+actor Bob #red
+' The only difference between actor
+'and participant is the drawing
+participant Alice
+participant "I have a really\nlong name" as L #99FF99
+/' You can also declare:
+   participant L as "I have a really\nlong name"  #99FF99
+  '/
+
+Alice->Bob: Authentication Request
+Bob->Alice: Authentication Response
+Bob->L: Log transaction
+@enduml
+....
+
+[.maxed-image]
+=== Message to self
+
+[plantuml, message-to-self, png]
+....
+@startuml
+Alice -> Alice: This is a signal to self.\nIt also demonstrates\nmultiline \ntext
+@enduml
+....
+
+[.maxed-image]
+=== Arrow styles
+
+[plantuml, arrow-styles, png]
+....
+@startuml
+Bob ->x Alice
+Bob -> Alice
+Bob ->> Alice
+Bob -\ Alice
+Bob \\- Alice
+Bob //-- Alice
+Bob ->o Alice
+Bob o\\-- Alice
+Bob <-> Alice
+Bob <->o Alice
+@enduml
+....
+
+[.maxed-image]
+=== Colored arrows
+
+[plantuml, colored-arrows, png]
+....
+@startuml
+Bob -[#red]> Alice : hello
+Alice -[#0000FF]-> Bob : ok
+@enduml
+....
+
+[.maxed-image]
+=== Message numbering
+
+[plantuml, message-numbering, png]
+....
+@startuml
+autonumber
+Bob -> Alice : Authentication Request
+Bob <- Alice : Authentication Response
+
+autonumber 15
+Bob -> Alice : Another authentication Request
+Bob <- Alice : Another authentication Response
+
+autonumber 40 10
+Bob -> Alice : Yet another authentication Request
+Bob <- Alice : Yet another authentication Response
+@enduml
+....
+
+[.maxed-image]
+=== Page title
+
+[plantuml, page-title, png]
+....
+@startuml
+title __Simple__ communication example
+
+Alice -> Bob: Authentication Request
+Bob -> Alice: Authentication Response
+@enduml
+....
+
+[.maxed-image]
+=== Complex grouping with multiple conditions
+
+[plantuml, complex-grouping, png]
+....
+@startuml
+Alice -> Bob: Authentication Request
+alt successful case
+    Bob -> Alice: Authentication Accepted
+else some kind of failure
+    Bob -> Alice: Authentication Failure
+    group My own label
+        Alice -> Log: Log attack start
+        loop 1000 times
+            Alice -> Bob: DNS Attack
+        end
+        Alice -> Log: Log attack end
+    end
+else Another type of failure
+    Bob -> Alice: Please repeat
+end
+@enduml
+....
+
+[.maxed-image]
+=== Nested grouping with parallel processes
+
+[plantuml, nested-grouping, png]
+....
+@startuml
+participant User
+participant A
+participant B
+participant C
+
+User -> A: Start Process
+activate A
+    par Processing Track 1
+        A -> B: Request Data
+        activate B
+            B -> C: Fetch Details
+            activate C
+            C --> B: Return Information
+            deactivate C
+        B --> A: Data Response
+        deactivate B
+    else Processing Track 2
+        A -> A: Internal Computation
+    end
+A --> User: Process Complete
+deactivate A
+@enduml
+....
+
+[.maxed-image]
+=== Optional and break scenarios
+
+[plantuml, optional-break, png]
+....
+@startuml
+Alice -> Bob: Request
+opt Valid Request
+    Bob -> Alice: Process Request
+    alt Successful
+        Bob -> Alice: Confirmation
+    else Failure
+        Bob -> Alice: Error Message
+        break Processing Error
+            Bob -> Log: Log Error
+        end
+    end
+else Invalid Request
+    Bob -> Alice: Reject Request
+end
+@enduml
+....
+
+[.maxed-image]
+=== Advanced lifeline activation
+
+[plantuml, advanced-lifeline, png]
+....
+@startuml
+autoactivate on
+actor User
+participant AuthService
+database UserDB
+
+User -> AuthService: Login Request
+AuthService -> UserDB: Validate Credentials
+UserDB --> AuthService: Credential Status
+alt Authentication Successful
+    AuthService -> AuthService: Generate Token
+    AuthService --> User: Login Token
+else Authentication Failed
+    AuthService --> User: Access Denied
+    destroy AuthService
+end
+@enduml
+....
+
+== PlantUML MindMap Diagrams
+
+[.maxed-image]
+=== OrgMode syntax
+
+[plantuml, mindmap-orgmode, png]
+....
+@startmindmap
+* Debian
+** Ubuntu
+*** Linux Mint
+*** Kubuntu
+*** Lubuntu
+*** KDE Neon
+** LMDE
+** SolydXK
+** SteamOS
+** Raspbian with a very long name
+*** <s>Raspmbc</s> => OSMC
+*** <s>Raspyfi</s> => Volumio
+@endmindmap
+....
+
+[.maxed-image]
+=== Markdown syntax
+
+[plantuml, mindmap-markdown, png]
+....
+@startmindmap
+* root node
+	* some first level node
+		* second level node
+		* another second level node
+	* another first level node
+@endmindmap
+....
+
+[.maxed-image]
+=== Arithmetic notation
+
+[plantuml, mindmap-arithmetic, png]
+....
+@startmindmap
++ OS
+++ Ubuntu
++++ Linux Mint
++++ Kubuntu
++++ Lubuntu
++++ KDE Neon
+++ LMDE
+++ SolydXK
+++ SteamOS
+++ Raspbian
+-- Windows 95
+-- Windows 98
+-- Windows NT
+--- Windows 8
+--- Windows 10
+@endmindmap
+....
+
+[.maxed-image]
+=== Multilines example
+
+[plantuml, mindmap-multilines, png]
+....
+@startmindmap
+* Class Templates
+**:Example 1
+<code>
+template <typename T>
+class cname{
+void f1()<U+003B>
+...
+}
+</code>
+;
+**:Example 2
+<code>
+other template <typename T>
+class cname{
+...
+</code>
+;
+@endmindmap
+....
+
+[.maxed-image]
+=== Color inline example
+
+[plantuml, mindmap-colors, png]
+....
+@startmindmap
+*[#Orange] Colors
+**[#lightgreen] Green
+**[#FFBBCC] Rose
+**[#lightblue] Blue
+@endmindmap
+....
+
+[.maxed-image]
+=== Removing boxes with underscore
+
+[plantuml, mindmap-no-boxes, png]
+....
+@startmindmap
+* root node
+** some first level node
+***_ second level node
+***_ another second level node
+***_ foo
+***_ bar
+***_ foobar
+** another first level node
+@endmindmap
+....
+
+[.maxed-image]
+=== Word wrap example
+
+[plantuml, mindmap-wordwrap, png]
+....
+@startmindmap
+<style>
+node {
+    MaximumWidth 100
+    Padding 12
+    BackgroundColor gold
+}
+</style>
+* Long Text Demonstration
+** This is an example of how PlantUML can automatically wrap long text within mindmap nodes
+*** Breaking text into manageable segments
+*** Improving readability of complex mind maps
+@endmindmap
+....
+
+[.maxed-image]
+=== Creole formatting in mindmap
+
+[plantuml, mindmap-creole, png]
+....
+@startmindmap
+* Formatting Examples
+**:==Creole Styles
+   This is **bold**
+   This is //italics//
+   This is __underlined__ ;
+** HTML-like Formatting
+**:This is <b>bold</b>
+   This is <color:blue>Blue text</color> ;
+@endmindmap
+....
+
+
+== PlantUML Entity Relation Diagrams
+
+[.maxed-image]
+=== Minimal vertical example
+
+[plantuml, er-vertical, png]
+....
+@startchen
+
+entity Person {
+}
+entity Location {
+}
+relationship Birthplace {
+}
+
+Person -N- Birthplace
+Birthplace -1- Location
+
+@endchen
+....
+
+[.maxed-image]
+=== Minimal horizontal example
+
+[plantuml, er-horizontal, png]
+....
+@startchen
+left to right direction
+
+entity Person { 
+}
+entity Location { 
+}
+relationship Birthplace { 
+}
+
+Person -N- Birthplace
+Birthplace -1- Location
+@endchen
+....
+
+[.maxed-image]
+=== Entities with attributes
+
+[plantuml, er-attributes, png]
+....
+@startchen
+entity DIRECTOR {
+  Name {
+    Fname
+    Lname
+  }
+  Born
+  Died
+  Age
+}
+entity MOVIE {
+  Title
+  Released
+  Code
+}
+@endchen
+....
+
+[.maxed-image]
+=== Key and multi-valued attributes
+
+[plantuml, er-key-attributes, png]
+....
+@startchen
+entity DIRECTOR {
+  Number : INTEGER <<key>>
+  Name {
+    Fname : STRING
+    Lname : STRING
+  }
+  Born : DATE
+  Died : DATE
+  Age : INTEGER
+}
+entity CUSTOMER {
+  Number : INTEGER <<key>>
+  Bonus : REAL <<derived>>
+  Name : STRING <<multi>>
+}
+@endchen
+....
+
+[.maxed-image]
+=== Relationships with cardinality
+
+[plantuml, er-cardinality, png]
+....
+@startchen
+entity CUSTOMER {
+  Number <<key>>
+  Name
+}
+entity MOVIE {
+  Code <<key>>
+}
+relationship RENTED_TO {
+  Date
+}
+RENTED_TO -(1,N)- CUSTOMER
+RENTED_TO -(0,1)- MOVIE
+@endchen
+....
+
+[.maxed-image]
+=== Weak entity example
+
+[plantuml, er-weak-entity, png]
+....
+@startchen
+
+entity PARENT {
+  Number <<key>>
+  Name
+}
+
+entity CHILD <<weak>> {
+  Name <<key>>
+  Age
+}
+
+relationship PARENT_OF <<identifying>> {
+}
+
+PARENT_OF -1- PARENT
+PARENT_OF =N= CHILD
+
+@endchen
+....
+
+[.maxed-image]
+=== Subclasses and categories
+
+[plantuml, er-subclasses, png]
+....
+@startchen
+
+entity CUSTOMER {
+}
+
+entity PARENT {
+}
+
+entity MEMBER {
+}
+
+CUSTOMER ->- PARENT
+MEMBER -<- CUSTOMER
+
+@endchen
+....
+
+== PlantUML DITAA Diagrams
+
+[.maxed-image]
+=== Basic DITAA diagram
+
+[ditaa, ditaa-basic, png]
+....
++--------+   +-------+    +-------+
+|        +---+ ditaa +--> |       |
+|  Text  |   +-------+    |diagram|
+|Document|   |!magic!|    |       |
+|     {d}|   |       |    |       |
++---+----+   +-------+    +-------+
+     :                         ^
+     |       Lots of work      |
+     +-------------------------+
+....
+
+[.maxed-image]
+=== DITAA with colors and symbols
+
+[ditaa, ditaa-colors, png]
+....
++---------+  /--------\   +-------+
+| cBLU    +--+cAAA    +---+Version|
+|         |  |  Data  |   |   V3  |
+|    +----+  |  Base  |   |cRED{d}|
+|    |cPNK|  |     {s}|   +-------+
+|    |    |  \---+----+    +-------+
++----+----+               |       |
+                          +-------+
+....
+
+[.maxed-image]
+=== DITAA remove separator
+
+[ditaa, ditaa-no-separator, png]
+....
++---------+  /--------\   +-------+
+| cBLU    +--+cAAA    +---+Version|
+|         |  |  Data  |   |   V3  |
+|    +----+  |  Base  |   |cRED{d}|
+|    |cPNK|  |     {s}|   +-------+
+|    |    |  \---+----+    +-------+
++----+----+               |       |
+                          +-------+
+....
+
+[.maxed-image]
+=== DITAA no shadows and scaled
+
+[ditaa, ditaa-no-shadows-scaled, png]
+....
++---------+  /--------\   +-------+
+| cBLU    +--+cAAA    +---+Version|
+|         |  |  Data  |   |   V3  |
+|    +----+  |  Base  |   |cRED{d}|
+|    |cPNK|  |     {s}|   +-------+
+|    |    |  \---+----+    +-------+
++----+----+               |       |
+                          +-------+
+....
+
+
+== PlantUML Gantt Diagrams
+
+[.maxed-image]
+=== Basic task duration
+
+[plantuml, gantt-basic, png]
+....
+@startgantt
+[Prototype design] requires 15 days
+[Test prototype] requires 10 days
+@endgantt
+....
+
+[.maxed-image]
+=== Project start date
+
+[plantuml, gantt-start-date, png]
+....
+@startgantt
+Project starts 2020-07-01
+[Prototype design] starts 2020-07-01
+[Test prototype] starts 2020-07-16
+@endgantt
+....
+
+[.maxed-image]
+=== Task dependencies
+
+[plantuml, gantt-dependencies, png]
+....
+@startgantt
+[Prototype design] requires 15 days
+[Test prototype] requires 10 days
+[Test prototype] starts at [Prototype design]'s end
+@endgantt
+....
+
+[.maxed-image]
+=== Task aliases
+
+[plantuml, gantt-aliases, png]
+....
+@startgantt
+[Prototype design] as [D] requires 15 days
+[Test prototype] as [T] requires 10 days
+[T] starts at [D]'s end
+@endgantt
+....
+
+[.maxed-image]
+=== Color customization
+
+[plantuml, gantt-colors, png]
+....
+@startgantt
+[Prototype design] requires 13 days
+[Test prototype] requires 4 days
+[Test prototype] starts at [Prototype design]'s end
+[Prototype design] is colored in Fuchsia/FireBrick
+[Test prototype] is colored in GreenYellow/Green
+@endgantt
+....
+
+[.maxed-image]
+=== Task completion percentage
+
+[plantuml, gantt-completion, png]
+....
+@startgantt
+[foo] requires 21 days
+[foo] is 40% completed
+[bar] requires 30 days and is 10% complete
+@endgantt
+....
+
+[.maxed-image]
+=== Milestones
+
+[plantuml, gantt-milestones, png]
+....
+@startgantt
+[Test prototype] requires 10 days
+[Prototype completed] happens at [Test prototype]'s end
+[Setup assembly line] requires 12 days
+[Setup assembly line] starts at [Test prototype]'s end
+@endgantt
+....
+
+[.maxed-image]
+=== Working days and weekends
+
+[plantuml, gantt-working-days, png]
+....
+@startgantt
+saturday are closed 
+sunday are closed 
+2022-07-04 to 2022-07-15 is closed  
+Project starts 2022-06-27 
+[task1] starts at 2022-06-27 and requires 1 week 
+[task2] starts 2 working days after [task1]'s end and requires 3 days  
+@endgantt
+....
+
+[.maxed-image]
+=== Task grouping with resources
+
+[plantuml, gantt-resources, png]
+....
+@startgantt
+[Task1] on {Alice} requires 10 days
+[Task2] on {Bob:50%} requires 2 days
+then [Task3] on {Alice:25%} requires 1 days
+then [Task4] on {Alice:25%} {Bob} requires 1 days
+@endgantt
+....
+
+[.maxed-image]
+=== Complex project example
+
+[plantuml, gantt-complex, png]
+....
+@startgantt
+[Prototype design] requires 13 days and is colored in Lavender/LightBlue 
+[Test prototype] requires 9 days and is colored in Coral/Green and starts 3 days after [Prototype design]'s end 
+[Write tests] requires 5 days and ends at [Prototype design]'s end 
+[Hire tests writers] requires 6 days and ends at [Write tests]'s start 
+[Init and write tests report] is colored in Coral/Green 
+[Init and write tests report] starts 1 day before [Test prototype]'s start and ends at [Test prototype]'s end 
+@endgantt
+....
+
+== PlantUML JSON Diagrams
+
+[.maxed-image]
+=== Basic JSON object
+
+[plantuml, json-basic, png]
+....
+@startjson
+{
+    "fruit":"Apple",
+    "size":"Large",
+    "color": ["Red", "Green"]
+}
+@endjson
+....
+
+[.maxed-image]
+=== Complex JSON structure
+
+[plantuml, json-complex, png]
+....
+@startjson
+{
+   "firstName": "John",
+   "lastName": "Smith",
+   "isAlive": true,
+   "age": 27,
+   "address": {
+     "streetAddress": "21 2nd Street",
+     "city": "New York",
+     "state": "NY",
+     "postalCode": "10021-3100"
+   },
+   "phoneNumbers": [
+     {
+       "type": "home",
+       "number": "212 555-1234"
+     },
+     {
+       "type": "office",
+       "number": "646 555-4567"
+     }
+   ],
+   "children": [],
+   "spouse": null
+}
+@endjson
+....
+
+[.maxed-image]
+=== JSON with highlighted elements
+
+[plantuml, json-highlighted, png]
+....
+@startjson
+#highlight "lastName"
+#highlight "address" / "city"
+#highlight "phoneNumbers" / "0" / "number"
+{
+   "firstName": "John",
+   "lastName": "Smith",
+   "isAlive": true,
+   "age": 28,
+   "address": {
+     "streetAddress": "21 2nd Street",
+     "city": "New York",
+     "state": "NY",
+     "postalCode": "10021-3100"
+   },
+   "phoneNumbers": [
+     {
+       "type": "home",
+       "number": "212 555-1234"
+     },
+     {
+       "type": "office",
+       "number": "646 555-4567"
+     }
+   ],
+   "children": [],
+   "spouse": null
+}
+@endjson
+....
+
+[.maxed-image]
+=== JSON with custom styles
+
+[plantuml, json-styled, png]
+....
+@startjson
+<style>
+   .h1 {
+     BackGroundColor green
+     FontColor white
+     FontStyle italic
+   }
+   .h2 {
+     BackGroundColor red
+     FontColor white
+     FontStyle bold
+   }
+</style>
+#highlight "lastName"
+#highlight "address" / "city" <<h1>>
+#highlight "phoneNumbers" / "0" / "number" <<h2>>
+{
+   "firstName": "John",
+   "lastName": "Smith",
+   "isAlive": true,
+   "age": 28,
+   "address": {
+     "streetAddress": "21 2nd Street",
+     "city": "New York",
+     "state": "NY",
+     "postalCode": "10021-3100"
+   },
+   "phoneNumbers": [
+     {
+       "type": "home",
+       "number": "212 555-1234"
+     },
+     {
+       "type": "office",
+       "number": "646 555-4567"
+     }
+   ],
+   "children": [],
+   "spouse": null
+}
+@endjson
+....
+
+== PlantUML YAML Diagrams
+
+[.maxed-image]
+=== Basic YAML diagram
+
+[plantuml, yaml-basic, png]
+....
+@startyaml
+fruit: Apple
+size: Large
+color:
+    - Red
+    - Green
+@endyaml
+....
+
+[.maxed-image]
+=== Complex YAML example
+
+[plantuml, yaml-complex, png]
+....
+@startyaml
+doe: "a deer, a female deer"
+ray: "a drop of golden sun"
+pi: 3.14159
+xmas: true
+french-hens: 3
+calling-birds:
+    - huey
+    - dewey
+    - louie
+    - fred
+xmas-fifth-day:
+    calling-birds: four
+    french-hens: 3
+    golden-rings: 5
+    partridges:
+        count: 1
+        location: "a pear tree"
+    turtle-doves: two
+@endyaml
+....
+
+[.maxed-image]
+=== YAML with special characters
+
+[plantuml, yaml-special-keys, png]
+....
+@startyaml
+@fruit: Apple
+$size: Large
+&color: Red
+❤: Heart
+‰: Per mille
+@endyaml
+....
+
+[.maxed-image]
+=== YAML with highlighted elements
+
+[plantuml, yaml-highlighted, png]
+....
+@startyaml
+#highlight "french-hens"
+#highlight "xmas-fifth-day" / "partridges"
+doe: "a deer, a female deer"
+ray: "a drop of golden sun"
+pi: 3.14159
+xmas: true
+french-hens: 3
+calling-birds:
+    - huey
+    - dewey
+    - louie
+    - fred
+xmas-fifth-day:
+    calling-birds: four
+    french-hens: 3
+    golden-rings: 5
+    partridges:
+        count: 1
+        location: "a pear tree"
+    turtle-doves: two
+@endyaml
+....
+
+[.maxed-image]
+=== YAML with custom highlight styles
+
+[plantuml, yaml-custom-styles, png]
+....
+@startyaml
+<style>
+yamlDiagram {
+    highlight {
+      BackGroundColor red
+      FontColor white
+      FontStyle italic
+    }
+}
+</style>
+#highlight "french-hens"
+#highlight "xmas-fifth-day" / "partridges"
+doe: "a deer, a female deer"
+ray: "a drop of golden sun"
+pi: 3.14159
+xmas: true
+french-hens: 3
+calling-birds:
+    - huey
+    - dewey
+    - louie
+    - fred
+xmas-fifth-day:
+    calling-birds: four
+    french-hens: 3
+    golden-rings: 5
+    partridges:
+        count: 1
+        location: "a pear tree"
+    turtle-doves: two
+@endyaml
+....
+
+
+== PlantUML WBS Diagrams
+
+[.maxed-image]
+=== Basic OrgMode syntax
+
+[plantuml, wbs-basic, png]
+....
+@startwbs
+* Business Process Modelling WBS
+** Launch the project
+*** Complete Stakeholder Research
+*** Initial Implementation Plan
+** Design phase
+*** Model of AsIs Processes Completed
+**** Model of AsIs Processes Completed1
+**** Model of AsIs Processes Completed2
+*** Measure AsIs performance metrics
+*** Identify Quick Wins
+** Complete innovate phase
+@endwbs
+....
+
+[.maxed-image]
+=== Change direction
+
+[plantuml, wbs-direction, png]
+....
+@startwbs
+* Business Process Modelling WBS
+** Launch the project
+*** Complete Stakeholder Research
+*** Initial Implementation Plan
+** Design phase
+*** Model of AsIs Processes Completed
+****< Model of AsIs Processes Completed1
+****> Model of AsIs Processes Completed2
+***< Measure AsIs performance metrics
+***< Identify Quick Wins
+@endwbs
+....
+
+[.maxed-image]
+=== Arithmetic notation
+
+[plantuml, wbs-arithmetic, png]
+....
+@startwbs
++ New Job
+++ Decide on Job Requirements
++++ Identity gaps
++++ Review JDs
+++++ Sign-Up for courses
+++++ Volunteer
+++++ Reading
+++- Checklist
++++- Responsibilities
++++- Location
+++ CV Upload Done
++++ CV Updated
+++++ Spelling & Grammar
+++++ Check dates
+---- Skills
++++ Recruitment sites chosen
+@endwbs
+....
+
+[.maxed-image]
+=== Multilines with icons
+
+[plantuml, wbs-multilines, png]
+....
+@startwbs
+* <&flag> Debian
+** <&globe> Ubuntu
+***:Linux Mint
+Open Source;
+*** Kubuntu
+*** Lubuntu
+@endwbs
+....
+
+[.maxed-image]
+=== Boxless nodes
+
+[plantuml, wbs-boxless, png]
+....
+@startwbs
++ Project
+ + Part One
+  + Task 1.1
+   - LeftTask 1.2
+   + Task 1.3
+  + Part Two
+   + Task 2.1
+   + Task 2.2
+   -_ Task 2.2.1 To the left boxless
+   -_ Task 2.2.2 To the Left boxless
+   +_ Task 2.2.3 To the right boxless
+@endwbs
+....
+
+[.maxed-image]
+=== Color and style
+
+[plantuml, wbs-colors, png]
+....
+@startwbs
+<style>
+wbsDiagram {
+  .pink {
+      BackgroundColor pink
+  }
+  .your_style_name {
+      BackgroundColor SkyBlue
+  }
+}
+</style>
+* this is the partner workpackage <<your_style_name>>
+** this is my workpackage <<pink>>
+**:This is on multiple
+lines; <<pink>>
+** this is another workpackage
+@endwbs
+....
+
+[.maxed-image]
+=== Advanced styling
+
+[plantuml, wbs-advanced-styling, png]
+....
+@startwbs
+<style>
+wbsDiagram {
+  Linecolor black
+  arrow {
+    LineColor green
+  }
+  :depth(0) {
+    BackgroundColor White
+    RoundCorner 10
+    LineColor red
+  }
+  node {
+    :depth(2) {
+      LineStyle 2
+      LineThickness 2.5
+    }
+  }
+  boxless {
+    FontColor darkgreen
+  }
+}
+</style>
+* World
+** America
+*** Canada
+*** Mexico
+**** Chihuahua
+*** USA
+**** Texas
+***< New York
+** Europe
+***_ England
+***_ Germany
+***_ Spain
+@endwbs
+....
+
+
+== PlantUML Math Diagrams
+
+[.maxed-image]
+=== Standalone AsciiMath formula
+
+[plantuml, math-ascii, png]
+....
+@startmath
+f(t)=(a_0)/2 + sum_(n=1)^ooa_ncos((npit)/L)+sum_(n=1)^oo b_n\ sin((npit)/L)
+@endmath
+....
+
+[.maxed-image]
+=== Standalone LaTeX formula
+
+[plantuml, math-latex, png]
+....
+@startlatex
+\sum_{i=0}^{n-1} (a_i + b_i^2)
+@endlatex
+....
+
+[.maxed-image]
+=== AsciiMath in activity diagram
+
+[plantuml, math-activity-ascii, png]
+....
+@startuml
+:<math>int_0^1f(x)dx</math>;
+:<math>x^2+y_1+z_12^34</math>;
+note right
+Try also <math>d/dxf(x)=lim_(h->0)(f(x+h)-f(x))/h</math>
+<math>P(y|bb"x") or f(bb"x")+epsilon</math>
+end note
+@enduml
+....
+
+[.maxed-image]
+=== LaTeX in activity diagram
+
+[plantuml, math-activity-latex, png]
+....
+@startuml
+:<latex>\int_0^1f(x)dx</latex>;
+:<latex>x^2+y_1+z_{12}^{34}</latex>;
+note right
+Try also <latex>\dfrac{d}{dx}f(x)=\lim\limits_{h \to 0}\dfrac{f(x+h)-f(x)}{h}</latex>
+<latex>P(y|\mathbf{x}) \mbox{ or } f(\mathbf{x})+\epsilon</latex>
+end note
+@enduml
+....
+
+[.maxed-image]
+=== Math in sequence diagram
+
+[plantuml, math-sequence, png]
+....
+@startuml
+Bob -> Alice : Can you solve: <math>ax^2+bx+c=0</math>
+Alice --> Bob: <math>x = (-b+-sqrt(b^2-4ac))/(2a)</math>
+@enduml
+....
