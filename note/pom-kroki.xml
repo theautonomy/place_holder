@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.zenika.ndx</groupId>
+    <artifactId>conferences</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <kroki.server.url>https://kroki.io</kroki.server.url>
+        <asciidoctor.highlighter>highlightjs</asciidoctor.highlighter>
+        <asciidoc.source.slides.directory>${basedir}/src/docs/asciidoc</asciidoc.source.slides.directory>
+        <asciidoc.target.slides.directory>${project.build.directory}/generated-slides</asciidoc.target.slides.directory>
+        <asciidoctor.highlighter>highlightjs</asciidoctor.highlighter>
+        <revealjs.plugins.directory>${basedir}/src/revealjs/plugins</revealjs.plugins.directory>
+
+        <version.asciidoctor.maven.plugin>3.2.0</version.asciidoctor.maven.plugin>
+        <version.asciidoctorj>3.0.0</version.asciidoctorj>
+        <version.asciidoctor.revealjs>5.2.0</version.asciidoctor.revealjs>
+        <version.asciidoctor.kroki>0.10.0</version.asciidoctor.kroki>
+        <version.jruby>9.4.8.0</version.jruby>
+        <revealjs.version>5.2.1</revealjs.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>rubygems</groupId>
+            <artifactId>asciidoctor-kroki</artifactId>
+            <version>${version.asciidoctor.kroki}</version>
+            <type>gem</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>rubygems</groupId>
+                    <artifactId>asciidoctor</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>rubygems</groupId>
+                    <artifactId>thread_safe</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>rubygems</groupId>
+                    <artifactId>concurrent-ruby</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${version.asciidoctor.maven.plugin}</version>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj</artifactId>
+                        <version>${version.asciidoctorj}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-revealjs</artifactId>
+                        <version>${version.asciidoctor.revealjs}</version>
+                    </dependency>
+                    <!-- Comment this section to use the default jruby artifact provided 
+							by the plugin -->
+                    <!--
+                        <dependency>
+                            <groupId>org.jruby</groupId>
+                            <artifactId>jruby-complete</artifactId>
+                            <version>${version.jruby}</version>
+                        </dependency>
+                    -->
+                </dependencies>
+
+                <executions>
+                    <execution>
+                        <id>generate-slides</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+
+                        <configuration>
+                            <gemPath>${project.build.directory}/gems</gemPath>
+                            <backend>revealjs</backend>
+                            <requires>
+                                <require>asciidoctor-kroki</require>
+                                <require>asciidoctor-revealjs</require>
+                            </requires>
+                            <!--
+                            <sourceDirectory>${asciidoc.source.slides.directory}</sourceDirectory> -->
+                            <outputDirectory>${asciidoc.target.slides.directory}</outputDirectory>
+                            <attributes>
+                                <allow-uri-read>true</allow-uri-read>
+                                <kroki-server-url>${kroki.server.url}</kroki-server-url>
+                                <revealjsdir>
+                                    https://cdn.jsdelivr.net/npm/reveal.js@${revealjs.version}</revealjsdir>
+                                <project-version>${project.version}</project-version>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>serve</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>http</goal>
+                        </goals>
+                        <configuration>
+                            <port>8888</port>
+                            <gemPath>${project.build.directory}/gems</gemPath>
+                            <backend>revealjs</backend>
+                            <requires>
+                                <require>asciidoctor-kroki</require>
+                                <require>asciidoctor-revealjs</require>
+                            </requires>
+                            <!--
+                            <sourceDirectory>${asciidoc.source.slides.directory}</sourceDirectory> -->
+                            <outputDirectory>${asciidoc.target.slides.directory}</outputDirectory>
+                            <attributes>
+                                <allow-uri-read>true</allow-uri-read>
+                                <kroki-server-url>${kroki.server.url}</kroki-server-url>
+                                <revealjsdir>
+                                    https://cdn.jsdelivr.net/npm/reveal.js@${revealjs.version}</revealjsdir>
+                                <project-version>${project.version}</project-version>
+                            </attributes>
+
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>de.saumya.mojo</groupId>
+                <artifactId>gem-maven-plugin</artifactId>
+                <version>2.0.1</version>
+                <configuration>
+                    <jrubyVersion>${version.jruby}</jrubyVersion>
+                    <gemHome>${project.build.directory}/gems</gemHome>
+                    <gemPath>${project.build.directory}/gems</gemPath>
+                </configuration>
+                <executions>
+                    <!-- Install required gems in target directory -->
+                    <execution>
+                        <id>install-gems</id>
+                        <goals>
+                            <goal>initialize</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+        <extensions>
+            <extension>
+                <groupId>org.jruby.maven</groupId>
+                <artifactId>mavengem-wagon</artifactId>
+                <version>2.0.0</version>
+            </extension>
+        </extensions>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>mavengems</id>
+            <url>mavengem:https://rubygems.org</url>
+        </repository>
+    </repositories>
+
+</project>
