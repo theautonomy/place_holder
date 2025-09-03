@@ -1,4 +1,23 @@
-  Summer Intern Performance Review
+## Using npm from command line
+cd test-js
+npm i --save asciidoctor @asciidoctor/reveal.js
+npm i --save asciidoctor-kroki
+
+npx asciidoctor-revealjs --help 
+
+npx asciidoctor-revealjs simple.adoc
+
+npx asciidoctor-revealjs -r asciidoctor-kroki -a allow-uri-read test.adoc
+
+npx asciidoctor-revealjs -r asciidoctor-kroki -a allow-uri-read=false -a kroki-fetch-diagram=true -D generated-slides sample-diagram.adoc
+
+npx asciidoctor-revealjs -r asciidoctor-kroki -a allow-uri-read=false -a kroki-fetch-diagram=true -D generated-slides -a width=1000px test.adoc
+
+* https://github.com/asciidoctor/asciidoctor-kroki
+** See all attributes there 
+
+----------
+Summer Intern Performance Review
 
   Technical Skills & Contributions
 
