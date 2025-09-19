@@ -1,3 +1,12 @@
+##
+
+Quick wins or time-saving prompts you've discovered
+Workflow examples (before/after AI assistance)
+Challenges you've faced and how you solved them
+Any "aha moments" worth sharing
+
+
+
 ## Using npm from command line
 cd test-js
 npm i --save asciidoctor @asciidoctor/reveal.js
