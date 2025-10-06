@@ -1,0 +1,43 @@
+I'll create a diagram showing the relationship between Spring AI's ChatClient, ChatClient.Builder, and ChatModel components.I've created a diagram showing the Spring AI architecture with three main layers:
+
+**Key Relationships:**
+
+1. **ChatModel** (blue) - The core interface that different AI providers implement (OpenAI, Anthropic, Ollama, Azure)
+
+2. **ChatClient.Builder** (orange) - The builder pattern that:
+   - Takes a ChatModel as dependency
+   - Allows configuration of defaults (system prompts, parameters, advisors)
+   - Builds immutable ChatClient instances
+
+3. **ChatClient** (green) - The fluent API that:
+   - Is created by the Builder
+   - Provides the `prompt()` method to start building requests
+   - Returns specs for further customization
+
+4. **Flow**: Developer creates Builder → configures defaults → builds ChatClient → uses prompt() → calls the underlying ChatModel
+
+The Builder pattern allows you to configure common settings once, while ChatClient provides a fluent, easy-to-use interface for making AI calls without directly working with the lower-level ChatModel interface.
+
+
+I'll update the diagram to show what Spring Boot auto-configuration provides for Spring AI.I've updated the diagram to show what Spring Boot auto-configuration sets up for Spring AI:
+
+**Auto-Configured Beans:**
+1. **ChatModel Bean** - Automatically created based on the AI provider dependency (OpenAI, Anthropic, etc.)
+2. **ChatClient.Builder Bean** - Pre-configured with the ChatModel and ready to inject
+3. **Optional Beans** - EmbeddingModel, ImageModel, VectorStore (if relevant dependencies are present)
+
+**Properties Configured via application.properties/yml:**
+- **API Keys** - Authentication credentials
+- **Base URL** - API endpoint (useful for custom deployments)
+- **Model Name** - Which specific model to use (e.g., gpt-4, claude-3-opus)
+- **Model Parameters** - Temperature, max tokens, top-p, etc.
+- **Timeouts** - Connection and read timeouts
+
+**Developer Experience:**
+1. Add Spring AI dependency to your project
+2. Configure properties in application.yml
+3. Auto-configuration creates all necessary beans
+4. Inject `ChatClient.Builder` into your services
+5. Optionally customize and build your `ChatClient`
+
+This means you don't need to manually configure the ChatModel implementation or create the Builder yourself - Spring Boot does it all automatically based on your dependencies and properties!
