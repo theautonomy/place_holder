@@ -1,5 +1,9 @@
 https://github.com/spring-projects/spring-ai/issues/2506
 
+https://github.com/spring-projects/spring-ai/issues/3948
+
+https://github.com/spring-ai-community/mcp-security/blob/f39f73105adef95df8b52491dc54f59402b6297e/mcp-client-security/src/main/java/org/springaicommunity/mcp/security/client/sync/oauth2/http/client/OAuth2ClientCredentialsSyncHttpRequestCustomizer.java
+
 
 -----
 	@Bean
