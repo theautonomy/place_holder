@@ -1,0 +1,480 @@
+= DevPulse: AI-Powered Developer Dashboard
+:revealjsdir: https://cdn.jsdelivr.net/npm/reveal.js@5.1.0
+:revealjs_theme: white
+:revealjs_slideNumber: true
+:revealjs_transition: slide
+:revealjs_controls: true
+:revealjs_progress: true
+:revealjs_width: 1600
+:revealjs_height: 1200
+:customcss: styles/hackathon-innovation-theme.css
+:source-highlighter: highlight.js
+:icons: font
+
+[.title-slide]
+== DevPulse
+
+[.lead]
+Your Intelligent Development Command Center
+
+[.tech-badge]
+Spring AI
+
+[.tech-badge.ai]
+MCP
+
+[.tech-badge.success]
+Real-time APIs
+
+[.status.live]
+● LIVE DEMO
+
+== The Problem
+
+[.impact]
+Developers are drowning in tools
+
+[.two-columns]
+====
+[.column]
+--
+**Current Reality:**
+
+* 10+ tabs open constantly
+* Context switching kills productivity
+* Scattered metrics and alerts
+* Manual integration chaos
+* Information overload
+--
+
+[.column]
+--
+[.big-number]
+37%
+
+[.lead]
+of dev time lost to tool switching
+
+[.big-number]
+4.5hrs
+
+[.lead]
+wasted per developer, per week
+--
+====
+
+== Our Solution
+
+[.highlight-box]
+**DevPulse**: One intelligent dashboard that connects everything, powered by AI
+
+[.feature-grid]
+====
+[.feature-card]
+--
+**🤖 AI Assistant**
+
+Natural language queries to your entire dev stack
+--
+
+[.feature-card]
+--
+**🔌 Universal Connectivity**
+
+MCP protocol connects to any tool
+--
+
+[.feature-card]
+--
+**📊 Smart Insights**
+
+AI-powered analysis and predictions
+--
+
+[.feature-card]
+--
+**⚡ Real-time Updates**
+
+Live data from all your sources
+--
+====
+
+== Architecture: Built for Scale
+
+[mermaid,architecture,svg]
+....
+graph TB
+    subgraph "Frontend"
+        UI["⚡ React Dashboard<br/>Real-time WebSocket"]
+    end
+
+    subgraph "Spring AI Backend"
+        Controller["🎮 REST Controllers"]
+        AIService["🧠 AI Service Layer"]
+        ChatClient["💬 Spring AI ChatClient"]
+        MCP["🔌 MCP Integration"]
+    end
+
+    subgraph "MCP Servers"
+        GitHub["📁 GitHub MCP"]
+        Jira["📋 Jira MCP"]
+        Jenkins["🔧 Jenkins MCP"]
+        Metrics["📊 Metrics MCP"]
+        Custom["⚙️ Custom MCP"]
+    end
+
+    subgraph "AI Models"
+        OpenAI["OpenAI GPT-4"]
+        Anthropic["Claude"]
+    end
+
+    UI --> Controller
+    Controller --> AIService
+    AIService --> ChatClient
+    ChatClient --> MCP
+    ChatClient --> OpenAI
+    ChatClient --> Anthropic
+
+    MCP --> GitHub
+    MCP --> Jira
+    MCP --> Jenkins
+    MCP --> Metrics
+    MCP --> Custom
+
+    style ChatClient fill:#6366f1
+    style MCP fill:#8b5cf6
+    style UI fill:#10b981
+....
+
+== Key Features: The Magic
+
+=== 1. Natural Language Queries
+
+[source,text]
+----
+You: "Show me all failed builds in the last 24 hours"
+
+DevPulse: 🔍 Querying Jenkins via MCP...
+
+📊 Found 3 failed builds:
+   • main-pipeline (12:34 PM) - Test failures
+   • frontend-build (2:15 PM) - Dependency conflict
+   • api-tests (4:20 PM) - Timeout
+
+🤖 AI Analysis: Pattern detected - all failures
+   relate to new dependency update in PR #234
+----
+
+=== 2. Smart Integrations via MCP
+
+[.two-columns]
+====
+[.column]
+--
+**Connected Tools:**
+
+[.tech-badge]
+GitHub
+
+[.tech-badge]
+Jira
+
+[.tech-badge]
+Jenkins
+
+[.tech-badge]
+SonarQube
+
+[.tech-badge]
+Grafana
+
+[.tech-badge]
+PagerDuty
+
+[.tech-badge]
+Slack
+--
+
+[.column]
+--
+**One Protocol, Infinite Possibilities**
+
+[source,yaml]
+----
+spring:
+  ai:
+    mcp:
+      clients:
+        github:
+          transport: stdio
+          command: npx
+          args: ["-y", "mcp-github"]
+
+        jira:
+          transport: http
+          url: "http://localhost:3000/mcp"
+
+        jenkins:
+          transport: stdio
+          command: python
+          args: ["jenkins-mcp-server.py"]
+----
+--
+====
+
+=== 3. AI-Powered Insights
+
+[.highlight-box]
+**Spring AI analyzes patterns across your entire dev workflow**
+
+[.two-columns]
+====
+[.column]
+--
+**Predictive Alerts:**
+
+[.warning-box]
+⚠️ High probability of deployment issues detected
+
+Based on:
+
+* 3 similar PRs failed in staging
+* Code complexity increased 40%
+* Test coverage dropped 15%
+
+**Recommendation:** Add integration tests before merging
+--
+
+[.column]
+--
+**Productivity Insights:**
+
+[.success-box]
+✅ Team velocity up 25% this sprint!
+
+Contributing factors:
+
+* 60% reduction in code review time
+* 40% fewer context switches
+* AI-assisted code suggestions
+
+**Keep it up!** 🚀
+--
+====
+
+=== 4. Real-time Dashboard
+
+[source,java]
+----
+@RestController
+@RequestMapping("/api/dashboard")
+public class DashboardController {
+
+    @Autowired
+    private DevPulseService devPulseService;
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<DashboardUpdate> streamUpdates() {
+        return devPulseService.getRealtimeUpdates()
+            .map(event -> enrichWithAI(event));  // AI adds context!
+    }
+
+    @PostMapping("/ask")
+    public Flux<String> askAI(@RequestBody Query query) {
+        return chatClient.prompt()
+            .user(query.getText())
+            .tools(mcpProvider)  // All MCP tools available!
+            .stream()
+            .content();
+    }
+}
+----
+
+== Tech Stack: Innovation at Every Layer
+
+[.columns]
+====
+[%step]
+[.column]
+--
+**Backend Power**
+
+[.tech-badge]
+Spring Boot 3.2
+
+[.tech-badge.ai]
+Spring AI 1.0
+
+[.tech-badge]
+Spring WebFlux
+
+[.tech-badge.ai]
+MCP Protocol
+
+[.tech-badge.success]
+PostgreSQL + pgvector
+
+[.tech-badge]
+Redis Cache
+--
+
+[.column]
+[%step]
+--
+**Frontend Excellence**
+
+[.tech-badge.success]
+React 18
+
+[.tech-badge]
+TypeScript
+
+[.tech-badge]
+TailwindCSS
+
+[.tech-badge.ai]
+WebSocket
+
+[.tech-badge]
+Chart.js
+
+[.tech-badge]
+Framer Motion
+--
+====
+
+[%step]
+[.highlight-box]
+**Why Spring AI + MCP?**
+[%step]
+====
+* **Standardized integrations** - One protocol for everything
+* **AI-native** - Built-in tool calling and reasoning
+* **Production-ready** - Spring Boot ecosystem
+* **Future-proof** - Industry standard protocol
+====
+
+== Live Demo
+
+[.demo-section]
+**Let's see DevPulse in action!**
+
+[.metric]
+[.number]
+3
+[.label]
+Questions to AI
+
+[.metric]
+[.number]
+7
+[.label]
+Tools Connected
+
+[.metric]
+[.number]
+< 2s
+[.label]
+Response Time
+
+[.cta]
+👉 Watch the Magic Happen
+
+== Impact & Results
+
+[.two-columns]
+====
+[.column]
+--
+[.metric]
+[.number]
+60%
+[.label]
+Faster Issue Resolution
+
+[.metric]
+[.number]
+45%
+[.label]
+Reduced Context Switching
+
+[.metric]
+[.number]
+80%
+[.label]
+Faster Onboarding
+--
+
+[.column]
+--
+[.success-box]
+**Developer Feedback:**
+
+"DevPulse feels like having a senior dev watching your back 24/7"
+— Sarah, Frontend Lead
+
+"Finally, one place for everything. This is a game-changer."
+— Mike, DevOps Engineer
+
+"The AI insights caught issues before they hit production."
+— Alex, Backend Developer
+--
+====
+
+== What's Next: The Vision
+
+[.highlight-box]
+**Short-term (Next 30 days)**
+
+[%step]
+* ✅ Multi-team support with role-based access
+* ✅ Custom MCP server marketplace
+* ✅ Mobile app for on-the-go monitoring
+* ✅ Advanced AI models (Claude, Gemini)
+
+[.warning-box]
+**Long-term Vision**
+
+[%step]
+* 🚀 **Autonomous Workflows** - AI executes routine tasks
+* 🚀 **Predictive Analytics** - Prevent issues before they happen
+* 🚀 **Team Collaboration AI** - Smart meeting summaries, action items
+* 🚀 **Enterprise Platform** - Multi-org, compliance, audit trails
+
+== Thank You!
+
+[.title-slide]
+=== DevPulse: Your Intelligent Development Command Center
+
+[.lead]
+Built with ❤️ using Spring AI & MCP
+
+[.two-columns]
+====
+[.column]
+--
+**Try it now:**
+
+🌐 devpulse-demo.com
+
+📁 github.com/team/devpulse
+
+📧 team@devpulse.dev
+--
+
+[.column]
+--
+**The Team:**
+
+👨‍💻 Engineering Lead
+
+👩‍💻 AI Specialist
+
+👨‍💻 Full-stack Developer
+
+👩‍💻 UX Designer
+--
+====
+
+[.cta]
+Questions?
