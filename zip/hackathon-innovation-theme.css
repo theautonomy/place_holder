@@ -1,0 +1,499 @@
+/**
+ * Hackathon Innovation Theme
+ * A bold, modern theme for creative tech presentations
+ */
+
+:root {
+  --color-primary: #6366f1;
+  --color-secondary: #8b5cf6;
+  --color-accent: #ec4899;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-dark: #1e1b4b;
+  --color-light: #f8fafc;
+  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --gradient-accent: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
+  --gradient-dark: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+}
+
+.reveal {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 38px;
+  font-weight: 400;
+  color: #1e1b4b;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  margin-bottom: 0.5em;
+}
+
+.reveal h1 {
+  font-size: 2.8em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.reveal h2 {
+  font-size: 2.2em;
+  color: var(--color-primary);
+}
+
+.reveal h3 {
+  font-size: 1.6em;
+  color: var(--color-secondary);
+}
+
+/* Title slide styling */
+.reveal .slides section.title-slide {
+  background: var(--gradient-dark);
+  color: white;
+  text-align: center;
+  padding: 2em;
+}
+
+.reveal .slides section.title-slide h1 {
+  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 3.5em;
+  margin-bottom: 0.3em;
+  text-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
+}
+
+.reveal .slides section.title-slide .lead {
+  color: #c7d2fe;
+  font-size: 1.3em;
+  font-weight: 300;
+  margin-top: 0.5em;
+}
+
+/* Lead text styling */
+.reveal .lead {
+  font-size: 1.3em;
+  font-weight: 300;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 1em;
+}
+
+/* Bold emphasis */
+.reveal strong {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Lists */
+.reveal ul,
+.reveal ol {
+  margin: 0 0 1em 1.5em;
+}
+
+.reveal ul li,
+.reveal ol li {
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+}
+
+.reveal ul li::marker {
+  color: var(--color-accent);
+  font-size: 1.2em;
+}
+
+/* Code blocks */
+.reveal pre {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  margin: 1em 0;
+  border: 1px solid #e2e8f0;
+}
+
+.reveal code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  background: #f1f5f9;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  color: #6366f1;
+  font-size: 0.85em;
+}
+
+.reveal pre code {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 1.5em;
+  max-height: 600px;
+  line-height: 1.6;
+}
+
+/* Tables */
+.reveal table {
+  border: none;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1em auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.reveal table thead {
+  background: var(--gradient-primary);
+}
+
+.reveal table thead th {
+  color: white;
+  font-weight: 600;
+  padding: 1em 1.5em;
+  border: none;
+}
+
+.reveal table tbody tr {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.reveal table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.reveal table tbody td {
+  padding: 0.8em 1.5em;
+  border: none;
+}
+
+/* Blockquotes */
+.reveal blockquote {
+  background: #f8fafc;
+  border-left: 5px solid var(--color-accent);
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  font-style: italic;
+  color: #475569;
+}
+
+/* Custom highlight boxes */
+.reveal .highlight-box {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 1.5em;
+  border-radius: 12px;
+  margin: 1em 0;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+}
+
+.reveal .success-box {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 1.5em;
+  border-radius: 12px;
+  margin: 1em 0;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+}
+
+.reveal .warning-box {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 1.5em;
+  border-radius: 12px;
+  margin: 1em 0;
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3);
+}
+
+/* Impact text */
+.reveal .impact {
+  font-size: 2.5em;
+  font-weight: 700;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin: 0.5em 0;
+}
+
+.reveal .big-number {
+  font-size: 4em;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin: 0.2em 0;
+}
+
+/* Feature cards */
+.reveal .feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5em;
+  margin: 1.5em 0;
+}
+
+.reveal .feature-card {
+  background: white;
+  padding: 1.5em;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-top: 4px solid var(--color-primary);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.reveal .feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2);
+}
+
+.reveal .feature-card h3 {
+  margin-top: 0;
+  color: var(--color-primary);
+}
+
+/* Tech stack badges */
+.reveal .tech-badge {
+  display: inline-block;
+  background: var(--gradient-primary);
+  color: white;
+  padding: 0.4em 1em;
+  border-radius: 20px;
+  margin: 0.3em;
+  font-size: 0.8em;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.reveal .tech-badge.ai {
+  background: var(--gradient-accent);
+}
+
+.reveal .tech-badge.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Progress indicators */
+.reveal .progress {
+  background: #e2e8f0;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 1em 0;
+}
+
+.reveal .progress-bar {
+  background: var(--gradient-primary);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* Icons and emojis */
+.reveal .icon {
+  font-size: 1.5em;
+  margin-right: 0.3em;
+  vertical-align: middle;
+}
+
+/* Slide backgrounds */
+.reveal .slides section[data-background-gradient] {
+  color: white;
+}
+
+/* Demo section */
+.reveal .demo-section {
+  background: var(--gradient-dark);
+  color: white;
+  padding: 2em;
+  border-radius: 16px;
+  margin: 1em 0;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Team section */
+.reveal .team-member {
+  display: inline-block;
+  text-align: center;
+  margin: 1em;
+}
+
+.reveal .team-member .avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: inline-block;
+  margin-bottom: 0.5em;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+}
+
+/* Call to action */
+.reveal .cta {
+  background: var(--gradient-accent);
+  color: white;
+  padding: 1em 2em;
+  border-radius: 50px;
+  display: inline-block;
+  margin: 1em 0;
+  font-weight: 600;
+  font-size: 1.2em;
+  box-shadow: 0 8px 30px rgba(236, 72, 153, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.reveal .cta:hover {
+  transform: scale(1.05);
+}
+
+/* Fragments */
+.reveal .fragment.highlight-current-blue.visible.current-fragment {
+  color: var(--color-primary);
+}
+
+/* Links */
+.reveal a {
+  color: var(--color-primary);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s ease;
+}
+
+.reveal a:hover {
+  border-bottom-color: var(--color-primary);
+}
+
+/* Controls */
+.reveal .controls {
+  color: var(--color-primary);
+}
+
+/* Progress bar */
+.reveal .progress {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.reveal .progress span {
+  background: var(--gradient-primary);
+}
+
+/* Slide number */
+.reveal .slide-number {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* Two-column layout - custom class */
+.reveal .two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2em;
+  align-items: center;
+}
+
+/* Columns layout - AsciiDoc reveal.js native support */
+.reveal .exampleblock.columns > .content {
+  display: flex;
+  gap: 2em;
+  align-items: flex-start;
+}
+
+.reveal .exampleblock.columns > .content > .openblock.column {
+  flex: 1;
+}
+
+.reveal .exampleblock.columns > .content > .openblock.column > .content {
+  padding: 0;
+}
+
+/* Animation classes */
+.reveal .fade-in {
+  animation: fadeIn 0.8s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Metric display */
+.reveal .metric {
+  text-align: center;
+  margin: 1em 0;
+}
+
+.reveal .metric .number {
+  font-size: 3em;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+  line-height: 1;
+}
+
+.reveal .metric .label {
+  font-size: 0.9em;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.5em;
+}
+
+/* Status indicator */
+.reveal .status {
+  display: inline-block;
+  padding: 0.3em 1em;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+.reveal .status.live {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Screenshot frame */
+.reveal .screenshot {
+  border: 3px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .reveal {
+    font-size: 28px;
+  }
+
+  .reveal .two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .reveal .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}

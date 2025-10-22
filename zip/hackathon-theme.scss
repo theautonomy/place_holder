@@ -1,0 +1,387 @@
+// Innovation Hackathon Theme
+// Modern, dynamic theme with gradient backgrounds and smooth animations
+
+$primary-color: #00d4ff;
+$secondary-color: #7c3aed;
+$accent-color: #f59e0b;
+$success-color: #10b981;
+$dark-bg: #0f172a;
+$darker-bg: #020617;
+$text-color: #f1f5f9;
+$heading-color: #ffffff;
+
+// Background gradients
+$gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$gradient-tech: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #db2777 100%);
+$gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+
+.reveal {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: $text-color;
+  background: $gradient-dark;
+
+  // Custom background
+  .backgrounds {
+    background: $darker-bg;
+  }
+
+  // Headings
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: $heading-color;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    font-size: 2.8em;
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5em;
+  }
+
+  h2 {
+    font-size: 2.2em;
+    color: $primary-color;
+    margin-bottom: 0.8em;
+  }
+
+  h3 {
+    font-size: 1.6em;
+    color: $secondary-color;
+  }
+
+  // Links
+  a {
+    color: $primary-color;
+    text-decoration: none;
+    transition: all 0.3s ease;
+
+    &:hover {
+      color: $accent-color;
+      text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    }
+  }
+
+  // Lists
+  ul, ol {
+    text-align: left;
+    line-height: 1.8;
+
+    li {
+      margin-bottom: 0.5em;
+
+      &::marker {
+        color: $primary-color;
+      }
+    }
+  }
+
+  // Centered lists
+  .text-center ul,
+  .text-center ol {
+    list-style-position: inside;
+    text-align: center;
+  }
+
+  // No bullet lists
+  .no-bullet ul,
+  .no-bullet ol {
+    list-style-type: none;
+    padding-left: 0;
+  }
+
+  // Code blocks
+  pre {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    code {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      padding: 1em;
+      max-height: 600px;
+    }
+  }
+
+  code {
+    color: $primary-color;
+    background: rgba(124, 58, 237, 0.2);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+  }
+
+  // Emphasis
+  strong {
+    color: $accent-color;
+    font-weight: 700;
+  }
+
+  em {
+    color: $primary-color;
+    font-style: italic;
+  }
+
+  // Custom classes
+  .lead {
+    font-size: 1.3em;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgba(241, 245, 249, 0.9);
+    margin: 1em 0;
+  }
+
+  .highlight-box {
+    background: rgba(124, 58, 237, 0.15);
+    border-left: 4px solid $secondary-color;
+    padding: 1.5em;
+    margin: 1em 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .tech-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(0, 212, 255, 0.3));
+    border: 1px solid $primary-color;
+    padding: 0.4em 1em;
+    margin: 0.3em;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 212, 255, 0.2);
+  }
+
+  .team-member {
+    display: inline-block;
+    background: rgba(30, 58, 138, 0.4);
+    padding: 0.5em 1.2em;
+    margin: 0.3em;
+    border-radius: 25px;
+    font-weight: 500;
+    border: 2px solid rgba(124, 58, 237, 0.5);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+      border-color: $primary-color;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+  }
+
+  .feature-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid rgba(124, 58, 237, 0.4);
+    border-radius: 16px;
+    padding: 1.5em;
+    margin: 1em;
+    backdrop-filter: blur(10px);
+    transition: all 0.5s ease;
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateY(-5px);
+      border-color: $primary-color;
+      box-shadow: 0 12px 40px rgba(0, 212, 255, 0.3);
+    }
+
+    // Change border color when first fragment is visible - no blinking
+    &:has(.fragment.visible) {
+      border-color: $primary-color;
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 60px rgba(124, 58, 237, 0.3);
+    }
+  }
+
+  .stats-number {
+    font-size: 3em;
+    font-weight: 700;
+    background: linear-gradient(135deg, $primary-color 0%, $accent-color 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+
+  // Fragments with custom animations
+  .fragment {
+    &.fade-in-then-semi-out {
+      opacity: 0;
+
+      &.visible {
+        opacity: 1;
+      }
+
+      &.current-fragment {
+        opacity: 1;
+      }
+
+      &.visible:not(.current-fragment) {
+        opacity: 0.5;
+      }
+    }
+
+    &.grow-highlight {
+      &.visible {
+        transform: scale(1.1);
+        color: $accent-color;
+      }
+    }
+  }
+
+  // Progress bar
+  .progress {
+    background: rgba(15, 23, 42, 0.8);
+    height: 4px;
+
+    span {
+      background: linear-gradient(90deg, $primary-color 0%, $secondary-color 100%);
+    }
+  }
+
+  // Controls
+  .controls {
+    color: $primary-color;
+
+    button {
+      &:hover {
+        color: $accent-color;
+      }
+    }
+  }
+
+  // Slide numbers
+  .slide-number {
+    background-color: rgba(15, 23, 42, 0.8);
+    color: $primary-color;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+  }
+
+  // Footer
+  .footer {
+    position: fixed;
+    bottom: 1em;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.6em;
+    color: rgba(241, 245, 249, 0.7);
+    font-style: italic;
+    z-index: 100;
+  }
+
+  // Tables
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+    th {
+      background: rgba(124, 58, 237, 0.4);
+      color: $heading-color;
+      font-weight: 600;
+      padding: 1em;
+      border-bottom: 2px solid $primary-color;
+    }
+
+    td {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.8em;
+      border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  // Blockquotes
+  blockquote {
+    background: rgba(124, 58, 237, 0.1);
+    border-left: 5px solid $secondary-color;
+    padding: 1.5em;
+    margin: 1em 0;
+    font-style: italic;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  // Special slide backgrounds
+  section[data-background-gradient] {
+    h1, h2, h3 {
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+    }
+  }
+
+  // Icon styling (for when using font-awesome or similar)
+  .icon {
+    color: $primary-color;
+    margin-right: 0.3em;
+  }
+
+  // Columns layout
+  .openblock.columns > .content {
+    display: flex;
+    gap: 2em;
+    align-items: flex-start;
+    justify-content: space-around;
+
+    .sidebarblock.column {
+      flex: 1;
+      text-align: center;
+    }
+  }
+
+  // Mermaid diagrams
+  .imageblock,
+  .kroki-container {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2em;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    margin: 1em auto;
+    max-height: 700px;
+    overflow: auto;
+
+    svg {
+      max-width: 100%;
+      max-height: 650px;
+      height: auto;
+    }
+  }
+}
+
+// Keyframe animations
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.6), 0 0 60px rgba(124, 58, 237, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.8), 0 0 80px rgba(124, 58, 237, 0.6);
+  }
+}
+
+// Print styles
+@media print {
+  .reveal {
+    background: white;
+    color: black;
+
+    h1, h2, h3, h4, h5, h6 {
+      color: black;
+      text-shadow: none;
+    }
+  }
+}

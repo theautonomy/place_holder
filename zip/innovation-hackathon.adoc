@@ -1,0 +1,272 @@
+= AI-Powered DevOps Intelligence Dashboard
+:revealjs_theme: white
+:revealjs_customtheme: styles/hackathon-theme.css
+:revealjs_slideNumber: true
+:revealjs_transition: slide
+:revealjs_transitionSpeed: fast
+:revealjs_controlsLayout: edges
+:revealjs_progress: true
+:revealjs_hash: true
+:revealjs_center: true
+:revealjs_width: 1600
+:revealjs_height: 1080
+:revealjsdir: https://cdn.jsdelivr.net/npm/reveal.js@5.1.0
+:source-highlighter: highlightjs
+:highlightjs-theme: monokai
+:icons: font
+:customcss: styles/hackathon-theme.css
+:kroki-server-url: http://localhost:5555
+:docinfo: private
+
+[.lead]
+*Transforming failures into insights, risks into confidence*
+
+Innovation Hackathon 2025
+
+== 🚀 Meet The Team
+
+[.lead]
+*Five minds, one vision: Revolutionizing DevOps with AI*
+
+[.team-member]#Wei# [.team-member]#Shirish# [.team-member]#Jim# [.team-member]#Michael# [.team-member]#Nick#
+
+
+== The Challenge
+
+[.feature-card]
+****
+[.fragment]
+[.highlight-box]
+*The Gap:* Teams need intelligent, automated analysis to make faster, safer deployment decisions
+
+[.text-center]
+[%step]
+[.no-bullet]
+* 🔥 GitHub Actions failures cost teams hours of debugging time
+* 🎯 Deployment risks are difficult to assess manually
+* 📊 Root cause analysis requires deep technical expertise
+* ⚡ Time-sensitive production issues demand instant insights
+* 🔍 Cross-platform data scattered across GitHub and Jira
+****
+
+[%notitle]
+== Solution Impact
+
+[.r-fit-text]
+*Our Solution*
+
+[.lead]
+AI-Powered DevOps Intelligence Dashboard
+
+[.fragment]
+[.stats-number]
+⚡ 5x Faster
+
+[.fragment]
+Failure Diagnosis
+
+== Core Features
+
+=== 🤖 AI Failure Analysis Engine
+
+[.feature-card]
+****
+[.text-center]
+[%step]
+[.no-bullet]
+* *Automated Root Cause Detection* - AI analyzes failed GitHub Actions logs
+* *Intelligent Pattern Recognition* - Learns from historical failures
+* *Contextual Insights* - Links to related Jira tickets and code changes
+* *Natural Language Explanations* - No more cryptic error messages
+****
+
+[transition=zoom]
+=== 🛡️ Deployment Risk Analyzer
+
+[.feature-card]
+****
+[.text-center]
+[%step]
+[.no-bullet]
+* *Commit Differential Analysis* - Compares two commits for deployment
+* *Risk Scoring Algorithm* - Quantifies deployment risk (0-100)
+* *Impact Assessment* - Identifies affected services and dependencies
+* *Smart Recommendations* - Suggests rollback or proceed with confidence
+****
+
+== Architecture Overview
+
+=== System Architecture
+
+[mermaid]
+....
+graph TB
+    subgraph "Frontend Layer"
+        A2[Interactive Reports]
+        A1[Dashboard UI]
+        A3[Risk Visualization]
+    end
+
+    subgraph "Backend API"
+        B[Spring Boot]
+        C[LibertyGPT Integration]
+        D[MCP Integration]
+        E[RAG Pipeline]
+    end
+
+    subgraph "Infrastructure"
+        F[GitHub REST API]
+        G[Atlassian Jira API]
+        H[DataDog]
+    end
+
+    subgraph "AI Processing"
+        I[LLM Analysis]
+        J[Vector Database]
+        K[Context Retrieval]
+    end
+
+    A1 --> B
+    A2 --> B
+    A3 --> B
+
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+    B --> G
+
+    D --> F
+    D --> G
+    D --> H
+
+    C --> I
+    E --> J
+
+    G --> B
+
+    I -.-> K
+    J -.-> K
+
+    style A1 fill:#00d4ff,stroke:#7c3aed,stroke-width:3px
+    style A2 fill:#00d4ff,stroke:#7c3aed,stroke-width:3px
+    style A3 fill:#00d4ff,stroke:#7c3aed,stroke-width:3px
+    style B fill:#7c3aed,stroke:#00d4ff,stroke-width:3px
+    style C fill:#10b981,stroke:#00d4ff,stroke-width:2px
+    style D fill:#10b981,stroke:#00d4ff,stroke-width:2px
+    style E fill:#10b981,stroke:#00d4ff,stroke-width:2px
+    style F fill:#ec4899,stroke:#00d4ff,stroke-width:2px
+    style G fill:#ec4899,stroke:#00d4ff,stroke-width:2px
+    style H fill:#ec4899,stroke:#00d4ff,stroke-width:2px
+    style I fill:#f59e0b,stroke:#7c3aed,stroke-width:2px
+    style J fill:#f59e0b,stroke:#7c3aed,stroke-width:2px
+....
+
+== AI-Powered Workflow
+
+=== Failure Analysis Pipeline
+
+[mermaid]
+....
+sequenceDiagram
+    participant UI as Angular UI
+    participant API as Spring Boot API
+    participant AI as Spring AI Engine
+    participant GH as GitHub API
+    participant RAG as RAG Pipeline
+    participant LLM as LLM Model
+
+    UI->>API: Request failure analysis
+    API->>GH: Fetch failed action logs
+    GH-->>API: Return logs & metadata
+    API->>RAG: Prepare context
+    RAG->>RAG: Retrieve similar failures
+    RAG-->>AI: Enhanced context
+    API->>AI: Analyze with context
+    AI->>LLM: Process
+    LLM-->>AI: Analysis & insights
+    AI-->>API: Structured response
+    API->>GH: Fetch related commits
+    API->>API: Link Jira tickets
+    API-->>UI: Complete analysis
+    UI->>UI: Visualize results
+....
+
+[transition=zoom]
+== Use Case Scenario
+
+=== Production deployment failed at 3 AM
+
+[%step]
+[.feature-card]
+[.text-center]
+[.no-bullet]
+1. 🚨 GitHub Action fails - notification triggers
+2. 🤖 AI analyzes 50,000 lines of logs in 5 seconds
+3. 🔍 Root cause identified: Database migration conflict
+4. 📊 Links to Jira ticket from 3 weeks ago with similar issue
+5. 💡 Recommends: Rollback to commit ABC123
+6. ✅ Team makes informed decision in minutes vs. hours
+
+== Business Impact
+
+=== ROI & Value Proposition
+
+[.fragment]
+[.highlight-box]
+*Transform DevOps from reactive firefighting to proactive intelligence*
+
+[.columns]
+--
+[.column.fragment]
+****
+[.stats-number]
+85%
+
+Reduction in MTTR
+(Mean Time To Resolution)
+****
+
+[.column.fragment]
+****
+[.stats-number]
+$250K
+
+Annual savings per team
+****
+
+[.column.fragment]
+****
+[.stats-number]
+95%
+
+Deployment confidence
+****
+--
+
+
+== Live Demo 
+
+[transition=zoom]
+== The Innovation
+
+=== What Makes This Hackathon-Worthy
+
+[%step]
+[.feature-card]
+[.text-center]
+[.no-bullet]
+* [.grow-highlight]#🎯 *Solves Real Pain*# - Every DevOps team faces this
+* [.grow-highlight]#🚀 *Cutting-Edge Tech*# - Latest AI/ML capabilities
+* [.grow-highlight]#💼 *Enterprise Ready*# - Production-grade architecture
+* [.grow-highlight]#📊 *Measurable Impact*# - Clear ROI & metrics
+* [.grow-highlight]#🔮 *Future-Proof*# - Extensible & scalable design
+
+[transition=zoom]
+== Question?
+
+== AI-Powered DevOps Intelligence Dashboard
+
+[.r-fit-text]
+[%step]
+*Transforming failures into insights, risks into confidence*

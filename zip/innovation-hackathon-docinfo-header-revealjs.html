@@ -1,0 +1,9 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const header = document.createElement('div');
+  header.className = 'private-header';
+  header.style.cssText = 'position: fixed; top: 10px; left: 0; right: 0; text-align: center; z-index: 1001; color: #f59e0b; font-size: 0.6em; font-family: Arial, sans-serif; font-style: italic;';
+  header.innerHTML = '<span style="color: #f59e0b !important;">Ignite team : AI powered devops dashboard. Transforming failures into insights, risks into confidence</span>';
+  document.querySelector('.reveal').appendChild(header);
+});
+</script>
