@@ -1,4 +1,6 @@
-        code --list-extensions | sed -e 's/^/code --install-extension /' > my_vscode_extensions.sh
+"terminal.integrated.defaultLocation": "editor"
+------------------
+code --list-extensions | sed -e 's/^/code --install-extension /' > my_vscode_extensions.sh
 -------------
 The current error tracker is critical for maintaining system reliability and operational visibility in your enterprise Java applications, providing essential capabilities to detect, investigate, and resolve production issues before they impact users. It serves as the foundation for incident response and system health monitoring, enabling your development and operations teams to understand application failures, track error trends over time, and maintain service quality standards across your enterprise infrastructure.
 
