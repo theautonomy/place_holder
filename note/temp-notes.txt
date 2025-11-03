@@ -3,6 +3,13 @@ vector doesn't exist
 https://learn.microsoft.com/en-us/answers/questions/1308154/create-extension-vector-error-type-does-not-exist
 
 https://stackoverflow.com/questions/76220715/type-vector-does-not-exist-on-postgresql-langchain
+
+[Code: 0, SQL State: 42883]  ERROR: function uuid_generate_v4() does not exist   Hint: No function matches the given name and argument types. You might need to add explicit type casts.   Position: 67  [Script position: 66 - 85]
+
+
+ALTER DATABASE your_database_name SET search_path TO "$user", public, your_extension_schema;
+
+
 ------------------
 "terminal.integrated.defaultLocation": "editor"
 ------------------
