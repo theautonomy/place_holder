@@ -1,9 +1,4 @@
-What He Does Well
-Jeff excels as both a technical contributor and leader in the DevOps space. His technical expertise shines through his development of comprehensive Datadog dashboards that have significantly enhanced our monitoring capabilities and system visibility for ECLPS and policy ecosystems. As a team lead, he demonstrates strong leadership by fostering collaboration and driving team performance while actively mentoring team members to elevate their skills and capabilities. His excellent communication skills and easy-going personality create a positive team environment, while his willingness to help teammates at any time makes him a trusted resource and go-to person for the entire team.
-His forward-thinking approach to technology adoption has been particularly impressive. Jeff has been a true pioneer in piloting AI and GPT technologies within our organization, positioning our team at the forefront of technological advancement. Additionally, his commitment to knowledge sharing, especially in monitoring and performance testing, has created lasting value by improving the entire team's understanding and establishing best practices that benefit the broader organization.
 
-Recommendations
-Continue to leverage Jeff's expertise in emerging technologies by expanding his role in AI and automation initiatives across the organization. His proven ability to successfully pilot new technologies while maintaining operational excellence makes him an ideal candidate for leading cross-functional projects. Consider providing him with opportunities to mentor other teams in AI adoption and monitoring best practices, allowing his impact to extend beyond his immediate team and drive broader organizational transformation.
 -----------------
 vector doesn't exist
 
