@@ -1,0 +1,628 @@
+@charset "UTF-8";
+/**
+ * Custom theme for LLM Demystification Presentation
+ * Modern, tech-focused design with AI/ML aesthetic
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap");
+/*********************************************
+ * GLOBAL STYLES
+ *********************************************/
+.reveal {
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 38px;
+  font-weight: 400;
+  color: #1e293b;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+/*********************************************
+ * BACKGROUNDS
+ *********************************************/
+.reveal {
+  background: #f8fafc;
+  background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+}
+
+/* Only apply frame to horizontal slides (no nested sections) */
+.reveal .slides > section:not(:has(> section)) {
+  padding: 70px 35px 35px 60px !important;
+  border: 3px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  margin: 20px;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 900px !important;
+}
+
+.reveal .slides > section:not(:has(> section)).present {
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+/* Parent container for vertical slides - no frame */
+.reveal .slides > section:has(> section) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: auto !important;
+}
+
+/* Vertical slides - apply frame styling */
+.reveal .slides > section > section {
+  padding: 70px 35px 35px 60px !important;
+  border: 3px solid rgba(99, 102, 241, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  margin: 20px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 900px !important;
+}
+
+.reveal .slides > section > section.present {
+  border-color: rgba(99, 102, 241, 0.6) !important;
+}
+
+.reveal .slides > section.present {
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+/* Prevent margin collapse on first child */
+.reveal .slides > section > *:first-child {
+  margin-top: 0;
+}
+
+.reveal .slides > section > * {
+  max-width: 100%;
+}
+
+/* Prevent images from overflowing */
+.reveal img {
+  max-width: 100%;
+  height: auto;
+  box-sizing: border-box;
+}
+
+/* Prevent other block elements from overflowing */
+.reveal .imageblock,
+.reveal .listingblock,
+.reveal .literalblock {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/*********************************************
+ * HEADERS
+ *********************************************/
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  margin: 0 0 30px 0;
+  color: #1e293b;
+}
+
+.reveal h1 {
+  font-size: 2.5em;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 20px;
+}
+
+.reveal h2 {
+  font-size: 1.8em;
+  color: #6366f1;
+  border-bottom: 3px solid #06b6d4;
+  padding-bottom: 15px;
+  margin-bottom: 40px;
+  max-width: 90%;
+}
+
+.reveal h3 {
+  font-size: 1.4em;
+  color: #8b5cf6;
+  margin-bottom: 25px;
+}
+
+/*********************************************
+ * TITLE SLIDE
+ *********************************************/
+.reveal .title {
+  text-align: center;
+  padding: 80px 40px;
+}
+.reveal .title h1 {
+  font-size: 3em;
+  margin-bottom: 30px;
+}
+
+.reveal .subtitle {
+  font-size: 1.2em;
+  color: #8b5cf6;
+  font-weight: 400;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+/*********************************************
+ * LEAD TEXT
+ *********************************************/
+.reveal .lead {
+  font-size: 1.2em;
+  font-weight: 500;
+  color: #6366f1;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  padding: 18px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-left: 5px solid #6366f1;
+  border-radius: 8px;
+  max-width: 85% !important;
+  width: 85% !important;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+
+/*********************************************
+ * TEXT
+ *********************************************/
+.reveal p {
+  margin: 20px 0;
+  line-height: 1.6;
+  max-width: 95%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+
+.reveal .paragraph,
+.reveal div.paragraph {
+  max-width: 95%;
+  box-sizing: border-box;
+}
+
+.reveal strong,
+.reveal b {
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.reveal em {
+  font-style: italic;
+  color: #8b5cf6;
+}
+
+/*********************************************
+ * LISTS
+ *********************************************/
+.reveal ul,
+.reveal ol {
+  margin: 25px 0;
+  margin-left: 40px;
+}
+
+.reveal ul {
+  list-style-type: none;
+}
+
+.reveal ul li {
+  margin: 15px 0;
+  padding-left: 35px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.reveal ul li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #6366f1;
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+.reveal ol li {
+  margin: 15px 0;
+  line-height: 1.6;
+}
+
+.reveal ul ul li::before {
+  content: "◦";
+  color: #8b5cf6;
+}
+
+/*********************************************
+ * CODE BLOCKS
+ *********************************************/
+.reveal pre {
+  margin: 25px 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  background: #1e293b;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  max-width: 85% !important;
+  width: 85% !important;
+  box-sizing: border-box;
+}
+
+.reveal .listingblock,
+.reveal .literalblock {
+  max-width: 85% !important;
+  width: 85% !important;
+  box-sizing: border-box;
+}
+
+.reveal code {
+  font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+  font-size: 0.85em;
+  padding: 0;
+  background: transparent;
+  border-radius: 4px;
+  word-wrap: break-word;
+}
+
+.reveal pre code {
+  display: block;
+  padding: 18px;
+  overflow: auto;
+  max-height: 600px;
+  width: 100%;
+  line-height: 1.5;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 12px;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.reveal p code,
+.reveal li code {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+/*********************************************
+ * TABLES
+ *********************************************/
+.reveal table {
+  margin: 30px auto;
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.reveal table th,
+.reveal table td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.reveal table th {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-weight: 700;
+  padding: 20px;
+  text-align: left;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reveal table td {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  background: white;
+}
+
+.reveal table tr:last-child td {
+  border-bottom: none;
+}
+
+.reveal table tr:hover td {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/*********************************************
+ * QUOTES
+ *********************************************/
+.reveal blockquote {
+  margin: 30px auto;
+  padding: 25px 30px 25px 70px;
+  position: relative;
+  background: white;
+  border-left: 5px solid #06b6d4;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-style: italic;
+  color: #1e293b;
+}
+
+.reveal blockquote::before {
+  content: "“";
+  position: absolute;
+  left: 20px;
+  top: 15px;
+  font-size: 3em;
+  color: #06b6d4;
+  opacity: 0.3;
+  font-family: Georgia, serif;
+}
+
+/*********************************************
+ * LINKS
+ *********************************************/
+.reveal a {
+  color: #6366f1;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.reveal a:hover {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+}
+
+/*********************************************
+ * DIAGRAMS (Mermaid)
+ *********************************************/
+.reveal .mermaid {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin: 30px auto;
+}
+
+/*********************************************
+ * FRAGMENTS
+ *********************************************/
+.reveal .fragment {
+  transition: all 0.3s ease;
+}
+
+.reveal .fragment.visible {
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/*********************************************
+ * SPECIAL ELEMENTS
+ *********************************************/
+.reveal aside.notes {
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 4px solid #6366f1;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.8em;
+}
+
+.reveal .step {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.reveal .step.current {
+  opacity: 1;
+}
+
+/*********************************************
+ * PROGRESS BAR
+ *********************************************/
+.reveal .progress {
+  background: rgba(0, 0, 0, 0.1);
+  height: 4px;
+}
+
+.reveal .progress span {
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+}
+
+/*********************************************
+ * SLIDE NUMBERS
+ *********************************************/
+.reveal .slide-number {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.7em;
+}
+
+/*********************************************
+ * CONTROLS
+ *********************************************/
+.reveal .controls {
+  color: #6366f1;
+}
+
+.reveal .controls button {
+  color: #6366f1;
+}
+
+.reveal .controls button:hover {
+  color: #8b5cf6;
+}
+
+/*********************************************
+ * CUSTOM UTILITY CLASSES
+ *********************************************/
+.text-primary {
+  color: #6366f1 !important;
+}
+
+.text-secondary {
+  color: #8b5cf6 !important;
+}
+
+.text-accent {
+  color: #06b6d4 !important;
+}
+
+.text-success {
+  color: #10b981 !important;
+}
+
+.text-warning {
+  color: #f59e0b !important;
+}
+
+.text-error {
+  color: #ef4444 !important;
+}
+
+.box {
+  padding: 25px;
+  border-radius: 12px;
+  margin: 25px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.box-primary {
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 5px solid #6366f1;
+}
+
+.box-secondary {
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 5px solid #8b5cf6;
+}
+
+.box-success {
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 5px solid #10b981;
+}
+
+.box-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 5px solid #f59e0b;
+}
+
+.box-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 5px solid #ef4444;
+}
+
+.icon {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.concept {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  margin: 30px 0;
+  border-top: 5px solid #6366f1;
+}
+
+.concept h3 {
+  margin-top: 0;
+  color: #6366f1;
+}
+
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.center {
+  text-align: center;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.big-text {
+  font-size: 6em !important;
+  font-weight: 900 !important;
+  color: #6366f1 !important;
+  line-height: 1 !important;
+  margin: 60px 0 !important;
+  display: block !important;
+  letter-spacing: 0.05em !important;
+}
+
+/*********************************************
+ * RESPONSIVE DESIGN
+ *********************************************/
+@media screen and (max-width: 768px) {
+  .reveal {
+    font-size: 28px;
+  }
+  .reveal h1 {
+    font-size: 2em;
+  }
+  .reveal h2 {
+    font-size: 1.5em;
+  }
+  .two-columns {
+    grid-template-columns: 1fr;
+  }
+}
+/*********************************************
+ * PRINT STYLES
+ *********************************************/
+@media print {
+  .reveal {
+    background: white;
+  }
+  .reveal h1,
+  .reveal h2,
+  .reveal h3 {
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
+  }
+}
+
+/*# sourceMappingURL=llm-theme.css.map */
