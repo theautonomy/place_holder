@@ -1,3 +1,5 @@
+https://github.com/spring-projects/spring-boot/blob/main/module/spring-boot-security-oauth2-client/src/main/java/org/springframework/boot/security/oauth2/client/autoconfigure/ConditionalOnOAuth2ClientRegistrationProperties.java#L39
+=============
 create schema my_test_schema;
 
 
