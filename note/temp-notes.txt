@@ -1,3 +1,38 @@
+[plantuml, architecture, svg]
+----
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 13
+
+package "Application Layer" {
+    [Controllers]
+    [Services]
+}
+
+package "Spring AI Layer" {
+    [ChatClient]
+    [VectorStore]
+    [EmbeddingModel]
+    [Tool Calling]
+}
+
+package "Provider Layer" {
+    [OpenAI]
+    [Anthropic]
+    [Azure]
+    [Ollama]
+}
+
+[Services] --> [ChatClient]
+[Services] --> [VectorStore]
+[ChatClient] --> [OpenAI]
+[ChatClient] --> [Anthropic]
+[VectorStore] --> [Providers]
+[EmbeddingModel] --> [Providers]
+
+@enduml
+----
+===========
 https://github.com/spring-projects/spring-boot/blob/main/module/spring-boot-security-oauth2-client/src/main/java/org/springframework/boot/security/oauth2/client/autoconfigure/ConditionalOnOAuth2ClientRegistrationProperties.java#L39
 =============
 create schema my_test_schema;
