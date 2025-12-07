@@ -1,3 +1,23 @@
+#!/bin/bash
+# Create package-info.java in all packages under src/main/java
+
+find src/main/java -type d | while read dir; do
+    # Check if directory has .java files (excluding package-info.java)
+    if ls "$dir"/*.java 2>/dev/null | grep -v package-info.java > /dev/null; then
+        # Convert directory path to package name
+        package=$(echo "$dir" | sed 's|src/main/java/||' | tr '/' '.')
+
+        # Create package-info.java
+        cat > "$dir/package-info.java" <<EOF
+@NullMarked
+package $package;
+
+import org.jspecify.annotations.NullMarked;
+EOF
+        echo "Created $dir/package-info.java"
+    fi
+done
+--------------------
 [plantuml, architecture, svg]
 ----
 @startuml
