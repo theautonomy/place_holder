@@ -1,3 +1,12 @@
+- Datadog api
+	- https://docs.datadoghq.com/api/latest/monitors/#monitors-search
+	- https://docs.datadoghq.com/api/latest/service-definition/#get-a-single-service-definition
+	- https://docs.datadoghq.com/api/latest/logs/#search-logs
+	- https://docs.datadoghq.com/api/latest/logs-metrics/#get-a-log-based-metric
+	- https://docs.datadoghq.com/api/latest/events/#search-events
+	- https://docs.datadoghq.com/api/latest/embeddable-graphs/#get-specific-embed
+
+-----
 #!/bin/bash
 # Create package-info.java in all packages under src/main/java
 
