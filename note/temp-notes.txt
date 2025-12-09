@@ -1,4 +1,8 @@
 Datadog api - sample http request and response
+
+1. get all services 
+2. filter services belong to us
+3. monitor search based on the service
 ------
 
 spring http service client - legacy configuration example
