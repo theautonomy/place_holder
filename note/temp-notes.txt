@@ -1,3 +1,16 @@
+Use jackson2 in spring boot  4
+
+<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-jackson2</artifactId>
+        </dependency>
+
+
+spring.http.converters.preferred-json-mapper=jackson2
+
+ Both Jackson 2 and Jackson 3 are loaded, but the spring.http.converters.preferred-json-mapper=jackson2 property tells Spring to use Jackson 2's MappingJackson2HttpMessageConverter for HTTP message conversion.
+
+-------------------------
 swagger for spring boot 4.0.0
 ----------------------
 Datadog api - sample http request and response
