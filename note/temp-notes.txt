@@ -13,6 +13,10 @@ Example api:// URI
     api://5550be71-xxxx-xxxx-xxxx-3de58953df6c/Tiny.Read
 
 https://stackoverflow.com/questions/76055443/azure-access-token-generation-from-postman-for-delegated-scopes
+
+https://stackoverflow.com/questions/62542868/calling-azure-webapi-from-postman-with-specific-scope
+
+client_id != the id used in scope for permission != id in token url
 ------------------------
 Use jackson2 in spring boot  4
 
