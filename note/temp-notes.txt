@@ -1,3 +1,19 @@
+client_id_exposing_API
+refers to using your Azure AD Application ID (Client ID) as the base URI for defining custom API permissions (scopes) for your own protected backend service, allowing frontend apps (like Blazor) to request specific access tokens for that API, ensuring your API validates these permissions using the api://{clientID}/... format and matching scopes in its configuration. It's a standard way to secure custom microservices within Microsoft Entra ID (Azure AD) for modern, identity-driven apps. 
+How it Works
+
+    Register Your API: You register your backend API as an "Application" in Azure AD (Entra ID).
+    Expose API: In that API's registration, you define custom permissions (scopes), e.g., Tiny.Read, under "Expose an API".
+    Get Client ID: The application registration gets a unique Client ID (Application ID).
+    Client App Permissions: Your client (e.g., Blazor WASM) requests permissions for this API, using the format api://{YourApiClientID}/Tiny.Read.
+    API Validation: Your backend API validates incoming tokens, checking for the presence and validity of these scopes, often configured in appsettings.json. 
+
+Example api:// URI
+
+    api://5550be71-xxxx-xxxx-xxxx-3de58953df6c/Tiny.Read
+
+https://stackoverflow.com/questions/76055443/azure-access-token-generation-from-postman-for-delegated-scopes
+------------------------
 Use jackson2 in spring boot  4
 
 <dependency>
