@@ -1,3 +1,8 @@
+call mvn clean package -DskipTests
+call mvn dependency:sources
+call mvn dependency:resolve -Dclassifier=javadoc
+call mvn dependency:resolve -Dclassifier=sources
+---------------
 client_id_exposing_API
 refers to using your Azure AD Application ID (Client ID) as the base URI for defining custom API permissions (scopes) for your own protected backend service, allowing frontend apps (like Blazor) to request specific access tokens for that API, ensuring your API validates these permissions using the api://{clientID}/... format and matching scopes in its configuration. It's a standard way to secure custom microservices within Microsoft Entra ID (Azure AD) for modern, identity-driven apps. 
 How it Works
