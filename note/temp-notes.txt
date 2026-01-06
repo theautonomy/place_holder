@@ -1,11 +1,5 @@
 
-Option 1:
-"Congratulations on three amazing years! Watching you grow from tech starter to associate software developer has been inspiring. Your eagerness to learn and positive attitude make you such a joy to work with. Here's to many more years of growth and success!"
-Option 2:
-"Three years and look how far you've come! Your journey from tech starter to associate software developer showcases your dedication and talent. Your enthusiasm for learning and wonderful work ethic brighten our team every day. Excited to see what you accomplish next!"
-Option 3:
-"Happy 3-year anniversary! It's been incredible to witness your growth and development as you've advanced from tech starter to associate software developer. Your passion for learning and exceptional attitude are truly appreciated by everyone on the team. Cheers to your continued success!"
------
+
 call mvn clean package -DskipTests
 call mvn dependency:sources
 call mvn dependency:resolve -Dclassifier=javadoc
