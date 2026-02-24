@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastering Spring WebClient</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (THEME)
+           Change these to change the whole look
+           =========================================== */
+        :root {
+            /* Colors */
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #0f1525;
+            --bg-card: #131a2e;
+            --text-primary: #e0e6f0;
+            --text-secondary: #7a8599;
+            --accent: #00ffcc;
+            --accent-dim: rgba(0, 255, 204, 0.15);
+            --accent-glow: rgba(0, 255, 204, 0.3);
+            --purple: #8b5cf6;
+            --purple-dim: rgba(139, 92, 246, 0.15);
+            --pink: #ec4899;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --green: #22c55e;
+            --blue: #3b82f6;
+
+            /* Typography — responsive with clamp() */
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --title-size: clamp(1.8rem, 5.5vw, 4.2rem);
+            --h2-size: clamp(1.3rem, 3.5vw, 2.4rem);
+            --h3-size: clamp(1rem, 2.5vw, 1.5rem);
+            --body-size: clamp(0.75rem, 1.4vw, 1.05rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --code-size: clamp(0.6rem, 1.1vw, 0.82rem);
+
+            /* Spacing — responsive */
+            --slide-padding: clamp(1.5rem, 4vw, 4rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+
+            /* Animation */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        /* ===========================================
+           BASE STYLES
+           =========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font-display);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            height: 100%;
+        }
+
+        /* ===========================================
+           SLIDE CONTAINER
+           Each slide = exact viewport height
+           =========================================== */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            padding: var(--slide-padding);
+        }
+
+        /* ===========================================
+           BACKGROUND EFFECTS
+           =========================================== */
+
+        /* Animated grid */
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 255, 204, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 204, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* Gradient orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        .orb-accent {
+            width: clamp(200px, 30vw, 400px);
+            height: clamp(200px, 30vw, 400px);
+            background: radial-gradient(circle, rgba(0, 255, 204, 0.12), transparent);
+        }
+        .orb-purple {
+            width: clamp(150px, 25vw, 300px);
+            height: clamp(150px, 25vw, 300px);
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.12), transparent);
+        }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        h1 {
+            font-size: var(--title-size);
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: var(--h2-size);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: var(--content-gap);
+        }
+
+        h3 {
+            font-size: var(--h3-size);
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        p, li {
+            font-size: var(--body-size);
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .accent { color: var(--accent); }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #00ffcc, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===========================================
+           COMPONENTS
+           =========================================== */
+
+        /* Badge pill */
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--accent);
+            background: var(--accent-dim);
+            border: 1px solid rgba(0, 255, 204, 0.25);
+            padding: 0.35em 1em;
+            border-radius: 999px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: var(--element-gap);
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #0c1120;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: min(55vh, 450px);
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.6em 1em;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .code-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .code-filename {
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            margin-left: 0.5em;
+        }
+
+        pre {
+            padding: clamp(0.75rem, 2vw, 1.5rem);
+            overflow: hidden;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: var(--code-size);
+            line-height: 1.55;
+        }
+
+        /* Syntax highlighting */
+        .kw { color: #c792ea; }      /* keywords */
+        .type { color: #82aaff; }    /* types */
+        .str { color: #c3e88d; }     /* strings */
+        .fn { color: #82aaff; }      /* functions */
+        .comment { color: #546e7a; font-style: italic; }
+        .num { color: #f78c6c; }     /* numbers */
+        .ann { color: #f59e0b; }     /* annotations */
+        .op { color: #89ddff; }      /* operators */
+        .param { color: #e0e6f0; }   /* parameters */
+
+        /* Feature cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: clamp(0.8rem, 2vw, 1.5rem);
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 255, 204, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .card-icon {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            margin-bottom: clamp(0.3rem, 0.8vw, 0.6rem);
+        }
+
+        .card h3 {
+            margin-bottom: 0.3em;
+        }
+
+        .card p {
+            font-size: var(--small-size);
+        }
+
+        /* Inline code */
+        code.inline {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 0.15em 0.5em;
+            border-radius: 4px;
+        }
+
+        /* Two-column layout */
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--content-gap);
+            align-items: start;
+        }
+
+        /* Step list */
+        .step-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--element-gap);
+        }
+
+        .step-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: clamp(0.5rem, 1vw, 0.8rem);
+        }
+
+        .step-num {
+            flex-shrink: 0;
+            width: clamp(1.4rem, 2.5vw, 1.8rem);
+            height: clamp(1.4rem, 2.5vw, 1.8rem);
+            background: var(--accent-dim);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Comparison layout */
+        .vs-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: clamp(0.5rem, 1.5vw, 1.5rem);
+            align-items: center;
+        }
+
+        .vs-divider {
+            font-family: var(--font-mono);
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            padding: 0.3em 0.6em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        /* ===========================================
+           SLIDE COUNTER & PROGRESS
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: clamp(0.5rem, 2vw, 1.5rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            padding: 0;
+        }
+
+        .nav-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            transform: scale(1.3);
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: clamp(0.5rem, 2vw, 1.5rem);
+            right: clamp(0.5rem, 2vw, 1.5rem);
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            z-index: 100;
+        }
+
+        /* Keyboard hint */
+        .keyboard-hint {
+            position: fixed;
+            bottom: clamp(0.5rem, 2vw, 1.5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: clamp(0.55rem, 0.8vw, 0.7rem);
+            color: rgba(255, 255, 255, 0.2);
+            z-index: 100;
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal:nth-child(1) { transition-delay: 0.1s; }
+        .reveal:nth-child(2) { transition-delay: 0.2s; }
+        .reveal:nth-child(3) { transition-delay: 0.3s; }
+        .reveal:nth-child(4) { transition-delay: 0.4s; }
+        .reveal:nth-child(5) { transition-delay: 0.5s; }
+        .reveal:nth-child(6) { transition-delay: 0.6s; }
+
+        /* Stagger cards inside a grid */
+        .slide.visible .card-grid .card:nth-child(1) { transition-delay: 0.15s; }
+        .slide.visible .card-grid .card:nth-child(2) { transition-delay: 0.25s; }
+        .slide.visible .card-grid .card:nth-child(3) { transition-delay: 0.35s; }
+        .slide.visible .card-grid .card:nth-child(4) { transition-delay: 0.45s; }
+        .slide.visible .card-grid .card:nth-child(5) { transition-delay: 0.55s; }
+        .slide.visible .card-grid .card:nth-child(6) { transition-delay: 0.65s; }
+
+        .card {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s var(--ease-out-expo),
+                        transform 0.5s var(--ease-out-expo),
+                        border-color 0.3s;
+        }
+        .slide.visible .card {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===========================================
+           RESPONSIVE BREAKPOINTS
+           =========================================== */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(1rem, 3vw, 2.5rem);
+                --content-gap: clamp(0.5rem, 1.5vw, 1.2rem);
+                --title-size: clamp(1.5rem, 5vw, 3rem);
+                --h2-size: clamp(1.1rem, 3vw, 1.8rem);
+            }
+        }
+
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 2.5vw, 1.5rem);
+                --content-gap: clamp(0.4rem, 1vw, 0.8rem);
+                --title-size: clamp(1.2rem, 4.5vw, 2.2rem);
+                --body-size: clamp(0.7rem, 1.2vw, 0.9rem);
+                --code-size: clamp(0.55rem, 0.9vw, 0.72rem);
+            }
+            .nav-dots, .keyboard-hint { display: none; }
+        }
+
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2vw, 1rem);
+                --title-size: clamp(1rem, 4vw, 1.8rem);
+                --h2-size: clamp(0.9rem, 2.5vw, 1.3rem);
+                --body-size: clamp(0.65rem, 1vw, 0.8rem);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .split {
+                grid-template-columns: 1fr;
+            }
+            .vs-grid {
+                grid-template-columns: 1fr;
+            }
+            .vs-divider {
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            :root {
+                --title-size: clamp(1.4rem, 7vw, 2.5rem);
+            }
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===========================================
+           REDUCED MOTION
+           =========================================== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Navigation dots -->
+    <nav class="nav-dots" id="navDots"></nav>
+
+    <!-- Slide counter -->
+    <div class="slide-counter" id="slideCounter"></div>
+
+    <!-- Keyboard hint -->
+    <div class="keyboard-hint">Arrow keys or scroll to navigate</div>
+
+    <!-- ==========================================
+         SLIDE 1: TITLE
+         ========================================== -->
+    <section class="slide" id="slide-1">
+        <div class="grid-bg"></div>
+        <div class="orb orb-accent" style="top: -10%; right: -5%;"></div>
+        <div class="orb orb-purple" style="bottom: -10%; left: -5%;"></div>
+        <div class="slide-content" style="align-items: center; text-align: center;">
+            <div class="reveal badge">Spring Framework</div>
+            <h1 class="reveal">Mastering<br><span class="gradient-text">WebClient</span></h1>
+            <p class="reveal" style="max-width: 500px; margin-top: var(--element-gap);">
+                Build reactive, non-blocking HTTP clients with Spring WebFlux
+            </p>
+            <div class="reveal" style="margin-top: var(--content-gap);">
+                <code class="inline">spring-boot-starter-webflux</code>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 2: WHY WEBCLIENT
+         ========================================== -->
+    <section class="slide" id="slide-2">
+        <div class="grid-bg"></div>
+        <div class="orb orb-purple" style="top: 10%; right: -10%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Why WebClient?</div>
+            <h2 class="reveal">RestTemplate is <span class="accent">deprecated</span>.<br>WebClient is the future.</h2>
+            <div class="card-grid" style="margin-top: var(--content-gap);">
+                <div class="card">
+                    <div class="card-icon">&#x26A1;</div>
+                    <h3>Non-Blocking</h3>
+                    <p>Async I/O under the hood with Project Reactor</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F504;</div>
+                    <h3>Reactive Streams</h3>
+                    <p>First-class Mono &amp; Flux support for streaming data</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F6E0;</div>
+                    <h3>Fluent API</h3>
+                    <p>Builder pattern with chainable, readable method calls</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">&#x1F512;</div>
+                    <h3>Production Ready</h3>
+                    <p>Timeouts, retries, filters, and error handling built-in</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 3: CONFIGURATION
+         ========================================== -->
+    <section class="slide" id="slide-3">
+        <div class="grid-bg"></div>
+        <div class="orb orb-accent" style="bottom: -5%; right: -10%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Setup</div>
+            <h2 class="reveal">Configuring <span class="accent">WebClient</span></h2>
+            <div class="reveal code-block" style="margin-top: var(--element-gap);">
+                <div class="code-header">
+                    <div class="code-dot" style="background:#ff5f57;"></div>
+                    <div class="code-dot" style="background:#febc2e;"></div>
+                    <div class="code-dot" style="background:#28c840;"></div>
+                    <span class="code-filename">WebClientConfig.java</span>
+                </div>
+                <pre><code><span class="ann">@Configuration</span>
+<span class="kw">public class</span> <span class="type">WebClientConfig</span> {
+
+    <span class="ann">@Bean</span>
+    <span class="kw">public</span> <span class="type">WebClient</span> <span class="fn">webClient</span>() {
+        <span class="type">HttpClient</span> httpClient = <span class="type">HttpClient</span>.<span class="fn">create</span>()
+            .<span class="fn">option</span>(<span class="type">ChannelOption</span>.CONNECT_TIMEOUT_MILLIS, <span class="num">5000</span>)
+            .<span class="fn">doOnConnected</span>(conn <span class="op">-></span>
+                conn.<span class="fn">addHandlerLast</span>(<span class="kw">new</span> <span class="type">ReadTimeoutHandler</span>(<span class="num">5000</span>, <span class="type">MILLISECONDS</span>))
+                    .<span class="fn">addHandlerLast</span>(<span class="kw">new</span> <span class="type">WriteTimeoutHandler</span>(<span class="num">5000</span>, <span class="type">MILLISECONDS</span>)));
+
+        <span class="kw">return</span> <span class="type">WebClient</span>.<span class="fn">builder</span>()
+            .<span class="fn">baseUrl</span>(<span class="str">"https://jsonplaceholder.typicode.com"</span>)
+            .<span class="fn">clientConnector</span>(<span class="kw">new</span> <span class="type">ReactorClientHttpConnector</span>(httpClient))
+            .<span class="fn">filter</span>(<span class="fn">logRequest</span>())
+            .<span class="fn">filter</span>(<span class="fn">errorHandlingFilter</span>())
+            .<span class="fn">build</span>();
+    }
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 4: BASIC GET
+         ========================================== -->
+    <section class="slide" id="slide-4">
+        <div class="grid-bg"></div>
+        <div class="orb orb-purple" style="top: -10%; left: -5%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">GET Requests</div>
+            <h2 class="reveal">Fetching Data</h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--content-gap);">
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-dot" style="background:#ff5f57;"></div>
+                        <div class="code-dot" style="background:#febc2e;"></div>
+                        <div class="code-dot" style="background:#28c840;"></div>
+                        <span class="code-filename">Single item (Mono)</span>
+                    </div>
+                    <pre><code>webClient
+    .<span class="fn">get</span>()
+    .<span class="fn">uri</span>(<span class="str">"/posts/{id}"</span>, id)
+    .<span class="fn">accept</span>(<span class="type">APPLICATION_JSON</span>)
+    .<span class="fn">retrieve</span>()
+    .<span class="fn">bodyToMono</span>(<span class="type">Post</span>.<span class="kw">class</span>)
+    .<span class="fn">timeout</span>(<span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">5</span>));</code></pre>
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-dot" style="background:#ff5f57;"></div>
+                        <div class="code-dot" style="background:#febc2e;"></div>
+                        <div class="code-dot" style="background:#28c840;"></div>
+                        <span class="code-filename">Collection (Flux)</span>
+                    </div>
+                    <pre><code>webClient
+    .<span class="fn">get</span>()
+    .<span class="fn">uri</span>(<span class="str">"/posts"</span>)
+    .<span class="fn">accept</span>(<span class="type">APPLICATION_JSON</span>)
+    .<span class="fn">retrieve</span>()
+    .<span class="fn">bodyToFlux</span>(<span class="type">Post</span>.<span class="kw">class</span>)
+    .<span class="fn">retryWhen</span>(<span class="type">Retry</span>.<span class="fn">backoff</span>(<span class="num">3</span>, <span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">2</span>)))
+    .<span class="fn">timeout</span>(<span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">10</span>));</code></pre>
+                </div>
+            </div>
+            <p class="reveal" style="margin-top: var(--element-gap); text-align: center;">
+                <code class="inline">Mono&lt;T&gt;</code> = 0 or 1 item &nbsp;&nbsp;|&nbsp;&nbsp; <code class="inline">Flux&lt;T&gt;</code> = 0 to N items
+            </p>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 5: POST / PUT / DELETE
+         ========================================== -->
+    <section class="slide" id="slide-5">
+        <div class="grid-bg"></div>
+        <div class="orb orb-accent" style="top: 5%; right: -8%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Mutations</div>
+            <h2 class="reveal">POST, PUT &amp; DELETE</h2>
+            <div class="reveal code-block" style="margin-top: var(--element-gap);">
+                <div class="code-header">
+                    <div class="code-dot" style="background:#ff5f57;"></div>
+                    <div class="code-dot" style="background:#febc2e;"></div>
+                    <div class="code-dot" style="background:#28c840;"></div>
+                    <span class="code-filename">JsonPlaceholderService.java</span>
+                </div>
+                <pre><code><span class="comment">// CREATE</span>
+webClient.<span class="fn">post</span>().<span class="fn">uri</span>(<span class="str">"/posts"</span>)
+    .<span class="fn">contentType</span>(<span class="type">APPLICATION_JSON</span>)
+    .<span class="fn">bodyValue</span>(post)
+    .<span class="fn">retrieve</span>().<span class="fn">bodyToMono</span>(<span class="type">Post</span>.<span class="kw">class</span>);
+
+<span class="comment">// UPDATE</span>
+webClient.<span class="fn">put</span>().<span class="fn">uri</span>(<span class="str">"/posts/{id}"</span>, id)
+    .<span class="fn">contentType</span>(<span class="type">APPLICATION_JSON</span>)
+    .<span class="fn">bodyValue</span>(post)
+    .<span class="fn">retrieve</span>().<span class="fn">bodyToMono</span>(<span class="type">Post</span>.<span class="kw">class</span>);
+
+<span class="comment">// DELETE</span>
+webClient.<span class="fn">delete</span>().<span class="fn">uri</span>(<span class="str">"/posts/{id}"</span>, id)
+    .<span class="fn">retrieve</span>().<span class="fn">bodyToMono</span>(<span class="type">Void</span>.<span class="kw">class</span>);</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 6: ERROR HANDLING
+         ========================================== -->
+    <section class="slide" id="slide-6">
+        <div class="grid-bg"></div>
+        <div class="orb orb-purple" style="bottom: -5%; left: -8%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Error Handling</div>
+            <h2 class="reveal">Handling Failures <span class="accent">Gracefully</span></h2>
+            <div class="reveal code-block" style="margin-top: var(--element-gap);">
+                <div class="code-header">
+                    <div class="code-dot" style="background:#ff5f57;"></div>
+                    <div class="code-dot" style="background:#febc2e;"></div>
+                    <div class="code-dot" style="background:#28c840;"></div>
+                    <span class="code-filename">WebClientService.java</span>
+                </div>
+                <pre><code>webClient.<span class="fn">get</span>().<span class="fn">uri</span>(<span class="str">"/posts/{id}"</span>, id)
+    .<span class="fn">retrieve</span>()
+    .<span class="fn">onStatus</span>(s <span class="op">-></span> s.<span class="fn">equals</span>(<span class="type">HttpStatus</span>.NOT_FOUND),
+        resp <span class="op">-></span> <span class="type">Mono</span>.<span class="fn">error</span>(<span class="kw">new</span> <span class="type">RuntimeException</span>(<span class="str">"Not found"</span>)))
+    .<span class="fn">onStatus</span>(<span class="type">HttpStatusCode</span>::<span class="fn">is4xxClientError</span>,
+        resp <span class="op">-></span> <span class="type">Mono</span>.<span class="fn">error</span>(<span class="kw">new</span> <span class="type">RuntimeException</span>(<span class="str">"Client error"</span>)))
+    .<span class="fn">onStatus</span>(<span class="type">HttpStatusCode</span>::<span class="fn">is5xxServerError</span>,
+        resp <span class="op">-></span> <span class="type">Mono</span>.<span class="fn">error</span>(<span class="kw">new</span> <span class="type">RuntimeException</span>(<span class="str">"Server error"</span>)))
+    .<span class="fn">bodyToMono</span>(<span class="type">Post</span>.<span class="kw">class</span>)
+    .<span class="fn">retryWhen</span>(<span class="type">Retry</span>.<span class="fn">backoff</span>(<span class="num">3</span>, <span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">1</span>))
+        .<span class="fn">filter</span>(ex <span class="op">-></span> !(ex <span class="kw">instanceof</span> <span class="type">NotFound</span>)))
+    .<span class="fn">onErrorResume</span>(ex <span class="op">-></span> <span class="type">Mono</span>.<span class="fn">empty</span>());</code></pre>
+            </div>
+            <p class="reveal" style="margin-top: var(--element-gap); text-align: center;">
+                <code class="inline">onStatus</code> per-status &nbsp;&#x2192;&nbsp; <code class="inline">retryWhen</code> with filter &nbsp;&#x2192;&nbsp; <code class="inline">onErrorResume</code> fallback
+            </p>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 7: REACTIVE COMPOSITION
+         ========================================== -->
+    <section class="slide" id="slide-7">
+        <div class="grid-bg"></div>
+        <div class="orb orb-accent" style="top: -10%; left: 50%; transform: translateX(-50%);"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Advanced</div>
+            <h2 class="reveal">Reactive <span class="gradient-text">Composition</span></h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--content-gap); margin-top: var(--element-gap);">
+                <div>
+                    <h3 style="color: var(--accent); margin-bottom: var(--element-gap);">Sequential Chaining</h3>
+                    <div class="code-block">
+                        <pre><code><span class="fn">getUserById</span>(userId)
+  .<span class="fn">flatMap</span>(user <span class="op">-></span>
+    <span class="fn">getPostsByUserId</span>(userId)
+      .<span class="fn">collectList</span>()
+      .<span class="fn">map</span>(posts <span class="op">-></span>
+        user.<span class="fn">name</span>() + <span class="str">" has "</span>
+        + posts.<span class="fn">size</span>()
+        + <span class="str">" posts"</span>));</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: var(--purple); margin-bottom: var(--element-gap);">Concurrent Requests</h3>
+                    <div class="code-block">
+                        <pre><code><span class="type">Flux</span>.<span class="fn">fromIterable</span>(userIds)
+  .<span class="fn">flatMap</span>(
+    <span class="kw">this</span>::<span class="fn">getUserById</span>,
+    <span class="num">3</span>  <span class="comment">// concurrency level</span>
+  )
+  .<span class="fn">timeout</span>(
+    <span class="type">Duration</span>.<span class="fn">ofSeconds</span>(<span class="num">10</span>)
+  );</code></pre>
+                    </div>
+                </div>
+            </div>
+            <p class="reveal" style="margin-top: var(--element-gap); text-align: center;">
+                <code class="inline">flatMap</code> chains async calls &nbsp;&nbsp;|&nbsp;&nbsp; Second arg controls parallelism
+            </p>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 8: HTTP INTERFACE
+         ========================================== -->
+    <section class="slide" id="slide-8">
+        <div class="grid-bg"></div>
+        <div class="orb orb-purple" style="top: 5%; right: -5%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Spring 6+</div>
+            <h2 class="reveal">Declarative <span class="accent">HTTP Interface</span></h2>
+            <div class="reveal code-block" style="margin-top: var(--element-gap);">
+                <div class="code-header">
+                    <div class="code-dot" style="background:#ff5f57;"></div>
+                    <div class="code-dot" style="background:#febc2e;"></div>
+                    <div class="code-dot" style="background:#28c840;"></div>
+                    <span class="code-filename">JsonPlaceholderClient.java</span>
+                </div>
+                <pre><code><span class="kw">public interface</span> <span class="type">JsonPlaceholderClient</span> {
+
+    <span class="ann">@GetExchange</span>(<span class="str">"/posts"</span>)
+    <span class="type">Flux</span>&lt;<span class="type">Post</span>&gt; <span class="fn">getAllPosts</span>();
+
+    <span class="ann">@GetExchange</span>(<span class="str">"/posts/{id}"</span>)
+    <span class="type">Mono</span>&lt;<span class="type">Post</span>&gt; <span class="fn">getPostById</span>(<span class="ann">@PathVariable</span> <span class="type">Long</span> id);
+
+    <span class="ann">@PostExchange</span>(<span class="str">"/posts"</span>)
+    <span class="type">Mono</span>&lt;<span class="type">Post</span>&gt; <span class="fn">createPost</span>(<span class="ann">@RequestBody</span> <span class="type">Post</span> post);
+
+    <span class="ann">@DeleteExchange</span>(<span class="str">"/posts/{id}"</span>)
+    <span class="type">Mono</span>&lt;<span class="type">Void</span>&gt; <span class="fn">deletePost</span>(<span class="ann">@PathVariable</span> <span class="type">Long</span> id);
+}</code></pre>
+            </div>
+            <p class="reveal" style="margin-top: var(--element-gap); text-align: center;">
+                Define an interface &#x2192; Spring generates the WebClient implementation via proxy
+            </p>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 9: JAVA RECORDS
+         ========================================== -->
+    <section class="slide" id="slide-9">
+        <div class="grid-bg"></div>
+        <div class="orb orb-accent" style="bottom: -8%; left: -5%;"></div>
+        <div class="slide-content">
+            <div class="reveal badge">Models</div>
+            <h2 class="reveal">Java Records as <span class="accent">DTOs</span></h2>
+            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--content-gap); margin-top: var(--element-gap); align-items: start;">
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-dot" style="background:#ff5f57;"></div>
+                        <div class="code-dot" style="background:#febc2e;"></div>
+                        <div class="code-dot" style="background:#28c840;"></div>
+                        <span class="code-filename">Post.java</span>
+                    </div>
+                    <pre><code><span class="kw">public record</span> <span class="type">Post</span>(
+    <span class="ann">@JsonProperty</span>(<span class="str">"id"</span>) <span class="type">Long</span> id,
+    <span class="ann">@JsonProperty</span>(<span class="str">"userId"</span>) <span class="type">Long</span> userId,
+    <span class="ann">@JsonProperty</span>(<span class="str">"title"</span>) <span class="type">String</span> title,
+    <span class="ann">@JsonProperty</span>(<span class="str">"body"</span>) <span class="type">String</span> body
+) {
+    <span class="comment">// Convenience constructor</span>
+    <span class="kw">public</span> <span class="fn">Post</span>(<span class="type">Long</span> userId,
+               <span class="type">String</span> title,
+               <span class="type">String</span> body) {
+        <span class="kw">this</span>(<span class="kw">null</span>, userId, title, body);
+    }
+}</code></pre>
+                </div>
+                <div>
+                    <ul class="step-list">
+                        <li>
+                            <span class="step-num">1</span>
+                            <span>Immutable by default &mdash; no setters needed</span>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <span>Auto-generated <code class="inline">equals()</code>, <code class="inline">hashCode()</code>, <code class="inline">toString()</code></span>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <span>Compact syntax replaces verbose POJOs</span>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <span>Works seamlessly with Jackson for JSON serialization</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SLIDE 10: RECAP & RESOURCES
+         ========================================== -->
+    <section class="slide" id="slide-10">
+        <div class="grid-bg"></div>
+        <div class="orb orb-accent" style="top: -5%; right: -5%;"></div>
+        <div class="orb orb-purple" style="bottom: -5%; left: -5%;"></div>
+        <div class="slide-content" style="align-items: center; text-align: center;">
+            <div class="reveal badge">Recap</div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">What You Learned</h2>
+            <div class="card-grid reveal" style="max-width: min(90vw, 800px);">
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="color: var(--accent);">&#x2699;</div>
+                    <h3>Configure</h3>
+                    <p>Timeouts, filters &amp; base URL</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="color: var(--blue);">&#x1F4E5;</div>
+                    <h3>GET / POST</h3>
+                    <p>Mono &amp; Flux for all HTTP methods</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="color: var(--red);">&#x1F6E1;</div>
+                    <h3>Error Handling</h3>
+                    <p>onStatus, retry &amp; fallback</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="color: var(--orange);">&#x1F517;</div>
+                    <h3>Composition</h3>
+                    <p>Chain &amp; parallelize calls</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="color: var(--purple);">&#x2728;</div>
+                    <h3>HTTP Interface</h3>
+                    <p>Declarative clients in Spring 6</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="color: var(--green);">&#x1F4E6;</div>
+                    <h3>Java Records</h3>
+                    <p>Clean, immutable DTOs</p>
+                </div>
+            </div>
+            <p class="reveal" style="margin-top: var(--content-gap); font-size: var(--body-size);">
+                <span class="accent" style="font-weight: 600;">Thank you!</span> &nbsp; Questions?
+            </p>
+        </div>
+    </section>
+
+    <!-- ==========================================
+       JAVASCRIPT: Navigation & Animations
+       ========================================== -->
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.totalSlides = this.slides.length;
+                this.currentSlide = 0;
+                this.isScrolling = false;
+
+                this.progressBar = document.getElementById('progressBar');
+                this.navDots = document.getElementById('navDots');
+                this.slideCounter = document.getElementById('slideCounter');
+
+                this.createNavDots();
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupWheelNav();
+                this.setupTouchNav();
+                this.updateUI();
+            }
+
+            /* --- Navigation Dots --- */
+            createNavDots() {
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot';
+                    dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                    dot.addEventListener('click', () => this.goToSlide(i));
+                    this.navDots.appendChild(dot);
+                });
+            }
+
+            /* --- Intersection Observer for scroll-triggered animations --- */
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const index = Array.from(this.slides).indexOf(entry.target);
+                            if (index !== -1) {
+                                this.currentSlide = index;
+                                this.updateUI();
+                            }
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+
+            /* --- Keyboard navigation --- */
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    switch (e.key) {
+                        case 'ArrowDown':
+                        case 'ArrowRight':
+                        case ' ':
+                            e.preventDefault();
+                            this.nextSlide();
+                            break;
+                        case 'ArrowUp':
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            this.prevSlide();
+                            break;
+                        case 'Home':
+                            e.preventDefault();
+                            this.goToSlide(0);
+                            break;
+                        case 'End':
+                            e.preventDefault();
+                            this.goToSlide(this.totalSlides - 1);
+                            break;
+                    }
+                });
+            }
+
+            /* --- Mouse wheel navigation with debounce --- */
+            setupWheelNav() {
+                document.addEventListener('wheel', (e) => {
+                    if (this.isScrolling) return;
+                    this.isScrolling = true;
+
+                    if (e.deltaY > 0) this.nextSlide();
+                    else this.prevSlide();
+
+                    setTimeout(() => { this.isScrolling = false; }, 800);
+                }, { passive: true });
+            }
+
+            /* --- Touch / swipe navigation --- */
+            setupTouchNav() {
+                let touchStartY = 0;
+                document.addEventListener('touchstart', (e) => {
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    const diff = touchStartY - e.changedTouches[0].clientY;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) this.nextSlide();
+                        else this.prevSlide();
+                    }
+                }, { passive: true });
+            }
+
+            /* --- Slide navigation --- */
+            nextSlide() {
+                if (this.currentSlide < this.totalSlides - 1) {
+                    this.goToSlide(this.currentSlide + 1);
+                }
+            }
+
+            prevSlide() {
+                if (this.currentSlide > 0) {
+                    this.goToSlide(this.currentSlide - 1);
+                }
+            }
+
+            goToSlide(index) {
+                this.slides[index].scrollIntoView({ behavior: 'smooth' });
+                this.currentSlide = index;
+                this.updateUI();
+            }
+
+            /* --- Update progress bar, dots, counter --- */
+            updateUI() {
+                // Progress bar
+                const progress = ((this.currentSlide + 1) / this.totalSlides) * 100;
+                this.progressBar.style.width = progress + '%';
+
+                // Nav dots
+                this.navDots.querySelectorAll('.nav-dot').forEach((dot, i) => {
+                    dot.classList.toggle('active', i === this.currentSlide);
+                });
+
+                // Slide counter
+                this.slideCounter.textContent =
+                    `${this.currentSlide + 1} / ${this.totalSlides}`;
+            }
+        }
+
+        // Initialize presentation
+        document.addEventListener('DOMContentLoaded', () => {
+            new SlidePresentation();
+        });
+    </script>
+</body>
+</html>
