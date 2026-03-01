@@ -1,0 +1,752 @@
+@charset "UTF-8";
+/**
+ * Tech Light - Reveal.js Theme
+ * Light mode theme for technical presentations
+ * Optimized for code snippets, side-by-side comparisons, and readability
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+/* ==============================
+   Base / Global
+   ============================== */
+.reveal {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 2rem;
+  font-weight: 400;
+  color: #1e293b;
+  background: #e2e8f0 url("https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80") no-repeat center center fixed;
+  background-size: cover;
+}
+
+.reveal .slides {
+}
+
+.reveal .slides section,
+.reveal .slides section > section {
+  line-height: 1.4;
+  font-weight: inherit;
+  background: #ffffff;
+  padding: 40px 50px;
+  box-sizing: border-box;
+  overflow: hidden;
+  height: 90%;
+  border-radius: 36px;
+}
+
+/* Parent section that wraps vertical slides — full height, no padding/background/radius */
+.reveal .slides section:has(> section) {
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  border-radius: 0;
+}
+
+.reveal .slides .slide-content {
+  box-sizing: border-box;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
+}
+
+.reveal .slides section h1,
+.reveal .slides section h2,
+.reveal .slides section h3,
+.reveal .slides section h4,
+.reveal .slides section h5,
+.reveal .slides section h6 {
+  text-align: left;
+}
+
+/* ==============================
+   Headings
+   ============================== */
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  margin: 0 0 20px 0;
+  color: #0f172a;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-shadow: none;
+  word-wrap: break-word;
+  text-transform: none;
+  text-align: left;
+}
+
+.reveal h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  border-bottom: 3px solid #3b82f6;
+  padding-bottom: 12px;
+}
+
+.reveal h2 {
+  font-size: 2.5rem;
+  color: #1e40af;
+  font-weight: 600;
+  border-bottom: 2px solid #93c5fd;
+  padding-bottom: 8px;
+}
+
+.reveal h3 {
+  font-size: 1.8rem;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.reveal h4 {
+  font-size: 1.4rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.reveal h5 {
+  font-size: 1.1rem;
+  color: #475569;
+}
+
+.reveal h6 {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+/* ==============================
+   Text
+   ============================== */
+.reveal p {
+  margin: 16px 0;
+  line-height: 1.6;
+  text-align: left;
+  color: #334155;
+}
+
+.reveal strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.reveal em {
+  color: #475569;
+}
+
+.reveal small {
+  font-size: 0.75em;
+  color: #64748b;
+}
+
+/* ==============================
+   Images
+   ============================== */
+.reveal img {
+  margin: 15px 0;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.reveal .imageblock,
+.reveal .imageblock img,
+.imageblock,
+.imageblock img {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* Auto-fit images to slide */
+.reveal .slides section img {
+  max-width: 100%;
+  max-height: 65vh;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+}
+
+.reveal hr {
+  border: none;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 24px 0;
+}
+
+/* ==============================
+   Links
+   ============================== */
+.reveal a {
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.15s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.reveal a:hover {
+  color: #1d4ed8;
+  border-bottom: 1px solid #2563eb;
+  text-shadow: none;
+}
+
+/* ==============================
+   Selection
+   ============================== */
+.reveal ::selection {
+  color: #fff;
+  background: rgba(59, 130, 246, 0.75);
+  text-shadow: none;
+}
+
+.reveal ::-moz-selection {
+  color: #fff;
+  background: rgba(59, 130, 246, 0.75);
+  text-shadow: none;
+}
+
+/* ==============================
+   Code - Inline
+   ============================== */
+/* Inline code only — pre code is handled by :highlightjs-theme */
+.reveal :not(pre) > code {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  text-transform: none;
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #be185d;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9em;
+}
+
+/* ==============================
+   Code - Blocks
+   Layout only — background/color owned entirely by :highlightjs-theme
+   ============================== */
+.reveal pre {
+  margin: 16px 0;
+  overflow: auto;
+  max-height: 50vh;
+  text-align: left;
+  font-size: 0.5em;
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  border-radius: 8px;
+}
+
+/* Override reveal.css font-size:15pt on .reveal .hljs */
+html:not(.print-pdf) .reveal pre .hljs {
+  font-size: 1em;
+}
+
+/* Code block title / label */
+.reveal .listingblock > .title,
+.reveal .literalblock > .title {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75em;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ==============================
+   Side-by-Side Code Comparison
+   Using two-column AsciiDoc layout
+   ============================== */
+/* Side-by-side columns - works with built-in reveal.js columns layout */
+.columns .slide-content {
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.columns .slide-content > .column {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.columns .slide-content > .column pre {
+  width: 100%;
+  margin: 8px 0;
+  font-size: 0.45em;
+  box-sizing: border-box;
+}
+
+/* Comparison helper classes */
+.reveal .code-compare {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.reveal .code-compare > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.code-before pre {
+  border-top: 3px solid #ef4444;
+}
+
+.code-after pre {
+  border-top: 3px solid #22c55e;
+}
+
+.code-before .title::before {
+  content: "BEFORE ";
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.code-after .title::before {
+  content: "AFTER ";
+  color: #22c55e;
+  font-weight: 600;
+}
+
+/* ==============================
+   Code Highlight / Callouts
+   ============================== */
+.reveal .hljs-ln-numbers {
+  color: #64748b;
+  padding-right: 12px;
+  border-right: 1px solid #334155;
+  margin-right: 12px;
+  user-select: none;
+}
+
+.reveal pre mark,
+.reveal pre .highlight-line {
+  background: rgba(59, 130, 246, 0.15);
+  display: inline-block;
+  width: 100%;
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+
+.reveal .conum[data-value] {
+  display: inline-block;
+  background: #3b82f6;
+  color: white;
+  font-family: "Inter", sans-serif;
+  font-size: 0.7em;
+  font-weight: 600;
+  width: 1.6em;
+  height: 1.6em;
+  line-height: 1.6em;
+  text-align: center;
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.reveal .colist td {
+  padding: 4px 8px;
+  font-size: 0.85em;
+  color: #475569;
+}
+
+/* ==============================
+   Lists
+   ============================== */
+.reveal ul,
+.reveal ol {
+  display: block;
+  margin: 0.8em 0;
+  padding-left: 1.5em;
+  text-align: left;
+}
+
+.reveal ul li,
+.reveal ol li {
+  margin-bottom: 0.4em;
+  position: relative;
+  color: #334155;
+}
+
+.reveal ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.reveal ul li {
+  padding-left: 1.5em;
+  position: relative;
+}
+
+.reveal ul li:before {
+  content: "›";
+  color: #3b82f6;
+  font-weight: 700;
+  font-size: 1.2em;
+  position: absolute;
+  left: 0;
+  top: -0.05em;
+}
+
+.reveal ol {
+  counter-reset: li;
+  list-style: none;
+  padding-left: 0;
+}
+
+.reveal ol li {
+  counter-increment: li;
+  padding-left: 2em;
+}
+
+.reveal ol li::before {
+  content: counter(li);
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.85em;
+  position: absolute;
+  left: 0;
+  width: 1.5em;
+  height: 1.5em;
+  line-height: 1.5em;
+  text-align: center;
+  background: #eff6ff;
+  border-radius: 50%;
+  top: 0.15em;
+}
+
+/* ==============================
+   Tables
+   ============================== */
+.reveal table {
+  margin: 16px auto;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  font-size: 0.85em;
+}
+
+.reveal table th {
+  background: #1e40af;
+  color: white;
+  font-weight: 600;
+  padding: 10px 16px;
+  font-family: "Inter", sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9em;
+}
+
+.reveal table td {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  background: #ffffff;
+}
+
+.reveal table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.reveal table tr:hover td {
+  background: #eff6ff;
+}
+
+/* Table for code comparison */
+.reveal table.code-table td {
+  vertical-align: top;
+  padding: 0;
+}
+
+.reveal table.code-table pre {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ==============================
+   Blockquote / Admonitions
+   ============================== */
+.reveal blockquote {
+  display: block;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 20px 0;
+  padding: 16px 24px;
+  font-style: italic;
+  background: #f8fafc;
+  border-left: 4px solid #3b82f6;
+  border-radius: 0 6px 6px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  color: #475569;
+  text-align: left;
+}
+
+.reveal blockquote p:first-child,
+.reveal blockquote p:last-child {
+  display: block;
+  text-align: left;
+}
+
+.reveal blockquote .attribution,
+.reveal blockquote footer,
+.reveal .quoteblock .attribution {
+  text-align: left;
+  margin-top: 0.8em;
+  font-style: normal;
+  font-size: 0.8em;
+  color: #94a3b8;
+}
+
+.reveal .quoteblock blockquote::after {
+  content: "";
+}
+
+.reveal .quoteblock .attribution {
+  text-align: left;
+}
+
+.reveal q {
+  font-style: italic;
+}
+
+/* Admonition blocks */
+.reveal .admonitionblock {
+  margin: 16px 0;
+  padding: 16px 20px;
+  border-radius: 6px;
+  font-size: 0.85em;
+}
+
+.reveal .admonitionblock.note {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.reveal .admonitionblock.tip {
+  background: #f0fdf4;
+  border-left: 4px solid #22c55e;
+}
+
+.reveal .admonitionblock.warning {
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+}
+
+.reveal .admonitionblock.important {
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+}
+
+/* ==============================
+   Progress Bar & Controls
+   ============================== */
+.reveal .progress {
+  background: #e2e8f0;
+  color: #3b82f6;
+  height: 3px;
+}
+
+.reveal .progress span {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+}
+
+.reveal .controls {
+  color: #3b82f6;
+}
+
+.reveal .controls .navigate-left,
+.reveal .controls .navigate-left.enabled {
+  border-right-color: #3b82f6;
+}
+
+.reveal .controls .navigate-right,
+.reveal .controls .navigate-right.enabled {
+  border-left-color: #3b82f6;
+}
+
+.reveal .controls .navigate-up,
+.reveal .controls .navigate-up.enabled {
+  border-bottom-color: #3b82f6;
+}
+
+.reveal .controls .navigate-down,
+.reveal .controls .navigate-down.enabled {
+  border-top-color: #3b82f6;
+}
+
+/* ==============================
+   Slide Number
+   ============================== */
+.reveal .slide-number {
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 0.7em;
+  border: 1px solid #bfdbfe;
+}
+
+/* ==============================
+   Utility Classes
+   ============================== */
+.reveal .text-center {
+  text-align: center;
+}
+
+.reveal .text-large {
+  font-size: 1.3em;
+}
+
+.reveal .text-smaller {
+  font-size: 0.7em;
+}
+
+.reveal .text-accent {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.reveal .text-muted {
+  color: #94a3b8;
+}
+
+.reveal .text-success {
+  color: #16a34a;
+}
+
+.reveal .text-danger {
+  color: #dc2626;
+}
+
+.reveal .text-warning {
+  color: #d97706;
+}
+
+/* Badge / Tag style */
+.reveal .badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.7em;
+  font-weight: 500;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.reveal .badge-green {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.reveal .badge-red {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* Highlight box */
+.reveal .highlight {
+  background: #eff6ff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Key concept box */
+.reveal .key-concept {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  padding: 20px 24px;
+  border-radius: 8px;
+  border-left: 4px solid #2563eb;
+  margin: 16px 0;
+}
+
+.reveal .key-concept strong {
+  color: #1e40af;
+}
+
+/* ==============================
+   Transitions
+   ============================== */
+.reveal .slides section {
+  transition: all 0.3s ease;
+}
+
+/* ==============================
+   Dark slide override
+   ============================== */
+.reveal .slides section.has-dark-background,
+.reveal .slides section.has-dark-background h1,
+.reveal .slides section.has-dark-background h2,
+.reveal .slides section.has-dark-background h3,
+.reveal .slides section.has-dark-background h4,
+.reveal .slides section.has-dark-background h5,
+.reveal .slides section.has-dark-background h6 {
+  color: #f1f5f9 !important;
+}
+
+.reveal .slides section.has-dark-background {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}
+
+.reveal .slides section.has-dark-background p,
+.reveal .slides section.has-dark-background li,
+.reveal .slides section.has-dark-background td {
+  color: #cbd5e1 !important;
+}
+
+.reveal .slides section.has-dark-background code {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.reveal .slides section[data-background-color] {
+  color: #fff !important;
+}
+
+.reveal .slides section[data-background-color] h1,
+.reveal .slides section[data-background-color] h2,
+.reveal .slides section[data-background-color] h3,
+.reveal .slides section[data-background-color] h4,
+.reveal .slides section[data-background-color] h5,
+.reveal .slides section[data-background-color] h6 {
+  color: #fff !important;
+}
+
+/* ==============================
+   Responsive code sizing
+   ============================== */
+.reveal .slides section .two-col-code pre {
+  font-size: 0.42em;
+  line-height: 1.4em;
+}
+
+/* Compact list for alongside code */
+.reveal .compact-list li {
+  margin-bottom: 0.2em;
+  font-size: 0.85em;
+}
+
+/* ==============================
+   Print / PDF adjustments
+   ============================== */
+@media print {
+  .reveal table {
+    box-shadow: none;
+  }
+}

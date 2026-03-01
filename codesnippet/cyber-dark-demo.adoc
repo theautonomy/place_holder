@@ -1,0 +1,321 @@
+= Mastering Spring WebClient: Reactive HTTP for Modern Java
+Wei Zhang
+v1.0, 2026-02-28
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_center: true
+:revealjs_controls: true
+:revealjs_progress: true
+:revealjs_hash: true
+:revealjs_history: true
+:revealjs_slideNumber: true
+:revealjs_width: 1120
+:revealjs_height: 720
+:source-highlighter: highlight.js
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/tokyo-night-dark.min.css
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.1/styles/atom-one-light.min.css 
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.1/styles/atom-one-dark.min.css 
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs.min.css
+:highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/nord.min.css
+:icons: font
+:imagesdir: images
+:customcss: styles/cyber-dark-theme.css
+
+[.slide-author]
+Wei Zhang
+
+[.slide-date]
+February 28, 2026
+
+== Mastering Spring WebClient
+
+Reactive HTTP for Modern Java
+
+[.text-muted]
+Non-blocking, streaming, and resilient API calls
+
+// ============================================================================
+// WHY WEBCLIENT
+// ============================================================================
+
+== Why WebClient?
+
+The evolution of HTTP clients in Spring
+
+=== RestTemplate vs WebClient
+
+[.columns]
+=== RestTemplate vs WebClient
+
+[.column.code-before%step]
+--
+.RestTemplate (blocking)
+[source,java]
+----
+// Blocks the thread until response
+RestTemplate rest = new RestTemplate();
+User user = rest.getForObject(
+    "/api/users/{id}", User.class, 42);
+
+// Thread sits idle during I/O
+// Limited scalability under load
+----
+
+[.text-danger]
+Blocking I/O — one thread per request
+--
+
+[.column.code-after%step]
+--
+.WebClient (reactive)
+[source,java]
+----
+// Non-blocking, returns immediately
+WebClient client = WebClient.create();
+Mono<User> user = client.get()
+    .uri("/api/users/{id}", 42)
+    .retrieve()
+    .bodyToMono(User.class);
+
+// Thread is free for other work
+----
+
+[.text-accent]
+Non-blocking — thousands of concurrent requests
+--
+
+// ============================================================================
+// BASIC USAGE
+// ============================================================================
+
+== Core Patterns
+
+Building blocks for HTTP calls
+
+=== GET Request
+
+[source,java]
+----
+@Service
+public class UserClient {
+    private final WebClient webClient;
+
+    UserClient(WebClient.Builder builder) {
+        this.webClient = builder
+            .baseUrl("https://api.example.com")
+            .defaultHeader(ACCEPT, APPLICATION_JSON_VALUE)
+            .build();
+    }
+
+    Mono<User> findById(Long id) {
+        return webClient.get()
+            .uri("/users/{id}", id)
+            .retrieve()
+            .bodyToMono(User.class);
+    }
+}
+----
+
+=== POST with Body
+
+[source,java]
+----
+Mono<User> create(CreateUserRequest request) {
+    return webClient.post()
+        .uri("/users")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(request)
+        .retrieve()
+        .bodyToMono(User.class);
+}
+----
+
+[.key-concept]
+`bodyValue()` for simple objects, `body()` with `BodyInserters` for streams
+
+=== WebClient Methods at a Glance
+
+[cols="1,1", options="header"]
+|===
+| Method | Description
+
+| `get()` / `post()` / `put()` / `delete()`
+| Start building a request with the given HTTP method
+
+| `.uri()`
+| Set the request URI with optional path variables
+
+| `.header()` / `.contentType()`
+| Add request headers or set content type
+
+| `.bodyValue()` / `.body()`
+| Set the request body (object or reactive stream)
+
+| `.retrieve()`
+| Execute the request and access the response
+
+| `.bodyToMono()` / `.bodyToFlux()`
+| Decode response body to a single value or a stream
+
+| `.onStatus()`
+| Handle specific HTTP status codes
+
+| `.exchangeToMono()`
+| Full access to the `ClientResponse` for advanced use
+|===
+
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+
+== Error Handling
+
+Graceful failures in reactive pipelines
+
+=== Status Code Handling
+
+[source,java]
+----
+Mono<User> findById(Long id) {
+    return webClient.get()
+        .uri("/users/{id}", id)
+        .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, resp ->
+            resp.bodyToMono(ErrorResponse.class)
+                .map(e -> new UserNotFoundException(e.message())))
+        .onStatus(HttpStatusCode::is5xxServerError, resp ->
+            Mono.error(new ServiceUnavailableException()))
+        .bodyToMono(User.class);
+}
+----
+
+=== Retry & Timeout
+
+[source,java]
+----
+Mono<User> findWithResilience(Long id) {
+    return webClient.get()
+        .uri("/users/{id}", id)
+        .retrieve()
+        .bodyToMono(User.class)
+        .timeout(Duration.ofSeconds(3))
+        .retryWhen(Retry.backoff(3, Duration.ofMillis(500))
+            .filter(ex -> ex instanceof WebClientResponseException.ServiceUnavailable))
+        .onErrorResume(TimeoutException.class,
+            ex -> Mono.error(new ServiceTimeoutException()));
+}
+----
+
+// ============================================================================
+// ARCHITECTURE
+// ============================================================================
+
+== Architecture
+
+How it all fits together
+
+[.columns]
+=== Reactive Pipeline Architecture
+
+[.column%step]
+--
+.Blocking I/O
+image::https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80[Server room]
+--
+
+[.column%step]
+--
+.Non-Blocking I/O
+image::https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&q=80[Network cables]
+--
+
+[.columns]
+=== Reactive Pipeline Architecture
+
+[.column%step]
+--
+.Transformer Model
+image::transformer-diagram.png[Transformer]
+--
+
+[.column%step]
+--
+.RAG Pipeline
+image::rag-diagram.png[RAG]
+--
+
+
+// ============================================================================
+// TESTING
+// ============================================================================
+
+== Testing
+
+Verifiable mock servers for WebClient
+
+=== MockWebServer
+
+[source,java]
+----
+@ExtendWith(MockitoExtension.class)
+class UserClientTest {
+    static MockWebServer server;
+    UserClient client;
+
+    @BeforeAll
+    static void setup() throws Exception {
+        server = new MockWebServer();
+        server.start();
+    }
+
+    @BeforeEach
+    void init() {
+        var webClient = WebClient.builder()
+            .baseUrl(server.url("/").toString()).build();
+        client = new UserClient(webClient);
+    }
+
+    @Test
+    void shouldFetchUser() {
+        server.enqueue(new MockResponse()
+            .setBody("{\"name\":\"Alice\"}")
+            .setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE));
+
+        StepVerifier.create(client.findById(1L))
+            .expectNextMatches(u -> u.name().equals("Alice"))
+            .verifyComplete();
+    }
+}
+----
+
+// ============================================================================
+// SUMMARY
+// ============================================================================
+
+== Summary
+
+Wrapping up
+
+=== Key Takeaways
+
+* [.text-accent]*WebClient* replaces RestTemplate for non-blocking HTTP
+* [.text-accent]*Mono/Flux* compose naturally with reactive pipelines
+* [.text-accent]*onStatus* for granular error handling per status code
+* [.text-accent]*Retry + Timeout* for production resilience
+* [.text-accent]*MockWebServer* for deterministic integration tests
+
+[.key-concept]
+Embrace reactive: fewer threads, more throughput, +
+better resource utilization under load.
+
+=== Resources
+
+* https://docs.spring.io/spring-framework/reference/web/webflux-webclient.html[Spring WebClient Docs]
+* https://projectreactor.io/docs/core/release/reference/[Project Reactor Reference]
+* https://github.com/square/okhttp/tree/master/mockwebserver[MockWebServer]
+
+[.text-muted]
+Built with AsciiDoc + Reveal.js

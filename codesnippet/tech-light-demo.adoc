@@ -1,0 +1,427 @@
+= Modern Java Development: Best Practices & Patterns
+:revealjs_theme: white
+:revealjs_transition: slide
+:revealjs_center: false
+:revealjs_controls: true
+:revealjs_progress: true
+:revealjs_hash: true
+:revealjs_history: true
+:revealjs_slideNumber: true
+:revealjs_width: 1120
+:revealjs_height: 720
+:source-highlighter: highlight.js
+// :highlightjs-theme: nord
+// :highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/atom-one-light.min.css 
+:highlightjs-theme: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css
+:icons: font
+:imagesdir: images
+:customcss: styles/tech-light-theme.css
+
+== Modern Java Development
+
+Best Practices & Patterns
+
+[.text-muted]
+A technical deep-dive into writing clean, maintainable Java
+
+// ============================================================================
+// RECORDS & PATTERN MATCHING
+// ============================================================================
+
+== Records & Sealed Types
+
+Concise data modeling with modern Java
+
+=== Java Records
+
+Records provide a concise way to create data carrier classes.
+
+[source,java]
+----
+public record User(
+    String name,
+    String email,
+    List<Role> roles
+) {
+    // Compact constructor for validation
+    public User {
+        Objects.requireNonNull(name, "name must not be null");
+        Objects.requireNonNull(email, "email must not be null");
+        roles = List.copyOf(roles); // defensive copy
+    }
+}
+----
+
+[.columns]
+=== Before vs After: Data Classes
+
+[.column.code-before%step]
+--
+.Traditional POJO
+[source,java]
+----
+public class Point {
+    private final int x;
+    private final int y;
+
+    public Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public int x() { return x; }
+    public int y() { return y; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Point p))
+            return false;
+        return x == p.x && y == p.y;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
+    }
+
+    @Override
+    public String toString() {
+        return "Point[x=%d, y=%d]"
+            .formatted(x, y);
+    }
+}
+----
+--
+
+[.column.code-after%step]
+--
+.Java Record
+[source,java]
+----
+public record Point(int x, int y) { }
+----
+
+That's it. You get:
+
+* Constructor
+* Accessors `x()` and `y()`
+* `equals()` and `hashCode()`
+* `toString()`
+
+[.badge-green]
+30+ lines -> 1 line
+--
+
+=== Sealed Types & Pattern Matching
+
+[source,java]
+----
+public sealed interface Shape
+    permits Circle, Rectangle, Triangle {
+}
+
+public record Circle(double radius) implements Shape {}
+public record Rectangle(double w, double h) implements Shape {}
+public record Triangle(double a, double b, double c) implements Shape {}
+----
+
+[source,java]
+----
+// Exhaustive pattern matching - no default needed
+String describe(Shape shape) {
+    return switch (shape) {
+        case Circle(var r)        -> "Circle with radius %.1f".formatted(r);
+        case Rectangle(var w, var h) -> "Rectangle %sx%s".formatted(w, h);
+        case Triangle(var a, _, _)   -> "Triangle with side %.1f".formatted(a);
+    };
+}
+----
+
+// ============================================================================
+// VIRTUAL THREADS
+// ============================================================================
+
+== Virtual Threads
+
+Scalable concurrency without the complexity
+
+[.columns]
+=== Platform vs Virtual Threads
+
+[.column.code-before%step]
+--
+.Platform Threads (old)
+[source,java]
+----
+// Limited by OS thread count
+ExecutorService executor =
+    Executors.newFixedThreadPool(200);
+
+for (int i = 0; i < 10_000; i++) {
+    executor.submit(() -> {
+        // blocks an OS thread!
+        var data = fetchFromDb();
+        return process(data);
+    });
+}
+// Many tasks queued, waiting
+----
+--
+
+[.column.code-after%step]
+--
+.Virtual Threads (Java 21+)
+[source,java]
+----
+// Millions of concurrent tasks
+ExecutorService executor =
+    Executors.newVirtualThreadPerTaskExecutor();
+
+for (int i = 0; i < 10_000; i++) {
+    executor.submit(() -> {
+        // yields the carrier thread
+        var data = fetchFromDb();
+        return process(data);
+    });
+}
+// All tasks run concurrently
+----
+--
+
+=== Structured Concurrency
+
+[source,java]
+----
+UserProfile fetchProfile(long userId) throws Exception {
+    try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        var user   = scope.fork(() -> findUser(userId));
+        var orders = scope.fork(() -> fetchOrders(userId));
+        var prefs  = scope.fork(() -> fetchPrefs(userId));
+
+        scope.join().throwIfFailed();
+        return new UserProfile(user.get(), orders.get(), prefs.get());
+    }
+}
+----
+
+[.key-concept]
+If any subtask fails, the others are **automatically cancelled**.
+
+// ============================================================================
+// SPRING BOOT
+// ============================================================================
+
+== Spring Boot Patterns
+
+Clean architecture and dependency injection
+
+[.columns]
+=== Constructor Injection
+
+[.column.code-before%step]
+--
+.Field Injection (avoid)
+[source,java]
+----
+@Service
+public class OrderService {
+
+    @Autowired
+    private OrderRepository repo;
+
+    @Autowired
+    private PaymentGateway payments;
+
+    @Autowired
+    private NotificationService notify;
+}
+----
+
+[.text-danger]
+Hard to test, hides dependencies
+--
+
+[.column.code-after%step]
+--
+.Constructor Injection
+[source,java]
+----
+@Service
+public class OrderService {
+
+    private final OrderRepository repo;
+    private final PaymentGateway payments;
+    private final NotificationService notify;
+
+    // Single constructor = auto-wired
+    OrderService(OrderRepository repo,
+                 PaymentGateway payments,
+                 NotificationService notify) {
+        this.repo = repo;
+        this.payments = payments;
+        this.notify = notify;
+    }
+}
+----
+--
+
+=== REST API Best Practices
+
+[source,java]
+----
+@RestController
+@RequestMapping("/api/v1/users")
+public class UserController {
+    private final UserService userService;
+
+    UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @GetMapping("/{id}")
+    ResponseEntity<UserDto> findById(@PathVariable Long id) {
+        return userService.findById(id)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    ResponseEntity<UserDto> create(@Valid @RequestBody CreateUserRequest req) {
+        var user = userService.create(req);
+        return ResponseEntity.created(
+            URI.create("/api/v1/users/" + user.id())).body(user);
+    }
+}
+----
+
+// ============================================================================
+// TESTING
+// ============================================================================
+
+== Testing Strategies
+
+Unit tests, integration tests, and Testcontainers
+
+=== Unit Test Structure
+
+[source,java]
+----
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock OrderRepository orderRepo;
+    @Mock PaymentGateway payments;
+    @InjectMocks OrderService service;
+
+    @Test
+    void shouldRejectOrderWhenPaymentFails() {
+        // Given
+        var order = new Order(1L, List.of(
+            new LineItem("Widget", 2, Money.of(9.99))
+        ));
+        when(payments.charge(any())).thenReturn(Result.failure("declined"));
+
+        // When
+        var result = service.placeOrder(order);
+
+        // Then
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.error()).isEqualTo("Payment declined");
+        verify(orderRepo, never()).save(any());
+    }
+}
+----
+
+=== Integration Test with Testcontainers
+
+[source,java]
+----
+@SpringBootTest
+@Testcontainers
+class UserRepositoryIT {
+
+    @Container
+    static PostgreSQLContainer<?> postgres =
+        new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("testdb");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
+    @Autowired UserRepository userRepo;
+
+    @Test
+    void shouldPersistAndRetrieveUser() {
+        var user = new User("alice", "alice@example.com", List.of(Role.USER));
+
+        var saved = userRepo.save(user);
+        var found = userRepo.findById(saved.id());
+
+        assertThat(found).isPresent()
+            .get()
+            .satisfies(u -> {
+                assertThat(u.name()).isEqualTo("alice");
+                assertThat(u.roles()).containsExactly(Role.USER);
+            });
+    }
+}
+----
+
+// ============================================================================
+// ARCHITECTURE DIAGRAMS
+// ============================================================================
+
+== Architecture Diagrams
+
+Visual comparison of system designs
+
+[.columns]
+=== Transformer vs RAG Architecture
+
+[.column%step]
+--
+.Transformer Architecture
+image::transformer-diagram.png[Transformer]
+--
+
+[.column%step]
+--
+.RAG Pipeline
+image::rag-diagram.png[RAG]
+--
+
+// ============================================================================
+// SUMMARY
+// ============================================================================
+
+== Summary
+
+Wrapping up the key ideas
+
+=== Key Takeaways
+
+* [.text-accent]*Records* eliminate boilerplate for data classes
+* [.text-accent]*Sealed types* + pattern matching = exhaustive checks
+* [.text-accent]*Virtual threads* scale to millions of tasks
+* [.text-accent]*Structured concurrency* manages task lifecycles
+* [.text-accent]*Constructor injection* over field injection
+* [.text-accent]*Testcontainers* for reliable integration tests
+
+[.key-concept]
+Write less code. Let the compiler catch more bugs. +
+Focus on *business logic*, not ceremony.
+
+=== Resources
+
+* https://openjdk.org/jeps/440[JEP 440: Record Patterns]
+* https://openjdk.org/jeps/444[JEP 444: Virtual Threads]
+* https://docs.spring.io/spring-boot/reference/[Spring Boot Reference]
+* https://testcontainers.com/guides/[Testcontainers Guides]
+
+[.text-muted]
+Built with AsciiDoc + Reveal.js
