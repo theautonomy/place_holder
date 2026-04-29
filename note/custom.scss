@@ -1,0 +1,12 @@
+@use "./base.scss";
+
+// Fix: Clicking the folder title text (.folder-title span) silently fails.
+// The toggleFolder handler checks evt.target: when target=span it resolves
+// span.parentElement.parentElement = the inner <div>, whose nextElementSibling
+// is null, so the toggle is a no-op.  Setting pointer-events:none on the span
+// causes clicks to fall through to the parent <button>, so target=button and
+// the traversal correctly reaches .folder-outer.
+
+// .explorer-content .folder-container .folder-title {
+  // pointer-events: none;
+// }
