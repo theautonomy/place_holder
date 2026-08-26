@@ -1,0 +1,27 @@
+@echo off
+setlocal
+set ANTHROPIC_API_KEY=
+set MSGFILE=%TEMP%\ai-commit-msg-%RANDOM%.txt
+
+git diff --cached | claude -p "Write a git commit message for the staged diff on stdin. Summarize only what the diff actually shows - do not invent or assume anything not visible in it. First line: imperative mood, under 72 characters, describing the overall change. Add a short body only if some part of the change needs context the summary line can't carry. Output only the commit message text - no preamble, no explanation, no markdown formatting or code fences." > "%MSGFILE%"
+
+:show
+echo.
+echo ==== Proposed commit message ====
+type "%MSGFILE%"
+echo ==================================
+echo.
+
+set "CONFIRM="
+set /p CONFIRM=Commit with this message? [y/e/N] (e=edit)
+if /i "%CONFIRM%"=="e" (
+    vim "%MSGFILE%"
+    goto show
+)
+if /i "%CONFIRM%"=="y" (
+    git commit -F "%MSGFILE%"
+) else (
+    echo Commit aborted.
+)
+
+del "%MSGFILE%" >nul 2>&1
