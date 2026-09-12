@@ -18,11 +18,18 @@ are flagged as requiring protection, triggering the validation sequence.
 [2] (https://terasolunaorg.github.io/guideline/5.0.2.RELEASE/en/Security/CSRF.html),
 [3] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)
 
-3. Loading the Expected TokenIf validation is required, Spring Security resolves the expected token
+3. Loading the Expected Token
+If validation is required, Spring Security resolves the expected token
  by evaluating the DeferredCsrfToken. This forces the CsrfTokenRepository to load the actual server-persisted
 token value tied to the user's session or cookies.
 [1] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html),
 [2] (https://medium.com/@mohanakrishna9842/understanding-csrf-protection-in-spring-security-372488b888e1)
+
+If no token exists yet in the repository (e.g., a new session), the repository generates a fresh, random
+cryptographic token and persists it.
+[1] (https://medium.com/@mohanakrishna9842/understanding-csrf-protection-in-spring-security-372488b888e1),
+[2] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html),
+[3] (https://ramakrishna-01.medium.com/how-spring-security-csrf-protection-works-internally-step-by-step-b143061e4b01)
 
 4. Extracting the Client TokenThe CsrfTokenRequestHandler is called again to extract the actual token sent
 by the client. By default, it searches the HTTP request components in this order:
