@@ -1,39 +1,22 @@
-In Spring Security, CSRF protection is enforced natively through a dedicated filter called . It relies on a synchronized token pattern to verify that state-changing requests originate from your application rather than a malicious third party. [1, 2, 3]  
-The step-by-step internal token validation flow unfolds within the filter execution: [4]  
-1. Lazy Loading via Deferred Token 
-When a request enters the , the framework loads a . Instead of instantly querying the underlying storage, this object lazily wraps a  (such as  or ). A  is passed to a , which maps the token metadata to an  attribute so the rest of your application can access it if needed. [2, 4]  
-2. HTTP Method Filtering 
-The  verifies whether the incoming HTTP method requires protection. 
-
-• Safe Methods: , , , and  bypass validation entirely. The filter immediately passes control down the . 
-• State-Changing Methods: , , , and  are flagged as requiring protection, triggering the validation sequence. [4, 5, 6]  
-
-3. Loading the Expected Token 
-If validation is required, Spring Security resolves the expected token by evaluating the . This forces the  to load the actual server-persisted token value tied to the user's session or cookies. [1, 4]  
-4. Extracting the Client Token 
-The  is called again to extract the actual token sent by the client. By default, it searches the HTTP request components in this order: 
-
-1. An HTTP request header named  
-2. An HTTP request parameter named  [7, 8, 9]  
-
-5. Comparison and Decision 
-The framework performs a secure string comparison between the server's expected token and the client's actual token. 
-
-• Match: If the values match perfectly, validation succeeds. The filter allows the execution to flow to the next element in the . 
-• Mismatch or Missing: If the client token is entirely absent or does not match the expected value, validation fails. [4]  
-
-6. Exception Handling 
-Upon validation failure, the filter creates an  (specifically a  or ). It passes this exception directly to the configured , which halts processing and responds to the client with an HTTP 403 Forbidden error status. [4, 5]  
-Are you troubleshooting a specific validation error (like an unexpected 403 status), or are you looking to customize this flow for a Single Page Application (SPA) architecture?Let me know if you need help with:Configuring cookie-based storage ()Handling tokens with stateless APIs (JWTs)Overriding the default  
-AI responses may include mistakes.
-
-[1] https://medium.com/@mohanakrishna9842/understanding-csrf-protection-in-spring-security-372488b888e1
-[2] https://www.youtube.com/watch?v=gdYVxp2YmNM
-[3] https://ramakrishna-01.medium.com/how-spring-security-csrf-protection-works-internally-step-by-step-b143061e4b01
-[4] https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html
-[5] https://terasolunaorg.github.io/guideline/5.0.2.RELEASE/en/Security/CSRF.html
-[6] https://www.youtube.com/watch?v=jZZb-pHJZMM
-[7] https://stackoverflow.com/questions/52068250/how-does-the-spring-internally-validate-the-csrf-token-with-csrf-parameter-or-x
-[8] https://www.youtube.com/watch?v=8QDORHQvdu8
-[9] https://dev.to/pramithamj/solved-cross-site-request-forgery-csrf-attacks-with-spring-security-32po
-
+In Spring Security, CSRF protection is enforced natively through a dedicated filter called CsrfFilter. It relies on a synchronized token pattern to verify that state-changing requests originate from your application rather than a malicious third party. [1] (https://medium.com/@mohanakrishna9842/understanding-csrf-protection-in-spring-security-372488b888e1), [2] (https://ramakrishna-01.medium.com/how-spring-security-csrf-protection-works-internally-step-by-step-b143061e4b01), [3] (https://www.youtube.com/watch?v=gdYVxp2YmNM&t=494)The step-by-step internal token validation flow unfolds within the filter execution: [1] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)1. Lazy Loading via Deferred TokenWhen a request enters the CsrfFilter, the framework loads a DeferredCsrfToken. Instead of instantly querying the underlying storage, this object lazily wraps a CsrfTokenRepository (such as HttpSessionCsrfTokenRepository or CookieCsrfTokenRepository). A Supplier<CsrfToken> is passed to a CsrfTokenRequestHandler, which maps the token metadata to an HttpServletRequest attribute so the rest of your application can access it if needed. [1] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html), [2] (https://www.youtube.com/watch?v=gdYVxp2YmNM&t=494)2. HTTP Method FilteringThe CsrfFilter verifies whether the incoming HTTP method requires protection. [1] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)Safe Methods: GET, HEAD, TRACE, and OPTIONS bypass validation entirely. The filter immediately passes control down the FilterChain.State-Changing Methods: POST, PUT, DELETE, and PATCH are flagged as requiring protection, triggering the validation sequence. [1] (https://www.youtube.com/watch?v=jZZb-pHJZMM), [2] (https://terasolunaorg.github.io/guideline/5.0.2.RELEASE/en/Security/CSRF.html), [3] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)3. Loading the Expected TokenIf validation is required, Spring Security resolves the expected token by evaluating the DeferredCsrfToken. This forces the CsrfTokenRepository to load the actual server-persisted token value tied to the user's session or cookies. [1] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html), [2] (https://medium.com/@mohanakrishna9842/understanding-csrf-protection-in-spring-security-372488b888e1)4. Extracting the Client TokenThe CsrfTokenRequestHandler is called again to extract the actual token sent by the client. By default, it searches the HTTP request components in this order: [1] (https://stackoverflow.com/questions/52068250/how-does-the-spring-internally-validate-the-csrf-token-with-csrf-parameter-or-x), [2] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)An HTTP request header named X-CSRF-TOKENAn HTTP request parameter named _csrf [1] (https://dev.to/pramithamj/solved-cross-site-request-forgery-csrf-attacks-with-spring-security-32po), [2] (https://stackoverflow.com/questions/52068250/how-does-the-spring-internally-validate-the-csrf-token-with-csrf-parameter-or-x), [3] (https://www.youtube.com/watch?v=8QDORHQvdu8)5. Comparison and DecisionThe framework performs a secure string comparison between the server's expected token and the client's actual token. [1] (https://ramakrishna-01.medium.com/how-spring-security-csrf-protection-works-internally-step-by-step-b143061e4b01), [2] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)Match: If the values match perfectly, validation succeeds. The filter allows the execution to flow to the next element in the FilterChain.Mismatch or Missing: If the client token is entirely absent or does not match the expected value, validation fails. [1] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)6. Exception HandlingUpon validation failure, the filter creates an AccessDeniedException (specifically a InvalidCsrfTokenException or MissingCsrfTokenException). It passes this exception directly to the configured AccessDeniedHandler, which halts processing and responds to the client with an HTTP 403 Forbidden error status. [1] (https://terasolunaorg.github.io/guideline/5.0.2.RELEASE/en/Security/CSRF.html), [2] (https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)[ Incoming Request ]
+         │
+         ▼
+ ┌───────────────┐
+ │  CsrfFilter   │ <─── Initialize DeferredCsrfToken (Lazy loading)
+ └───────┬───────┘
+         │
+         ├─► [ Is it a Safe Method? (GET/HEAD/TRACE/OPTIONS) ] ──► YES ──► ( Continue Filter Chain )
+         │
+         ▼ NO (POST, PUT, DELETE, PATCH)
+ ┌───────────────────────────────────────────┐
+ │ Load Expected Token (from Repository)      │
+ ├───────────────────────────────────────────┤
+ │ Extract Client Token (Header or Parameter)│
+ └───────┬───────────────────────────────────┘
+         │
+         ▼
+   [ Do they match? ]
+         ├─► YES ──► ( Continue Filter Chain )
+         │
+         └─► NO  ──► [ AccessDeniedHandler ] ──► HTTP 403 Forbidden
+Are you troubleshooting a specific validation error (like an unexpected 403 status), or are you looking to customize this flow for a Single Page Application (SPA) architecture?Let me know if you need help with:Configuring cookie-based storage (CookieCsrfTokenRepository)Handling tokens with stateless APIs (JWTs)Overriding the default CsrfTokenRequestHandlerSpringSourceCross Site Request Forgery (CSRF) :: Spring SecurityFirst, the DeferredCsrfToken is loaded, which holds a reference to the CsrfTokenRepository so that the persisted CsrfToken can be ...Stack OverflowHow does the spring internally validate the csrf token with _csrf parameter or X-CSRF-TOKEN header?Spring internally validates CSRF tokens by comparing two tokens extracted from the cookie and the header/param: * **Header/param**YouTube·Code With ZCORS Setup, CSRF Protection, and Authorization | Video 3/4Jan 20, 2025 — Spring Security Part 3: CORS Setup, CSRF Protection, and Authorization |  Video 3/4 and I reload. this this time see I have got th...9m
