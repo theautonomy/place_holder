@@ -133,6 +133,87 @@ What this means in practice:
 
 The template style depends on the framework: `{id}` (Spring), `:id` (Express), `<id>` (Flask). Check the facet panel for the values your spans actually carry.
 
+## `=>` vs `->` between services
+
+Both lines mean "traces where service-a calls service-b." The arrow sets how directly: `=>` requires service-a to be the immediate parent, while `->` allows anything in between.
+
+```text
+service:service-a => service:service-b
+service:service-a -> service:service-b
+```
+
+| Syntax | Matches traces where… |
+| --- | --- |
+| `service:service-a => service:service-b` | A service-a span is the **direct parent** of a service-b span, meaning service-a calls service-b itself. |
+| `service:service-a -> service:service-b` | A service-a span is **anywhere upstream** of a service-b span. This includes direct calls and chains like a → x → y → b. |
+
+So `=>` is a subset of `->`. Some examples:
+
+| Call path in the trace | `=>` | `->` |
+| --- | --- | --- |
+| a → b | yes | yes |
+| a → gateway → b | no | yes |
+| b → a | no | no (direction matters) |
+| a and b in separate traces | no | no |
+
+**Entering it:** in Trace Explorer, you usually define each side as a span query (`a: service:service-a`, `b: service:service-b`) and type `a => b` in **Traces matching**. The one-line form is shorthand for that. If the search bar doesn't accept the inline form, use the labeled form.
+
+**Why `=>` can miss direct calls:** the direct parent of service-b's server span is service-a's **client span**. That client span doesn't always carry `service:service-a`:
+
+- Older tracers may tag it as `service:service-a-http-client` or `service:okhttp`.
+- A proxy, gateway or mesh sidecar that's also traced (Envoy, nginx) sits in between.
+
+In those cases `a => b` finds nothing even though a calls b. Use `->`, or widen `a` to something like `service:service-a*`.
+
+**Neither arrow checks errors or latency.** Put those conditions in the span query itself:
+
+```text
+a: service:service-a
+b: service:service-b status:error
+Traces matching: a -> b
+```
+
+That finds traces where service-a is upstream of a failing service-b span.
+
+**Trace headers must reach service-b** for any of this to work. If the context isn't propagated, a and b land in separate traces and neither operator matches.
+
+### When service-b is external (not in Datadog)
+
+If service-b isn't instrumented with Datadog, it sends no spans. Neither `=>` nor `->` can match, because no span has `service:service-b`. The only record of the call is **service-a's client span**, so you search for that single span. You don't need a trace query.
+
+```text
+service:service-a @span.kind:client @out.host:service-b.example.com
+```
+
+Depending on the tracer, the host is in one of these attributes:
+
+| Attribute | Example |
+| --- | --- |
+| `@out.host` | `@out.host:api.service-b.com` |
+| `@peer.hostname` | `@peer.hostname:api.service-b.com` |
+| `@peer.service` | `@peer.service:service-b` (if set, or defaulted from the host) |
+| `@http.url` | `@http.url:*service-b.com*` |
+
+**Inferred services:** Datadog builds an inferred service from these peer tags. service-b then shows up in the service map and Software Catalog as a dependency of service-a, with request, error and latency metrics. But it's an entity built from service-a's spans, not a service with spans of its own. In Trace Explorer, filter on the peer tag, not on `service:`.
+
+| You get | You don't get |
+| --- | --- |
+| Call count, latency and status codes, as service-a saw them | What happened inside service-b |
+| Errors: timeouts, connection refused, 5xx (`@error.type`, `@error.message`) | Network time vs. service-b's processing time |
+| The upstream path to the call | Anything downstream of service-b |
+
+The call is the last hop in the trace, so trace queries still show how requests reach it:
+
+```text
+a: service:frontend
+b: service:service-a @out.host:service-b.example.com status:error
+Traces matching: a -> b
+```
+
+This finds frontend requests that ended in a failed call to the external service.
+
+**If service-b is traced by a different system** (its own APM, or a vendor's tracing), the trace can only continue if both sides use the same trace headers, such as W3C `traceparent`. Even then, service-b's spans live in that other system, not in Datadog.
+
 ## Sources
 
 - [Trace Explorer query syntax](https://docs.datadoghq.com/tracing/trace_explorer/query_syntax/)
