@@ -5,6 +5,7 @@ tabs or spaces, indent size, line endings, character set, trailing whitespace an
 It's the reason this course's scripts keep their LF line endings and 2-space indentation, whether you open them in VS Code, IntelliJ, Vim or Notepad++.
 
 - Website and full specification: <https://editorconfig.org> · <https://spec.editorconfig.org>
+- Generator: <https://editorconfig.timseverien.com/> builds a `.editorconfig` from the options you pick
 
 ## Contents
 
@@ -206,7 +207,7 @@ They overlap, and you usually want all three:
 | **Catches** | new edits only | every commit, from any tool (including `git add` of a file you never opened) | whole files |
 | **Doesn't** | fix existing files you don't touch, or files written by scripts | care about indentation | run unless you run it |
 
-The combination this repository uses:
+A typical combination (this repository's own `.gitattributes` is explained in [GITATTRIBUTES.md](GITATTRIBUTES.md)):
 
 ```ini
 # .editorconfig: editors write LF
@@ -222,7 +223,7 @@ end_of_line = lf
 ```
 
 `.editorconfig` alone isn't enough for line endings. A file created by a script, or edited outside your IDE, can still get CRLF,
-and git with `core.autocrlf=true` converts on checkout. `.gitattributes` is the safety net.
+and git with `core.autocrlf=true` converts on checkout. `.gitattributes` is the safety net (see [GITATTRIBUTES.md](GITATTRIBUTES.md)).
 
 ## Gotchas
 
@@ -300,6 +301,8 @@ insert_final_newline = unset
 ```
 
 Pair it with the matching `.gitattributes` (above). Project 3's `newproj.sh` generates a smaller version of both for new projects.
+For other stacks, the [EditorConfig generator](https://editorconfig.timseverien.com/) builds a file from the options you pick.
+Review what it gives you: make sure it has `root = true`, keeps comments on their own lines, and has no `[*.{js}]`-style single-item braces (see [gotchas](#gotchas)).
 
 ## Checking it in CI
 
